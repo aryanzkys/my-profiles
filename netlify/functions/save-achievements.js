@@ -43,22 +43,10 @@ async function ensureSchema(client) {
   `);
 }
 
-async function ensureTableViaSupabaseMeta() {
-  const base = SUPABASE_URL;
-  if (!base || !SUPABASE_SERVICE_ROLE_KEY) return false;
-  // Create table using Supabase Postgres Meta API
-  const endpoint = `${base}/pg/tables`;
-  const payload = {
-    schema: 'public',
-    name: 'app_data',
-    comment: null,
-    columns: [
-      { name: 'id', type: 'text', default_value: null, is_identity: false, is_nullable: false },
-      { name: 'data', type: 'jsonb', default_value: null, is_identity: false, is_nullable: false },
-      { name: 'updated_at', type: 'timestamp with time zone', default_value: 'now()', is_identity: false, is_nullable: false },
-    ],
-    primary_keys: ['id'],
-  };
+// Supabase Storage fallback (REST-only, no direct DB or Meta API required)
+async function ensureStorageBucket(bucket = 'app_data') {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return false;
+  const endpoint = `${SUPABASE_URL}/storage/v1/bucket`;
   const res = await fetch(endpoint, {
     method: 'POST',
     headers: {
@@ -67,16 +55,32 @@ async function ensureTableViaSupabaseMeta() {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ name: bucket, public: false }),
   });
-  if (res.ok || res.status === 409) {
-    // 201 Created or 409 Already exists
-    return true;
-  }
-  // If another error, try to detect "already exists" text
+  if (res.ok || res.status === 409) return true; // created or already exists
+  // Some deployments may return 400/404 with text mentioning exists; be lenient
   const t = await res.text();
-  if (/already exists/i.test(t)) return true;
-  throw new Error(`Supabase Meta create table failed (${res.status}): ${t}`);
+  if (/exist/i.test(t)) return true;
+  throw new Error(`Supabase Storage create bucket failed (${res.status}): ${t}`);
+}
+
+async function saveToStorage(json, bucket = 'app_data', object = 'achievements.json') {
+  await ensureStorageBucket(bucket);
+  const endpoint = `${SUPABASE_URL}/storage/v1/object/${encodeURIComponent(bucket)}/${object}`;
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      'Content-Type': 'application/json',
+      'x-upsert': 'true',
+    },
+    body: JSON.stringify(json),
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`Supabase Storage save failed (${res.status}): ${t}`);
+  }
 }
 
 exports.handler = async function (event) {
@@ -101,21 +105,20 @@ exports.handler = async function (event) {
       });
       if (!res.ok) {
         const t = await res.text();
-        // If table missing, try to create via PG then retry REST once
+        // If table missing, try a REST-only fallback to Supabase Storage then retry REST once
         if (res.status === 404 && t && t.includes("Could not find the table")) {
           try {
-            // Prefer creating table via Supabase Meta API to avoid direct DB DNS
-            await ensureTableViaSupabaseMeta();
-            // tiny delay to let PostgREST refresh schema cache
-            await new Promise((r) => setTimeout(r, 250));
+            // Save payload to Storage so data persists even if table doesn't exist yet
+            await saveToStorage(body);
+            // tiny delay; in case a background migration creates the table later
+            await new Promise((r) => setTimeout(r, 150));
           } catch (e) {
-            // If we cannot connect to PG, bubble a helpful error
-            // Fallback: try direct DB create if Meta API not available
+            // As a last resort, try direct DB create (may fail if DNS blocked)
             try {
               const client = await getPool().connect();
               try { await ensureSchema(client); } finally { client.release(); }
             } catch (ee) {
-              throw new Error(`Supabase REST save failed (${res.status}): ${t}. Failed to create table via Meta API: ${e.message}. PG fallback also failed: ${ee.message}`);
+              throw new Error(`Supabase REST save failed (${res.status}): ${t}. Storage fallback also failed: ${e.message}. PG fallback also failed: ${ee.message}`);
             }
           }
           // Retry REST once
@@ -147,7 +150,13 @@ exports.handler = async function (event) {
             } finally { client.release(); }
             return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ok: true, via: 'supabase-postgres' }) };
           } catch (e) {
-            throw new Error(`Supabase REST save failed after retry (${res.status}): ${t2}. PG fallback also failed: ${e.message}`);
+            // If PG also fails, at least confirm storage was written
+            try {
+              await saveToStorage(body);
+              return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ok: true, via: 'supabase-storage' }) };
+            } catch (e2) {
+              throw new Error(`Supabase REST save failed after retry (${res.status}): ${t2}. PG fallback also failed: ${e.message}. Storage write also failed: ${e2.message}`);
+            }
           }
         }
         throw new Error(`Supabase REST save failed (${res.status}): ${t}`);

@@ -1,6 +1,6 @@
 # My Profiles — Futuristic 3D Portfolio (Next.js + Tailwind + Framer + Spline)
 
-Interactive 3D profile built with Next.js, TailwindCSS, Spline, and Framer Motion. Supports static export (GitHub Pages/Netlify) and Netlify Functions + Supabase/Postgres for Achievements data.
+Interactive 3D profile built with Next.js, TailwindCSS, Spline, and Framer Motion. Supports static export (GitHub Pages/Netlify) and Netlify Functions + Supabase (REST-first; Storage fallback; optional direct Postgres) for Achievements data.
 
 ## Run locally
 
@@ -30,14 +30,14 @@ Serve `out/` with any static host or push to the `gh-pages` branch.
 - Gate: set `NEXT_PUBLIC_ADMIN_KEY` in `.env` and enter it once (stored in localStorage)
 - Data sources: loads from Netlify Function if available; otherwise uses local JSON
 - Save options:
-  - Save to DB: uses Netlify Function (MongoDB)
-  - Save (dev): writes `data/achievements.json` in dev mode
-  - Save to File / Download JSON: file-based, no server required
+	- Save to DB: Netlify Function using Supabase REST. If the PostgREST table isn't ready yet, it falls back to Supabase Storage so your data still persists; an optional direct Postgres path is used if configured.
+	- Save (dev): writes `data/achievements.json` in dev mode
+	- Save to File / Download JSON: file-based, no server required
 
 ## Netlify + Supabase/Postgres
 1) Set environment variables in Netlify Site settings:
-	- Direct DB (pg): `SUPABASE_DB_URL` (or discrete: `SUPABASE_DB_HOST`, `SUPABASE_DB_PORT`, `SUPABASE_DB_DATABASE`, `SUPABASE_DB_USER`, `SUPABASE_DB_PASSWORD`)
-	- Supabase REST (optional, avoids direct DB DNS): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+	- Supabase REST (recommended): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+	- Optional direct DB (pg): `SUPABASE_DB_URL` (or discrete: `SUPABASE_DB_HOST`, `SUPABASE_DB_PORT`, `SUPABASE_DB_DATABASE`, `SUPABASE_DB_USER`, `SUPABASE_DB_PASSWORD`)
 	- Admin gate: `NEXT_PUBLIC_ADMIN_KEY`
 	- optional: `NEXT_PUBLIC_BASE_PATH`
 2) Build settings:
@@ -46,11 +46,8 @@ Serve `out/` with any static host or push to the `gh-pages` branch.
 3) Netlify Functions live at `/.netlify/functions/*` (configured via `netlify.toml`).
 
 Troubleshooting and notes:
-- The functions create a simple table `app_data` at first save/read:
-	- id text primary key
-	- data jsonb not null
-	- updated_at timestamptz
-- The Achievements data is stored in row id='achievements'.
+- Primary storage is Supabase REST table `public.app_data` (row id='achievements'). If this table is missing in a fresh project, the save function writes to Supabase Storage bucket `app_data/achievements.json` so data is not lost. When the table becomes available later, REST reads/writes will be used automatically.
+- If you configure direct Postgres and your password contains `#`, either URL-encode it or use the discrete env vars.
 
 ## Notes
 - Fullscreen layout, no scroll (`h-screen w-screen overflow-hidden`).

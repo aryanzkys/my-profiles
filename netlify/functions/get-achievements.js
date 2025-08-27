@@ -55,13 +55,35 @@ exports.handler = async function () {
           Accept: 'application/json',
         },
       });
-      if (!res.ok) {
+      if (res.ok) {
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows[0] && rows[0].data) {
+          return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify(rows[0].data) };
+        }
+      } else if (res.status === 404) {
+        // If table missing, try Supabase Storage fallback
+        try {
+          const sres = await fetch(`${SUPABASE_URL}/storage/v1/object/app_data/achievements.json`, {
+            headers: {
+              apikey: SUPABASE_SERVICE_ROLE_KEY,
+              Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            },
+          });
+          if (sres.ok) {
+            const text = await sres.text();
+            try {
+              const json = JSON.parse(text);
+              return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify(json) };
+            } catch {
+              return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: text };
+            }
+          }
+        } catch {}
         const t = await res.text();
         throw new Error(`Supabase REST get failed (${res.status}): ${t}`);
-      }
-      const rows = await res.json();
-      if (Array.isArray(rows) && rows[0] && rows[0].data) {
-        return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify(rows[0].data) };
+      } else {
+        const t = await res.text();
+        throw new Error(`Supabase REST get failed (${res.status}): ${t}`);
       }
     }
 
@@ -79,7 +101,7 @@ exports.handler = async function () {
       }
     }
 
-    // Fallback to local JSON
+  // Fallback to local JSON
     const filePath = path.join(process.cwd(), 'data', 'achievements.json');
     const raw = fs.readFileSync(filePath, 'utf8');
     return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: raw };
