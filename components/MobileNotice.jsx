@@ -1,21 +1,28 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-function isMobileUA() {
-  if (typeof navigator === 'undefined') return false;
-  return /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(navigator.userAgent);
+function isMobileOrTablet() {
+  if (typeof window === 'undefined') return false;
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  const uaMatch = /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile|Tablet/i.test(ua);
+  const coarse = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+  const narrow = typeof window.innerWidth === 'number' && window.innerWidth <= 1024;
+  return uaMatch || coarse || narrow;
 }
 
 export default function MobileNotice() {
   const [show, setShow] = useState(false);
+  const [dontShow, setDontShow] = useState(false);
 
   useEffect(() => {
     const dismissed = typeof window !== 'undefined' && localStorage.getItem('mobileNoticeDismissed') === '1';
-    if (!dismissed && isMobileUA()) setShow(true);
+    if (!dismissed && isMobileOrTablet()) setShow(true);
   }, []);
 
   const dismiss = () => {
-    try { localStorage.setItem('mobileNoticeDismissed', '1'); } catch {}
+    try {
+      if (dontShow) localStorage.setItem('mobileNoticeDismissed', '1');
+    } catch {}
     setShow(false);
   };
 
@@ -37,14 +44,18 @@ export default function MobileNotice() {
             transition={{ type: 'spring', stiffness: 260, damping: 20 }}
           >
             <div className="mb-3">
-              <h3 className="text-white text-lg font-semibold">Pengalaman Terbaik di Desktop/Laptop</h3>
+              <h3 className="text-white text-lg font-semibold">Best Experience on Desktop/Laptop</h3>
               <p className="text-gray-300 text-sm mt-1">
-                Demi optimalisasi dan kelancaran saat membuka website, disarankan menggunakan perangkat Desktop atau Laptop.
+                For optimal performance and a smoother 3D experience, please open this website on a Desktop or Laptop. Mobile and tablet devices may have limited performance.
               </p>
             </div>
+            <label className="flex items-center gap-2 text-sm text-gray-300 select-none">
+              <input type="checkbox" checked={dontShow} onChange={(e) => setDontShow(e.target.checked)} />
+              Don't show again
+            </label>
             <div className="flex items-center justify-end gap-2 mt-4">
               <button onClick={dismiss} className="px-3 py-2 rounded-md bg-white/10 border border-white/20 text-sm hover:bg-white/15">
-                Tetap Lanjut
+                Continue anyway
               </button>
             </div>
           </motion.div>
