@@ -1,4 +1,64 @@
 {
+  "2023": [
+    {
+      "text": "🥇 1st Place, Indonesian Language Olympiad – UNESA (2023)",
+      "cert": ""
+    },
+    {
+      "text": "🥇 1st Place, National Accounting and Mathlish Olympiad #2 (Physics, 2023)",
+      "cert": ""
+    },
+    {
+      "text": "🥇 1st Place, Quartal Social Science Olympiad (English, 2023)",
+      "cert": ""
+    }
+  ],
+  "2024": [
+    {
+      "text": "🥈 2nd Place, FTTI UNJAYA National MIPA Championship (2024)",
+      "cert": "https://drive.google.com/file/d/1lD_BzMcksBshfxoyCRG0Cg3O2O_WP0kZ/view?usp=drive_link"
+    },
+    {
+      "text": "🥇 1st Place, Cendekia Natural Science Competition (Biology, 2024)",
+      "cert": ""
+    },
+    {
+      "text": "🥇 1st Place, Indonesian Medical Olympiad #2 (Biology, 2024)",
+      "cert": ""
+    },
+    {
+      "text": "🥇 1st Place, Young Entrepreneurship Competition (2024)",
+      "cert": ""
+    },
+    {
+      "text": "🥉 3rd Place, Poisson Statistics Competition (2024)",
+      "cert": ""
+    },
+    {
+      "text": "🥉 3rd Place, Social-Science Air-LANGGA Competition (2024)",
+      "cert": ""
+    },
+    {
+      "text": "🏅 Top 50, Canadian Team Mathematics Contest (2024, International)",
+      "cert": ""
+    },
+    {
+      "text": "🏅 Top 100, APBD Data Analysis Competition (2024)",
+      "cert": ""
+    },
+    {
+      "text": "🏅 Top 200, Ruangguru Science Competition (Physics, 2024)",
+      "cert": ""
+    },
+    {
+      "text": "🏅 Finalist – National Scientific Writing Competition, UB Faculty of Medicine (2024)",
+      "cert": ""
+    },
+    {
+      "text": "🥈 2nd Place, School Ranking 1 Competition (2024)",
+      "cert": ""
+    }
+  ],
   "2025": [
     {
       "text": "🏅 Semifinalist (7th National), Industrial Engineering Games – ITS (2025)",
@@ -8,23 +68,5 @@
       "text": "🏅 11th Place, Malang City UTBK SNBT Tryout (2025)",
       "cert": "https://drive.google.com/file/d/13LpA8KZr4vqgrYnrqaKtx7MxVmgJ2Fyh/view?usp=drive_link"
     }
-  ],
-  "2024": [
-    { "text": "🥈 2nd Place, FTTI UNJAYA National MIPA Championship (2024)" },
-    { "text": "🥇 1st Place, Cendekia Natural Science Competition (Biology, 2024)" },
-    { "text": "🥇 1st Place, Indonesian Medical Olympiad #2 (Biology, 2024)" },
-    { "text": "🥇 1st Place, Young Entrepreneurship Competition (2024)" },
-    { "text": "🥉 3rd Place, Poisson Statistics Competition (2024)" },
-    { "text": "🥉 3rd Place, Social-Science Air-LANGGA Competition (2024)" },
-    { "text": "🏅 Top 50, Canadian Team Mathematics Contest (2024, International)" },
-    { "text": "🏅 Top 100, APBD Data Analysis Competition (2024)" },
-    { "text": "🏅 Top 200, Ruangguru Science Competition (Physics, 2024)" },
-    { "text": "🏅 Finalist – National Scientific Writing Competition, UB Faculty of Medicine (2024)" },
-    { "text": "🥈 2nd Place, School Ranking 1 Competition (2024)" }
-  ],
-  "2023": [
-    { "text": "🥇 1st Place, Indonesian Language Olympiad – UNESA (2023)" },
-    { "text": "🥇 1st Place, National Accounting and Mathlish Olympiad #2 (Physics, 2023)" },
-    { "text": "🥇 1st Place, Quartal Social Science Olympiad (English, 2023)" }
   ]
 }
