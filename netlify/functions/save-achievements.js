@@ -43,6 +43,42 @@ async function ensureSchema(client) {
   `);
 }
 
+async function ensureTableViaSupabaseMeta() {
+  const base = SUPABASE_URL;
+  if (!base || !SUPABASE_SERVICE_ROLE_KEY) return false;
+  // Create table using Supabase Postgres Meta API
+  const endpoint = `${base}/pg/tables`;
+  const payload = {
+    schema: 'public',
+    name: 'app_data',
+    comment: null,
+    columns: [
+      { name: 'id', type: 'text', default_value: null, is_identity: false, is_nullable: false },
+      { name: 'data', type: 'jsonb', default_value: null, is_identity: false, is_nullable: false },
+      { name: 'updated_at', type: 'timestamp with time zone', default_value: 'now()', is_identity: false, is_nullable: false },
+    ],
+    primary_keys: ['id'],
+  };
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  if (res.ok || res.status === 409) {
+    // 201 Created or 409 Already exists
+    return true;
+  }
+  // If another error, try to detect "already exists" text
+  const t = await res.text();
+  if (/already exists/i.test(t)) return true;
+  throw new Error(`Supabase Meta create table failed (${res.status}): ${t}`);
+}
+
 exports.handler = async function (event) {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
@@ -68,11 +104,19 @@ exports.handler = async function (event) {
         // If table missing, try to create via PG then retry REST once
         if (res.status === 404 && t && t.includes("Could not find the table")) {
           try {
-            const client = await getPool().connect();
-            try { await ensureSchema(client); } finally { client.release(); }
+            // Prefer creating table via Supabase Meta API to avoid direct DB DNS
+            await ensureTableViaSupabaseMeta();
+            // tiny delay to let PostgREST refresh schema cache
+            await new Promise((r) => setTimeout(r, 250));
           } catch (e) {
             // If we cannot connect to PG, bubble a helpful error
-            throw new Error(`Supabase REST save failed (${res.status}): ${t}. Additionally, failed to create table via direct DB: ${e.message}`);
+            // Fallback: try direct DB create if Meta API not available
+            try {
+              const client = await getPool().connect();
+              try { await ensureSchema(client); } finally { client.release(); }
+            } catch (ee) {
+              throw new Error(`Supabase REST save failed (${res.status}): ${t}. Failed to create table via Meta API: ${e.message}. PG fallback also failed: ${ee.message}`);
+            }
           }
           // Retry REST once
           res = await fetch(url, {
