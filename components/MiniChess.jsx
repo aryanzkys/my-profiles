@@ -67,7 +67,7 @@ function bestMove(chess, depth, onProgress) {
 
 export default function MiniChess() {
   const [game, setGame] = useState(() => new Chess());
-  const [fen, setFen] = useState('start');
+  const [fen, setFen] = useState(() => new Chess().fen());
   const [orientation, setOrientation] = useState('white');
   const [thinking, setThinking] = useState(false);
   const [difficulty, setDifficulty] = useState(2);
@@ -88,13 +88,9 @@ export default function MiniChess() {
             try { g.move(san); } catch {}
           }
           setGame(g);
-          setFen(g.fen());
-          setSanList(g.history());
         } else if (saved?.fen) {
           const g = new Chess(saved.fen);
           setGame(g);
-          setFen(g.fen());
-          setSanList(g.history());
         }
         if (saved?.playSide === 'white' || saved?.playSide === 'black') setPlaySide(saved.playSide);
         if (saved?.orientation === 'white' || saved?.orientation === 'black') setOrientation(saved.orientation);
@@ -102,6 +98,12 @@ export default function MiniChess() {
       }
     } catch {}
   }, []);
+
+  // Keep derived values in sync with the game instance
+  useEffect(() => {
+    setFen(game.fen());
+    setSanList(game.history());
+  }, [game]);
 
   useEffect(() => {
     const turn = game.turn() === 'w' ? 'White' : 'Black';
@@ -122,6 +124,7 @@ export default function MiniChess() {
     const aiTurn = (playSide === 'white' && game.turn() === 'b') || (playSide === 'black' && game.turn() === 'w');
     if (!aiTurn) return;
     setThinking(true);
+    aiTimeout.current && clearTimeout(aiTimeout.current);
     aiTimeout.current = setTimeout(() => {
       const searchGame = new Chess(game.fen());
       const depth = Math.min(Math.max(difficulty, 1), 3);
@@ -130,8 +133,6 @@ export default function MiniChess() {
         const next = new Chess(game.fen());
         next.move(move);
         setGame(next);
-        setFen(next.fen());
-        setSanList(next.history());
       }
       setThinking(false);
     }, 200);
@@ -140,26 +141,22 @@ export default function MiniChess() {
 
   useEffect(() => {
     try {
-      const payload = { fen, playSide, orientation, difficulty, sanList, v: 1 };
+      const payload = { fen: game.fen(), playSide, orientation, difficulty, sanList: game.history(), v: 1 };
       if (typeof window !== 'undefined') localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     } catch {}
-  }, [fen, playSide, orientation, difficulty, sanList]);
+  }, [game, playSide, orientation, difficulty]);
 
   const newGame = (side = playSide) => {
     const g = new Chess();
     setGame(g);
-    setFen(g.fen());
     setPlaySide(side);
     setOrientation(side);
-    setSanList([]);
   };
 
   const resetProgress = () => {
     try { if (typeof window !== 'undefined') localStorage.removeItem(STORAGE_KEY); } catch {}
     const g = new Chess();
     setGame(g);
-    setFen(g.fen());
-    setSanList([]);
   };
 
   const onDrop = (sourceSquare, targetSquare) => {
@@ -171,8 +168,6 @@ export default function MiniChess() {
     const result = next.move(move);
     if (result) {
       setGame(next);
-      setFen(next.fen());
-      setSanList(next.history());
       return true;
     }
     return false;
