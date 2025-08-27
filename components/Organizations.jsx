@@ -95,7 +95,7 @@ export default function Organizations() {
       </div>
 
       {/* Scroll container */}
-      <div className="bg-black/35 border border-white/10 rounded-2xl p-3 md:p-4 backdrop-blur-md max-h-[65vh] overflow-y-auto">
+  <div className="pointer-events-auto bg-black/35 border border-white/10 rounded-2xl p-3 md:p-4 backdrop-blur-md max-h-[65vh] overflow-y-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {list.map((item, idx) => {
             const isCurrent = /present/i.test(item.period);

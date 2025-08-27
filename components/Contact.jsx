@@ -69,7 +69,7 @@ export default function Contact() {
       className="w-full max-w-3xl"
     >
       <h2 className="text-2xl md:text-3xl font-semibold text-cyan-300 mb-4 tracking-wide">Contact</h2>
-      <div className="bg-black/35 border border-white/10 rounded-2xl p-4 md:p-6 backdrop-blur-md">
+  <div className="bg-black/35 border border-white/10 rounded-2xl p-4 md:p-6 backdrop-blur-md max-h-[65vh] overflow-y-auto pr-2">
         <ul className="text-gray-200 divide-y divide-white/10">
           {links.map((item) => {
             const Icon = item.icon;

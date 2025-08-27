@@ -111,7 +111,7 @@ export default function Education() {
     >
       <h2 className="text-2xl md:text-3xl font-semibold text-cyan-300 mb-4 tracking-wide">Education</h2>
 
-      <div ref={scrollRef} className="bg-black/35 border border-white/10 rounded-2xl p-4 md:p-6 backdrop-blur-md max-h-[65vh] overflow-y-auto">
+      <div ref={scrollRef} className="pointer-events-auto bg-black/35 border border-white/10 rounded-2xl p-4 md:p-6 backdrop-blur-md max-h-[65vh] overflow-y-auto">
         <ol ref={listRef} className="relative ml-4 border-l-2 border-cyan-500/20">
           {/* Active progress line */}
           <motion.span

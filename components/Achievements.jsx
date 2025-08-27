@@ -155,7 +155,7 @@ function YearTimeline({ year, items, onOpenCert }) {
       <h2 className="text-2xl md:text-3xl font-semibold text-cyan-300 mb-4 tracking-wide">
         Achievements
       </h2>
-      <div className="bg-black/35 border border-white/10 rounded-2xl p-4 md:p-6 backdrop-blur-md max-h-[65vh] overflow-y-auto pr-2">
+  <div className="pointer-events-auto bg-black/35 border border-white/10 rounded-2xl p-4 md:p-6 backdrop-blur-md max-h-[65vh] overflow-y-auto pr-2">
         <div className="space-y-8">
           {years.map((year) => (
             <YearTimeline
