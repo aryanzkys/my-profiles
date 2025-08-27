@@ -9,3 +9,6 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
   external_node_modules = ["mongodb"]
+
+[[plugins]]
+  package = "netlify-plugin-cache-nextjs"
