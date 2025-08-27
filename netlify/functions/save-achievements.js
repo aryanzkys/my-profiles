@@ -11,9 +11,14 @@ function getPool() {
   }
   const base = { max: 1, idleTimeoutMillis: 5000, connectionTimeoutMillis: 5000, ssl: { rejectUnauthorized: false } };
   if (hasDiscrete) {
+    let host = (process.env.SUPABASE_DB_HOST || '').trim();
+    // If someone pasted a full URL into HOST, extract the hostname
+    if (/^\w+:\/\//.test(host)) {
+      try { host = new URL(host).hostname; } catch {}
+    }
     pool = new Pool({
       ...base,
-      host: process.env.SUPABASE_DB_HOST,
+      host,
       port: Number(process.env.SUPABASE_DB_PORT || 5432),
       database: process.env.SUPABASE_DB_DATABASE || 'postgres',
       user: process.env.SUPABASE_DB_USER || 'postgres',
