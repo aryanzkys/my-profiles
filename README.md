@@ -36,7 +36,8 @@ Serve `out/` with any static host or push to the `gh-pages` branch.
 
 ## Netlify + Supabase/Postgres
 1) Set environment variables in Netlify Site settings:
-	- `SUPABASE_DB_URL` = your Postgres connection string (e.g. `postgresql://postgres:password@db.xxxxxx.supabase.co:5432/postgres`)
+	- Direct DB (pg): `SUPABASE_DB_URL` (or discrete: `SUPABASE_DB_HOST`, `SUPABASE_DB_PORT`, `SUPABASE_DB_DATABASE`, `SUPABASE_DB_USER`, `SUPABASE_DB_PASSWORD`)
+	- Supabase REST (optional, avoids direct DB DNS): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
 	- Admin gate: `NEXT_PUBLIC_ADMIN_KEY`
 	- optional: `NEXT_PUBLIC_BASE_PATH`
 2) Build settings:

@@ -2,6 +2,9 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
+const SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
 const PG_URL = process.env.SUPABASE_DB_URL || process.env.POSTGRES_URL || process.env.DATABASE_URL;
 let pool;
 
@@ -42,6 +45,26 @@ async function ensureSchema(client) {
 
 exports.handler = async function () {
   try {
+    // 0) Prefer Supabase REST (no direct DB, avoids DNS issues with db.<ref>)
+    if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      const url = `${SUPABASE_URL}/rest/v1/app_data?select=data&id=eq.achievements`;
+      const res = await fetch(url, {
+        headers: {
+          apikey: SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          Accept: 'application/json',
+        },
+      });
+      if (!res.ok) {
+        const t = await res.text();
+        throw new Error(`Supabase REST get failed (${res.status}): ${t}`);
+      }
+      const rows = await res.json();
+      if (Array.isArray(rows) && rows[0] && rows[0].data) {
+        return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify(rows[0].data) };
+      }
+    }
+
     const p = getPool();
     if (p) {
       const client = await p.connect();

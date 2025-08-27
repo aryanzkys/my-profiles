@@ -1,5 +1,8 @@
 const { Pool } = require('pg');
 
+const SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
 const PG_URL = process.env.SUPABASE_DB_URL || process.env.POSTGRES_URL || process.env.DATABASE_URL;
 let pool;
 
@@ -46,6 +49,27 @@ exports.handler = async function (event) {
   }
   try {
     const body = event.body ? JSON.parse(event.body) : {};
+    // 0) Prefer Supabase REST (service role) to avoid direct DB DNS issues
+    if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      // Ensure table exists (via RPC or SQL is overkill here). We'll attempt upsert; if table missing, fall back to PG path which creates it.
+      const url = `${SUPABASE_URL}/rest/v1/app_data`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates',
+        },
+        body: JSON.stringify({ id: 'achievements', data: body, updated_at: new Date().toISOString() }),
+      });
+      if (!res.ok) {
+        const t = await res.text();
+        throw new Error(`Supabase REST save failed (${res.status}): ${t}`);
+      }
+      return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ok: true, via: 'supabase-rest' }) };
+    }
+
     const client = await getPool().connect();
     try {
       await ensureSchema(client);
