@@ -5,6 +5,7 @@ import Achievements from './Achievements';
 import Education from './Education';
 import Organizations from './Organizations';
 import Contact from './Contact';
+import { usePerformance } from './PerformanceContext';
 
 const NavButton = ({ label, active, onClick }) => (
   <button
@@ -22,12 +23,13 @@ const NavButton = ({ label, active, onClick }) => (
 
 export default function Overlay() {
   const [section, setSection] = useState('home');
+  const { mode, setMode, isLite } = usePerformance();
 
   return (
     <div className="absolute inset-0 pointer-events-none z-10">
       {/* Top Navigation */}
-      <div className="w-full flex justify-center md:justify-end p-4">
-        <div className="pointer-events-auto bg-black/40 backdrop-blur-md border border-white/10 rounded-xl px-3 py-2 flex gap-2 overflow-x-auto no-scrollbar max-w-full">
+      <div className="w-full flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-center md:justify-end p-4">
+        <div className="pointer-events-auto bg-black/40 backdrop-blur-md border border-white/10 rounded-xl px-2 py-2 flex gap-2 overflow-x-auto no-scrollbar max-w-full">
           <NavButton label="Home" active={section === 'home'} onClick={() => setSection('home')} />
           <NavButton label="About Me" active={section === 'about'} onClick={() => setSection('about')} />
           <NavButton label="Achievements" active={section === 'achievements'} onClick={() => setSection('achievements')} />
@@ -35,10 +37,22 @@ export default function Overlay() {
           <NavButton label="Organizations" active={section === 'organizations'} onClick={() => setSection('organizations')} />
           <NavButton label="Contact" active={section === 'contact'} onClick={() => setSection('contact')} />
         </div>
+        <div className="pointer-events-auto bg-black/40 backdrop-blur-md border border-white/10 rounded-xl px-2 py-2 flex gap-2 items-center">
+          <span className="text-xs text-gray-300 hidden sm:inline">Performance</span>
+          <select
+            value={mode}
+            onChange={(e) => setMode(e.target.value)}
+            className="bg-white/5 border border-white/10 rounded-md text-sm text-gray-200 px-2 py-1 outline-none"
+          >
+            <option value="auto">Auto {isLite ? '(Lite)' : '(High)'}</option>
+            <option value="lite">Lite</option>
+            <option value="high">High</option>
+          </select>
+        </div>
       </div>
 
       {/* Center Content */}
-      <div className="absolute inset-0 flex items-center justify-center p-6">
+  <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-6">
         <AnimatePresence mode="wait">
           {section === 'home' && (
             <motion.div
@@ -49,10 +63,10 @@ export default function Overlay() {
               transition={{ duration: 0.35 }}
               className="pointer-events-none text-center"
             >
-              <h1 className="text-white text-3xl md:text-5xl font-bold drop-shadow-[0_4px_20px_rgba(0,255,255,0.35)]">
+              <h1 className="text-white text-2xl sm:text-3xl md:text-5xl font-bold drop-shadow-[0_4px_20px_rgba(0,255,255,0.35)]">
                 Hi, I'm Aryan – Computer Science Student
               </h1>
-              <p className="text-cyan-200 mt-3 opacity-90">Aspiring DevSecOps Engineer</p>
+              <p className="text-cyan-200 mt-2 sm:mt-3 opacity-90 text-sm sm:text-base">Aspiring DevSecOps Engineer</p>
             </motion.div>
           )}
           {section === 'about' && (
