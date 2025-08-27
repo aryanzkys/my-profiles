@@ -38,6 +38,7 @@ Serve `out/` with any static host or push to the `gh-pages` branch.
 1) Set environment variables in Netlify Site settings:
 	- `MONGODB_URI` (your mongodb+srv URI)
 	- `MONGODB_DB` (e.g. `myprofiles`)
+	- `MONGODB_COLLECTION` (e.g. `myprofiles`)
 	- `NEXT_PUBLIC_ADMIN_KEY` (simple admin gate)
 	- optional: `NEXT_PUBLIC_BASE_PATH`
 2) Build settings:
@@ -45,10 +46,10 @@ Serve `out/` with any static host or push to the `gh-pages` branch.
 	- Publish: `out`
 3) Netlify Functions live at `/.netlify/functions/*` (configured via `netlify.toml`).
 
-MongoDB schema:
+MongoDB schema (single doc):
 ```
 db: MONGODB_DB (default myprofiles)
-collection: achievements
+collection: MONGODB_COLLECTION (default myprofiles)
 doc: { _id: 'achievements', data: { [year]: [{ text, cert? }] }, updatedAt }
 ```
 

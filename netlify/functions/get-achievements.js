@@ -27,8 +27,9 @@ exports.handler = async function (event, context) {
     // Try MongoDB first
     const client = await getClient();
     if (client) {
-      const dbName = process.env.MONGODB_DB || 'myprofiles';
-      const col = client.db(dbName).collection('achievements');
+  const dbName = process.env.MONGODB_DB || 'myprofiles';
+  const collectionName = process.env.MONGODB_COLLECTION || 'myprofiles';
+  const col = client.db(dbName).collection(collectionName);
       const doc = await col.findOne({ _id: 'achievements' });
       if (doc && doc.data) {
         return {

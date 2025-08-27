@@ -25,13 +25,10 @@ exports.handler = async function (event, context) {
   try {
     const body = event.body ? JSON.parse(event.body) : {};
     const client = await getClient();
-    const dbName = process.env.MONGODB_DB || 'myprofiles';
-    const col = client.db(dbName).collection('achievements');
-    await col.updateOne(
-      { _id: 'achievements' },
-      { $set: { data: body, updatedAt: new Date() } },
-      { upsert: true }
-    );
+  const dbName = process.env.MONGODB_DB || 'myprofiles';
+  const collectionName = process.env.MONGODB_COLLECTION || 'myprofiles';
+  const col = client.db(dbName).collection(collectionName);
+  await col.updateOne({ _id: 'achievements' }, { $set: { data: body, updatedAt: new Date() } }, { upsert: true });
     return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ok: true }) };
   } catch (e) {
     return { statusCode: 500, body: `Save error: ${e.message || 'Failed to save achievements'}` };
