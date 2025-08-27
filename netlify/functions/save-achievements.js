@@ -53,7 +53,7 @@ exports.handler = async function (event) {
     if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
       // Ensure table exists (via RPC or SQL is overkill here). We'll attempt upsert; if table missing, fall back to PG path which creates it.
       const url = `${SUPABASE_URL}/rest/v1/app_data`;
-      const res = await fetch(url, {
+      let res = await fetch(url, {
         method: 'POST',
         headers: {
           apikey: SUPABASE_SERVICE_ROLE_KEY,
@@ -65,6 +65,47 @@ exports.handler = async function (event) {
       });
       if (!res.ok) {
         const t = await res.text();
+        // If table missing, try to create via PG then retry REST once
+        if (res.status === 404 && t && t.includes("Could not find the table")) {
+          try {
+            const client = await getPool().connect();
+            try { await ensureSchema(client); } finally { client.release(); }
+          } catch (e) {
+            // If we cannot connect to PG, bubble a helpful error
+            throw new Error(`Supabase REST save failed (${res.status}): ${t}. Additionally, failed to create table via direct DB: ${e.message}`);
+          }
+          // Retry REST once
+          res = await fetch(url, {
+            method: 'POST',
+            headers: {
+              apikey: SUPABASE_SERVICE_ROLE_KEY,
+              Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+              'Content-Type': 'application/json',
+              Prefer: 'resolution=merge-duplicates',
+            },
+            body: JSON.stringify({ id: 'achievements', data: body, updated_at: new Date().toISOString() }),
+          });
+          if (res.ok) {
+            return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ok: true, via: 'supabase-rest' }) };
+          }
+          const t2 = await res.text();
+          // As a final fallback, write via PG directly (table should exist now)
+          try {
+            const client = await getPool().connect();
+            try {
+              await ensureSchema(client);
+              await client.query(
+                `insert into app_data (id, data, updated_at)
+                 values ($1, $2::jsonb, now())
+                 on conflict (id) do update set data = excluded.data, updated_at = now()`,
+                ['achievements', body]
+              );
+            } finally { client.release(); }
+            return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ok: true, via: 'supabase-postgres' }) };
+          } catch (e) {
+            throw new Error(`Supabase REST save failed after retry (${res.status}): ${t2}. PG fallback also failed: ${e.message}`);
+          }
+        }
         throw new Error(`Supabase REST save failed (${res.status}): ${t}`);
       }
       return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ok: true, via: 'supabase-rest' }) };
