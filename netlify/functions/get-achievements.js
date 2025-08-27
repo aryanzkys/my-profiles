@@ -39,14 +39,26 @@ exports.handler = async function (event, context) {
     if (GITHUB_REPO) {
       const [owner, repo] = GITHUB_REPO.split('/');
       const endpoint = `https://raw.githubusercontent.com/${owner}/${repo}/${encodeURIComponent(GITHUB_BRANCH)}/${GITHUB_FILE_PATH}`;
-      const res = await fetch(endpoint, {
-        headers: GITHUB_TOKEN ? { Authorization: `Bearer ${GITHUB_TOKEN}` } : {},
-      });
+      // For public repos, avoid sending a bad token; for private, raw endpoint doesn't accept PAT in header, so fallback to contents API
+      const res = await fetch(endpoint);
       if (res.ok) {
         const raw = await res.text();
         // simple validation
         JSON.parse(raw);
         return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: raw };
+      } else if (res.status === 404 && GITHUB_TOKEN) {
+        // Try contents API for private repos
+        const api = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(GITHUB_FILE_PATH)}?ref=${encodeURIComponent(GITHUB_BRANCH)}`;
+        const apiRes = await fetch(api, { headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, Accept: 'application/vnd.github+json' } });
+        if (apiRes.ok) {
+          const json = await apiRes.json();
+          const content = Buffer.from(json.content || '', json.encoding || 'base64').toString('utf8');
+          JSON.parse(content);
+          return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: content };
+        } else if (apiRes.status === 401 || apiRes.status === 403) {
+          const t = await apiRes.text();
+          throw new Error(`GitHub auth failed (${apiRes.status}). Check GITHUB_TOKEN scopes and repo access. Details: ${t}`);
+        }
       }
     }
 

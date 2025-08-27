@@ -70,6 +70,12 @@ async function saveWithGitHub(docData) {
   if (getRes.status === 200) {
     const json = await getRes.json();
     sha = json.sha;
+  } else if (getRes.status === 401 || getRes.status === 403) {
+    const t = await getRes.text();
+    throw new Error(
+      `GitHub auth failed (${getRes.status}). Check GITHUB_TOKEN scopes and repo access. ` +
+      `Repo: ${GITHUB_REPO}@${GITHUB_BRANCH}, Path: ${GITHUB_FILE_PATH}. Details: ${t}`
+    );
   } else if (getRes.status !== 404) {
     const t = await getRes.text();
     throw new Error(`GitHub get file failed (${getRes.status}): ${t}`);
@@ -97,7 +103,10 @@ async function saveWithGitHub(docData) {
   });
   if (!putRes.ok) {
     const t = await putRes.text();
-    throw new Error(`GitHub commit failed (${putRes.status}): ${t}`);
+    const authHint = putRes.status === 401 || putRes.status === 403
+      ? ' Check GITHUB_TOKEN (scopes: classic token with repo/public_repo or fine-grained with Contents: Read & Write) and ensure the token has access to the repo/branch.'
+      : '';
+    throw new Error(`GitHub commit failed (${putRes.status}): ${t}.${authHint}`);
   }
   return { ok: true, via: 'github' };
 }
