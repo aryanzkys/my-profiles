@@ -1,6 +1,6 @@
 # My Profiles — Futuristic 3D Portfolio (Next.js + Tailwind + Framer + Spline)
 
-Interactive 3D profile built with Next.js, TailwindCSS, Spline, and Framer Motion. Supports static export (GitHub Pages/Netlify) and Netlify Functions + MongoDB for Achievements data.
+Interactive 3D profile built with Next.js, TailwindCSS, Spline, and Framer Motion. Supports static export (GitHub Pages/Netlify) and Netlify Functions + Supabase/Postgres for Achievements data.
 
 ## Run locally
 
@@ -34,21 +34,9 @@ Serve `out/` with any static host or push to the `gh-pages` branch.
   - Save (dev): writes `data/achievements.json` in dev mode
   - Save to File / Download JSON: file-based, no server required
 
-## Netlify + Storage Options
-1) Choose a storage backend and set environment variables in Netlify Site settings:
-	- GitHub (recommended for static sites; simple and durable):
-	  - `GITHUB_TOKEN` (repo contents write)
-	  - `GITHUB_REPO` (e.g. `owner/repo`)
-	  - optional: `GITHUB_BRANCH` (default `main`), `GITHUB_FILE_PATH` (default `data/achievements.json`), `FORCE_GITHUB=true` (skip DB/Data API)
-	- MongoDB Driver (direct connection):
-	  - `MONGODB_URI`
-	  - `MONGODB_DB` (e.g. `myprofiles`)
-	  - `MONGODB_COLLECTION` (e.g. `myprofiles`)
-	- MongoDB Data API (fallback; note deprecation EOL Sep 30, 2025):
-	  - `MONGODB_DATA_API_BASEURL`
-	  - `MONGODB_DATA_API_KEY`
-	  - `MONGODB_DATA_SOURCE` (e.g. `Cluster0`)
-	  - optional: `MONGODB_DATA_API_DB`, `MONGODB_DATA_API_COLLECTION`
+## Netlify + Supabase/Postgres
+1) Set environment variables in Netlify Site settings:
+	- `SUPABASE_DB_URL` = your Postgres connection string (e.g. `postgresql://postgres:password@db.xxxxxx.supabase.co:5432/postgres`)
 	- Admin gate: `NEXT_PUBLIC_ADMIN_KEY`
 	- optional: `NEXT_PUBLIC_BASE_PATH`
 2) Build settings:
@@ -57,16 +45,11 @@ Serve `out/` with any static host or push to the `gh-pages` branch.
 3) Netlify Functions live at `/.netlify/functions/*` (configured via `netlify.toml`).
 
 Troubleshooting and notes:
-- For serverless reliability with a static site, GitHub storage is simplest (no IP allowlists, durable PR history). The Admin Save button commits `data/achievements.json` to your repo.
-- If using MongoDB driver: ensure Atlas Network Access allows Netlify egress IPs (temporarily allow 0.0.0.0/0 for testing) and your URI uses TLS.
-- Data API is supported but slated for deprecation (EOL Sep 30, 2025). Prefer GitHub storage or the direct driver long term.
-
-MongoDB schema (single doc):
-```
-db: MONGODB_DB (default myprofiles)
-collection: MONGODB_COLLECTION (default myprofiles)
-doc: { _id: 'achievements', data: { [year]: [{ text, cert? }] }, updatedAt }
-```
+- The functions create a simple table `app_data` at first save/read:
+	- id text primary key
+	- data jsonb not null
+	- updated_at timestamptz
+- The Achievements data is stored in row id='achievements'.
 
 ## Notes
 - Fullscreen layout, no scroll (`h-screen w-screen overflow-hidden`).
