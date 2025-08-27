@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import achievementsData from '../data/achievements.json';
+import educationData from '../data/education.json';
+import orgsData from '../data/organizations.json';
 
 function deepClone(obj) {
   return JSON.parse(JSON.stringify(obj));
@@ -10,7 +12,10 @@ function isDev() {
 }
 
 export default function AdminPage() {
+  const [tab, setTab] = useState('achievements'); // achievements | education | organizations
   const [data, setData] = useState(() => deepClone(achievementsData));
+  const [edu, setEdu] = useState(() => deepClone(educationData));
+  const [orgs, setOrgs] = useState(() => deepClone(orgsData));
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [authorized, setAuthorized] = useState(false);
@@ -38,7 +43,7 @@ export default function AdminPage() {
     } else if (stored && stored === required) {
       setAuthorized(true);
     }
-    // Try loading from Netlify Function (DB), fallback to dev API, else keep bundled JSON
+  // Load Achievements from backend if available
     (async () => {
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
       const candidates = Array.from(new Set([
@@ -54,6 +59,40 @@ export default function AdminPage() {
           const json = await res.json();
           setData(deepClone(json));
           setMessage(`Loaded data from ${url}`);
+          break;
+        } catch (_) {}
+      }
+    })();
+    // Load Education
+    (async () => {
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const candidates = Array.from(new Set([
+        '/.netlify/functions/get-education',
+        `${basePath}/.netlify/functions/get-education`,
+      ]));
+      for (const url of candidates) {
+        try {
+          const res = await fetch(url, { headers: { accept: 'application/json' } });
+          if (!res.ok) continue;
+          const json = await res.json();
+          setEdu(deepClone(json));
+          break;
+        } catch (_) {}
+      }
+    })();
+    // Load Organizations
+    (async () => {
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const candidates = Array.from(new Set([
+        '/.netlify/functions/get-organizations',
+        `${basePath}/.netlify/functions/get-organizations`,
+      ]));
+      for (const url of candidates) {
+        try {
+          const res = await fetch(url, { headers: { accept: 'application/json' } });
+          if (!res.ok) continue;
+          const json = await res.json();
+          setOrgs(deepClone(json));
           break;
         } catch (_) {}
       }
@@ -165,6 +204,42 @@ export default function AdminPage() {
     }
   };
 
+  const reloadEducation = async () => {
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+    const candidates = Array.from(new Set([
+      '/.netlify/functions/get-education',
+      `${basePath}/.netlify/functions/get-education`,
+    ]));
+    for (const url of candidates) {
+      try {
+        const res = await fetch(url, { headers: { accept: 'application/json' } });
+        if (!res.ok) continue;
+        const json = await res.json();
+        setEdu(deepClone(json));
+        setMessage((m) => (m ? `${m} • Reloaded education` : 'Reloaded education'));
+        break;
+      } catch (_) {}
+    }
+  };
+
+  const reloadOrganizations = async () => {
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+    const candidates = Array.from(new Set([
+      '/.netlify/functions/get-organizations',
+      `${basePath}/.netlify/functions/get-organizations`,
+    ]));
+    for (const url of candidates) {
+      try {
+        const res = await fetch(url, { headers: { accept: 'application/json' } });
+        if (!res.ok) continue;
+        const json = await res.json();
+        setOrgs(deepClone(json));
+        setMessage((m) => (m ? `${m} • Reloaded organizations` : 'Reloaded organizations'));
+        break;
+      } catch (_) {}
+    }
+  };
+
   const saveToDb = async () => {
     setSaving(true);
     setMessage('');
@@ -210,6 +285,70 @@ export default function AdminPage() {
     a.download = 'achievements.json';
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  // Education editors
+  const addEdu = () => setEdu([...edu, { title: '', subtitle: '', period: '' }]);
+  const removeEdu = (idx) => setEdu(edu.filter((_, i) => i !== idx));
+  const updateEdu = (idx, key, value) => {
+    const next = deepClone(edu);
+    next[idx] = { ...next[idx], [key]: value };
+    setEdu(next);
+  };
+  const saveEdu = async () => {
+    setSaving(true);
+    setMessage('');
+    try {
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const candidates = Array.from(new Set([
+        '/.netlify/functions/save-education',
+        `${basePath}/.netlify/functions/save-education`,
+      ]));
+      let ok = false; let lastErr = '';
+      const payload = JSON.stringify(edu);
+      for (const url of candidates) {
+        try {
+          const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: payload });
+          if (res.ok) { setMessage(`Saved education via ${url}`); ok = true; break; }
+          else { lastErr = `HTTP ${res.status} on ${url}: ${await res.text()}`; }
+        } catch (e) { lastErr = `Request failed on ${url}: ${e.message}`; }
+      }
+      if (!ok) throw new Error(lastErr || 'Unknown error');
+      await reloadEducation();
+    } catch (e) { setMessage(`Save education failed: ${e.message}`); }
+    finally { setSaving(false); }
+  };
+
+  // Organizations editors
+  const addOrg = () => setOrgs([...orgs, { org: '', role: '', period: '' }]);
+  const removeOrg = (idx) => setOrgs(orgs.filter((_, i) => i !== idx));
+  const updateOrg = (idx, key, value) => {
+    const next = deepClone(orgs);
+    next[idx] = { ...next[idx], [key]: value };
+    setOrgs(next);
+  };
+  const saveOrgs = async () => {
+    setSaving(true);
+    setMessage('');
+    try {
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const candidates = Array.from(new Set([
+        '/.netlify/functions/save-organizations',
+        `${basePath}/.netlify/functions/save-organizations`,
+      ]));
+      let ok = false; let lastErr = '';
+      const payload = JSON.stringify(orgs);
+      for (const url of candidates) {
+        try {
+          const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: payload });
+          if (res.ok) { setMessage(`Saved organizations via ${url}`); ok = true; break; }
+          else { lastErr = `HTTP ${res.status} on ${url}: ${await res.text()}`; }
+        } catch (e) { lastErr = `Request failed on ${url}: ${e.message}`; }
+      }
+      if (!ok) throw new Error(lastErr || 'Unknown error');
+      await reloadOrganizations();
+    } catch (e) { setMessage(`Save organizations failed: ${e.message}`); }
+    finally { setSaving(false); }
   };
 
   const saveToFile = async () => {
@@ -299,7 +438,19 @@ export default function AdminPage() {
       ) : (
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-semibold text-cyan-300">Admin • Achievements</h1>
+          <h1 className="text-2xl font-semibold text-cyan-300">Admin Panel</h1>
+        </div>
+        <div className="mb-4 flex gap-2">
+          {['achievements','education','organizations'].map((t) => (
+            <button key={t} onClick={() => setTab(t)} className={`px-3 py-2 rounded-md border ${tab===t? 'bg-cyan-500/20 border-cyan-400/40 text-cyan-200':'bg-white/5 border-white/10 hover:bg-white/10'}`}>
+              {t.charAt(0).toUpperCase()+t.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'achievements' && (
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-cyan-300">Achievements</h2>
           <div className="flex gap-2">
             <button
               onClick={addYear}
@@ -345,7 +496,7 @@ export default function AdminPage() {
               {saving ? 'Saving…' : 'Save to DB'}
             </button>
           </div>
-        </div>
+        </div>)}
 
         {message && (
           <div className="mb-4 text-sm text-gray-300 bg-white/5 border border-white/10 rounded-md p-3">
@@ -353,7 +504,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        <div className="space-y-8">
+  {tab === 'achievements' && (<div className="space-y-8">
           {years.map((year) => (
             <section key={year} className="bg-white/5 border border-white/10 rounded-xl p-4">
               <div className="flex items-center justify-between mb-4">
@@ -402,7 +553,73 @@ export default function AdminPage() {
               </div>
             </section>
           ))}
-        </div>
+        </div>)}
+
+        {tab === 'education' && (
+          <section className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-white">Education</h2>
+              <div className="flex gap-2">
+                <button onClick={addEdu} className="px-2 py-1 rounded-md bg-white/10 border border-white/20 text-sm hover:bg-white/15">+ Add</button>
+                <button onClick={saveEdu} disabled={saving} className="px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30">{saving?'Saving…':'Save to DB'}</button>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {edu.map((it, idx) => (
+                <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start bg-black/30 border border-white/10 rounded-lg p-3">
+                  <div className="md:col-span-4">
+                    <label className="block text-xs text-gray-300 mb-1">Title</label>
+                    <input className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2" value={it.title} onChange={(e)=>updateEdu(idx,'title',e.target.value)} />
+                  </div>
+                  <div className="md:col-span-5">
+                    <label className="block text-xs text-gray-300 mb-1">Subtitle</label>
+                    <input className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2" value={it.subtitle} onChange={(e)=>updateEdu(idx,'subtitle',e.target.value)} />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs text-gray-300 mb-1">Period</label>
+                    <input className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2" value={it.period} onChange={(e)=>updateEdu(idx,'period',e.target.value)} />
+                  </div>
+                  <div className="md:col-span-1 flex md:justify-end">
+                    <button onClick={()=>removeEdu(idx)} className="px-3 py-2 rounded-md bg-red-500/20 border border-red-400/40 text-red-200 hover:bg-red-500/30">Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {tab === 'organizations' && (
+          <section className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-white">Organizations</h2>
+              <div className="flex gap-2">
+                <button onClick={addOrg} className="px-2 py-1 rounded-md bg-white/10 border border-white/20 text-sm hover:bg-white/15">+ Add</button>
+                <button onClick={saveOrgs} disabled={saving} className="px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30">{saving?'Saving…':'Save to DB'}</button>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {orgs.map((it, idx) => (
+                <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start bg-black/30 border border-white/10 rounded-lg p-3">
+                  <div className="md:col-span-5">
+                    <label className="block text-xs text-gray-300 mb-1">Organization</label>
+                    <input className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2" value={it.org} onChange={(e)=>updateOrg(idx,'org',e.target.value)} />
+                  </div>
+                  <div className="md:col-span-4">
+                    <label className="block text-xs text-gray-300 mb-1">Role</label>
+                    <input className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2" value={it.role} onChange={(e)=>updateOrg(idx,'role',e.target.value)} />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs text-gray-300 mb-1">Period</label>
+                    <input className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2" value={it.period} onChange={(e)=>updateOrg(idx,'period',e.target.value)} />
+                  </div>
+                  <div className="md:col-span-1 flex md:justify-end">
+                    <button onClick={()=>removeOrg(idx)} className="px-3 py-2 rounded-md bg-red-500/20 border border-red-400/40 text-red-200 hover:bg-red-500/30">Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
   </div>
   )}
     </div>

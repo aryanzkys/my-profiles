@@ -1,33 +1,8 @@
 import { motion, useScroll, useSpring } from 'framer-motion';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import defaultEducation from '../data/education.json';
 
-const timeline = [
-  {
-    title: 'Brawijaya University',
-    subtitle: 'Bachelor of Computer Science',
-    period: '2025 — Present',
-  },
-  {
-    title: 'SMA Negeri 1 Singosari',
-    subtitle: 'Science Major',
-    period: '2022 — 2025',
-  },
-  {
-    title: 'SMP Negeri 5 Mojokerto',
-    subtitle: '',
-    period: '2019 — 2022',
-  },
-  {
-    title: 'SD Negeri Wates 3 Mojokerto',
-    subtitle: '',
-    period: '2016 — 2019',
-  },
-  {
-    title: 'SD Plus Al-Kautsar Malang',
-    subtitle: '',
-    period: '2013 — 2016',
-  },
-];
+const fallbackTimeline = defaultEducation;
 
 const itemVariants = {
   hidden: { opacity: 0, y: 12 },
@@ -35,6 +10,7 @@ const itemVariants = {
 };
 
 export default function Education() {
+  const [timeline, setTimeline] = useState(fallbackTimeline);
   const scrollRef = useRef(null);
   const listRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: listRef, container: scrollRef, offset: ['start 0.9', 'end 0.1'] });
@@ -100,6 +76,30 @@ export default function Education() {
       window.removeEventListener('resize', onResize);
     };
   }, [cursorY]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const candidates = Array.from(new Set([
+        '/.netlify/functions/get-education',
+        `${basePath}/.netlify/functions/get-education`,
+      ]));
+      for (const url of candidates) {
+        try {
+          const res = await fetch(url, { headers: { accept: 'application/json' } });
+          if (!res.ok) continue;
+          const json = await res.json();
+          if (!cancelled && Array.isArray(json) && json.length) {
+            setTimeline(json);
+            break;
+          }
+        } catch (_) {}
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <motion.div

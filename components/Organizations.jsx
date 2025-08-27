@@ -1,22 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import defaultOrganizations from '../data/organizations.json';
 
-const organizations = [
-  { org: 'ASEAN Youth Organization (AYO)', role: 'Active Member', period: '2023 — Present' },
-  { org: 'Loss and Damage Youth Coalition (LDYC)', role: 'Active Member', period: '2024 — Present' },
-  { org: 'The SDG7 Youth Constituency', role: 'Active Member', period: '2023 — Present' },
-  { org: 'Youth Rangers Indonesia (YRI)', role: 'Active Member', period: '2023 — Present' },
-  { org: 'SMANESI Olympiad Club (SOC)', role: 'Chairman', period: '2023 — 2024' },
-  { org: 'Desamind Chapter Malang', role: 'Secretary', period: '2023 — 2024' },
-  { org: 'English Club SMAN 1 Singosari', role: 'Secretary', period: '2023 — 2024' },
-  { org: 'Biology Science Club (BSC)', role: 'Member', period: '2023 — 2024' },
-  { org: 'Nutrition Goes To School (NGTS)', role: 'Student Ambassador', period: '2023 — 2024' },
-  { org: 'BDI SMAN 1 Singosari', role: 'Coordinator', period: '2022 — 2024' },
-  { org: 'Polisi Siswa', role: 'Discipline Division', period: '2022 — 2024' },
-  { org: 'OSIS SMPN 5 Mojokerto', role: 'Member', period: '2020 — 2021' },
-  { org: 'Red Cross Youth (PMR)', role: 'Member', period: '2020 — 2021' },
-  { org: 'Robotics Club', role: 'Member', period: '2021 — 2022' },
-];
+const fallbackOrganizations = defaultOrganizations;
 
 const itemVariants = {
   hidden: { opacity: 0, y: 10, scale: 0.98 },
@@ -24,6 +10,7 @@ const itemVariants = {
 };
 
 export default function Organizations() {
+  const [organizations, setOrganizations] = useState(fallbackOrganizations);
   const [filter, setFilter] = useState('all'); // all | active | past
   const [query, setQuery] = useState('');
 
@@ -52,6 +39,30 @@ export default function Organizations() {
       {label}
     </button>
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const candidates = Array.from(new Set([
+        '/.netlify/functions/get-organizations',
+        `${basePath}/.netlify/functions/get-organizations`,
+      ]));
+      for (const url of candidates) {
+        try {
+          const res = await fetch(url, { headers: { accept: 'application/json' } });
+          if (!res.ok) continue;
+          const json = await res.json();
+          if (!cancelled && Array.isArray(json)) {
+            setOrganizations(json);
+            break;
+          }
+        } catch (_) {}
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <motion.div
