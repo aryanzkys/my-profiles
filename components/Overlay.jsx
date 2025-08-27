@@ -6,6 +6,7 @@ import Education from './Education';
 import Organizations from './Organizations';
 import Contact from './Contact';
 import { usePerformance } from './PerformanceContext';
+import MiniChess from './MiniChess';
 
 const NavButton = ({ label, active, onClick }) => (
   <button
@@ -26,7 +27,7 @@ export default function Overlay() {
   const { mode, setMode, isLite } = usePerformance();
   const [perfOpen, setPerfOpen] = useState(false);
   const [miniOpen, setMiniOpen] = useState(false);
-  const [miniTab, setMiniTab] = useState('puzzle'); // 'puzzle' | 'analysis'
+  // Mini games modal state
 
   return (
     <>
@@ -169,7 +170,7 @@ export default function Overlay() {
       )}
     </AnimatePresence>
 
-    {/* Mini Games Modal (Lichess) */}
+  {/* Mini Games Modal (Play vs AI) */}
     <AnimatePresence>
       {miniOpen && (
         <motion.div
@@ -186,10 +187,10 @@ export default function Overlay() {
             exit={{ y: 12, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 260, damping: 22 }}
           >
-            <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="flex items-center justify-between gap-2 mb-3">
               <div>
-                <h3 className="text-white text-lg font-semibold leading-tight">Mini Games</h3>
-                <p className="text-gray-400 text-xs">Play chess right here via Lichess</p>
+        <h3 className="text-white text-lg font-semibold leading-tight">Mini Games</h3>
+        <p className="text-gray-400 text-xs">Play Chess vs AI — right here</p>
               </div>
               <button
                 onClick={() => setMiniOpen(false)}
@@ -198,60 +199,7 @@ export default function Overlay() {
                 Close
               </button>
             </div>
-
-            {/* Tabs */}
-            <div className="flex items-center gap-2 mb-3">
-              {[
-                { id: 'puzzle', label: 'Puzzle' },
-                { id: 'analysis', label: 'Analysis' },
-              ].map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setMiniTab(t.id)}
-                  className={`px-3 py-1.5 rounded-md text-sm border ${
-                    miniTab === t.id
-                      ? 'bg-cyan-500/20 text-cyan-100 border-cyan-400/30'
-                      : 'text-gray-300 hover:text-white hover:bg-white/10 border-white/10'
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Content */}
-            <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/30">
-              {miniTab === 'puzzle' && (
-                <div className="w-full" style={{ aspectRatio: '10/11' }}>
-                  <iframe
-                    src="https://lichess.org/training/frame?theme=brown&bg=dark"
-                    style={{ width: '100%', height: '100%' }}
-                    allow="clipboard-write; fullscreen"
-                    allowTransparency={true}
-                    frameBorder="0"
-                    title="Lichess Puzzle"
-                  />
-                </div>
-              )}
-              {miniTab === 'analysis' && (
-                <div className="w-full" style={{ aspectRatio: '4/3' }}>
-                  <iframe
-                    src="https://lichess.org/embed/analysis?bg=dark&theme=brown"
-                    style={{ width: '100%', height: '100%' }}
-                    allow="clipboard-write; fullscreen"
-                    frameBorder="0"
-                    title="Lichess Analysis"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Tips */}
-            <div className="text-[11px] text-gray-400 mt-2 flex flex-wrap items-center gap-2">
-              <span>Tip: Use the Performance Lite mode if the board feels heavy.</span>
-              <span className="hidden sm:inline">•</span>
-              <span>If you’re on mobile, rotate to landscape for a bigger board.</span>
-            </div>
+      <MiniChess />
           </motion.div>
         </motion.div>
       )}
