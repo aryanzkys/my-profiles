@@ -22,12 +22,16 @@ export default function AdminPage() {
   );
 
   useEffect(() => {
-    if (!isDev()) {
-      setMessage('Admin mode is disabled on production builds. Use local dev to save directly, or use "Download JSON"/"Save to File" and replace data/achievements.json.');
-    }
     // simple passcode gate
     const required = process.env.NEXT_PUBLIC_ADMIN_KEY;
     const stored = typeof window !== 'undefined' ? localStorage.getItem('adminKey') : null;
+    if (!isDev()) {
+      if (!required) {
+        setMessage('Production mode: admin locked until NEXT_PUBLIC_ADMIN_KEY is set. Use "Save to File"/"Download JSON" for now or set the key in Netlify env and redeploy.');
+      } else {
+        setMessage('Production mode: Save (dev) is disabled. Use "Save to DB" (Netlify) or "Save to File"/"Download JSON".');
+      }
+    }
     if (!required) {
       // If no key set, allow only in dev; block in prod
       setAuthorized(isDev());
