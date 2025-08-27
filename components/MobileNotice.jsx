@@ -48,6 +48,17 @@ export default function MobileNotice() {
               <p className="text-gray-300 text-sm mt-1">
                 For optimal performance and a smoother 3D experience, please open this website on a Desktop or Laptop. Mobile and tablet devices may have limited performance.
               </p>
+              <div className="text-gray-300 text-sm mt-3">
+                Tip: If you still prefer mobile, try enabling "Desktop site" in your browser for a better layout.
+                <a
+                  href="https://support.google.com/chrome/answer/13514529?hl=en"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-1 text-cyan-300 underline hover:text-cyan-200"
+                >
+                  Chrome: Request desktop site
+                </a>
+              </div>
             </div>
             <label className="flex items-center gap-2 text-sm text-gray-300 select-none">
               <input type="checkbox" checked={dontShow} onChange={(e) => setDontShow(e.target.checked)} />
