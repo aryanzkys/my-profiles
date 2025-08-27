@@ -34,17 +34,21 @@ Serve `out/` with any static host or push to the `gh-pages` branch.
   - Save (dev): writes `data/achievements.json` in dev mode
   - Save to File / Download JSON: file-based, no server required
 
-## Netlify + MongoDB
-1) Set environment variables in Netlify Site settings:
-	- Driver (direct connection):
-	  - `MONGODB_URI` (your mongodb+srv URI)
+## Netlify + Storage Options
+1) Choose a storage backend and set environment variables in Netlify Site settings:
+	- GitHub (recommended for static sites; simple and durable):
+	  - `GITHUB_TOKEN` (repo contents write)
+	  - `GITHUB_REPO` (e.g. `owner/repo`)
+	  - optional: `GITHUB_BRANCH` (default `main`), `GITHUB_FILE_PATH` (default `data/achievements.json`)
+	- MongoDB Driver (direct connection):
+	  - `MONGODB_URI`
 	  - `MONGODB_DB` (e.g. `myprofiles`)
 	  - `MONGODB_COLLECTION` (e.g. `myprofiles`)
-	- Data API (recommended if you hit TLS/IP allowlist issues):
-	  - `MONGODB_DATA_API_BASEURL` (e.g. `https://<region>.data.mongodb-api.com/app/<app-id>/endpoint/data/v1`)
+	- MongoDB Data API (fallback; note deprecation EOL Sep 30, 2025):
+	  - `MONGODB_DATA_API_BASEURL`
 	  - `MONGODB_DATA_API_KEY`
 	  - `MONGODB_DATA_SOURCE` (e.g. `Cluster0`)
-	  - optional overrides: `MONGODB_DATA_API_DB`, `MONGODB_DATA_API_COLLECTION`
+	  - optional: `MONGODB_DATA_API_DB`, `MONGODB_DATA_API_COLLECTION`
 	- Admin gate: `NEXT_PUBLIC_ADMIN_KEY`
 	- optional: `NEXT_PUBLIC_BASE_PATH`
 2) Build settings:
@@ -52,9 +56,10 @@ Serve `out/` with any static host or push to the `gh-pages` branch.
 	- Publish: `out`
 3) Netlify Functions live at `/.netlify/functions/*` (configured via `netlify.toml`).
 
-Troubleshooting DB connectivity:
-- If Save to DB returns an SSL/TLS internal error or 504 from Atlas, switch to the MongoDB Data API by setting the three `MONGODB_DATA_API_*` vars above. The functions auto-prefer Data API when configured.
-- For direct driver: ensure Atlas Network Access allows Netlify egress IPs (temporarily allow 0.0.0.0/0 for testing), and your connection string uses `mongodb+srv://` with TLS.
+Troubleshooting and notes:
+- For serverless reliability with a static site, GitHub storage is simplest (no IP allowlists, durable PR history). The Admin Save button commits `data/achievements.json` to your repo.
+- If using MongoDB driver: ensure Atlas Network Access allows Netlify egress IPs (temporarily allow 0.0.0.0/0 for testing) and your URI uses TLS.
+- Data API is supported but slated for deprecation (EOL Sep 30, 2025). Prefer GitHub storage or the direct driver long term.
 
 MongoDB schema (single doc):
 ```

@@ -2,6 +2,12 @@ const { MongoClient } = require('mongodb');
 const fs = require('fs');
 const path = require('path');
 
+// Optional GitHub storage config
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GITHUB_REPO = process.env.GITHUB_REPO; // owner/repo
+const GITHUB_BRANCH = process.env.GITHUB_BRANCH || 'main';
+const GITHUB_FILE_PATH = process.env.GITHUB_FILE_PATH || 'data/achievements.json';
+
 // Optional MongoDB Data API config
 const DATA_API_BASE = process.env.MONGODB_DATA_API_BASEURL;
 const DATA_API_KEY = process.env.MONGODB_DATA_API_KEY;
@@ -29,6 +35,21 @@ async function getClient() {
 
 exports.handler = async function (event, context) {
   try {
+    // 0) Try GitHub first if configured
+    if (GITHUB_REPO) {
+      const [owner, repo] = GITHUB_REPO.split('/');
+      const endpoint = `https://raw.githubusercontent.com/${owner}/${repo}/${encodeURIComponent(GITHUB_BRANCH)}/${GITHUB_FILE_PATH}`;
+      const res = await fetch(endpoint, {
+        headers: GITHUB_TOKEN ? { Authorization: `Bearer ${GITHUB_TOKEN}` } : {},
+      });
+      if (res.ok) {
+        const raw = await res.text();
+        // simple validation
+        JSON.parse(raw);
+        return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: raw };
+      }
+    }
+
     // 1) Try MongoDB Data API if configured
     if (DATA_API_BASE && DATA_API_KEY && DATA_SOURCE) {
       const database = process.env.MONGODB_DB || process.env.MONGODB_DATA_API_DB || 'myprofiles';
