@@ -8,7 +8,11 @@ async function getClient() {
   if (cachedClient) return cachedClient;
   const uri = process.env.MONGODB_URI;
   if (!uri) return null;
-  const client = new MongoClient(uri, { maxPoolSize: 1 });
+  const client = new MongoClient(uri, {
+    maxPoolSize: 1,
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 5000,
+  });
   await client.connect();
   cachedClient = client;
   return client;

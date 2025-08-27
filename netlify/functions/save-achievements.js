@@ -6,7 +6,11 @@ async function getClient() {
   if (cachedClient) return cachedClient;
   const uri = process.env.MONGODB_URI;
   if (!uri) throw new Error('MONGODB_URI is not set');
-  const client = new MongoClient(uri, { maxPoolSize: 1 });
+  const client = new MongoClient(uri, {
+    maxPoolSize: 1,
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 5000,
+  });
   await client.connect();
   cachedClient = client;
   return client;
@@ -28,6 +32,6 @@ exports.handler = async function (event, context) {
     );
     return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ok: true }) };
   } catch (e) {
-    return { statusCode: 500, body: e.message || 'Failed to save achievements' };
+    return { statusCode: 500, body: `Save error: ${e.message || 'Failed to save achievements'}` };
   }
 };
