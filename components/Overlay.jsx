@@ -24,8 +24,10 @@ const NavButton = ({ label, active, onClick }) => (
 export default function Overlay() {
   const [section, setSection] = useState('home');
   const { mode, setMode, isLite } = usePerformance();
+  const [perfOpen, setPerfOpen] = useState(false);
 
   return (
+    <>
     <div className="absolute inset-0 pointer-events-none z-10">
       {/* Top Navigation */}
       <div className="w-full flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-center md:justify-end p-4 relative z-20">
@@ -37,7 +39,8 @@ export default function Overlay() {
           <NavButton label="Organizations" active={section === 'organizations'} onClick={() => setSection('organizations')} />
           <NavButton label="Contact" active={section === 'contact'} onClick={() => setSection('contact')} />
         </div>
-        <div className="pointer-events-auto bg-black/40 backdrop-blur-md border border-white/10 rounded-xl px-2 py-2 flex gap-2 items-center">
+        {/* Inline performance select for large screens only */}
+        <div className="hidden lg:flex pointer-events-auto bg-black/40 backdrop-blur-md border border-white/10 rounded-xl px-2 py-2 gap-2 items-center">
           <span className="text-xs text-gray-300 hidden sm:inline">Performance</span>
           <select
             value={mode}
@@ -49,6 +52,14 @@ export default function Overlay() {
             <option value="high">High</option>
           </select>
         </div>
+        {/* Mobile/Tablet performance button opens popup */}
+        <button
+          onClick={() => setPerfOpen(true)}
+          className="lg:hidden pointer-events-auto bg-black/40 backdrop-blur-md border border-white/10 rounded-xl px-3 py-2 text-sm text-gray-200 hover:bg-white/10"
+          aria-label="Open performance settings"
+        >
+          Performance
+        </button>
       </div>
 
       {/* Center Content */}
@@ -96,6 +107,55 @@ export default function Overlay() {
           )}
         </AnimatePresence>
       </div>
-    </div>
+  </div>
+  {/* Performance Modal for mobile/tablet */}
+    <AnimatePresence>
+      {perfOpen && (
+        <motion.div
+          className="fixed inset-0 z-30 flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setPerfOpen(false)} />
+          <motion.div
+            className="relative z-10 w-full max-w-md bg-neutral-900/95 border border-white/10 rounded-2xl p-5 shadow-2xl"
+            initial={{ y: 24, scale: 0.98, opacity: 0 }}
+            animate={{ y: 0, scale: 1, opacity: 1 }}
+            exit={{ y: 12, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+          >
+            <h3 className="text-white text-lg font-semibold mb-2">Performance Mode</h3>
+            <p className="text-gray-300 text-sm mb-4">Choose a mode for the best experience on your device.</p>
+            <div className="space-y-2">
+              {[
+                { id: 'auto', label: `Auto ${isLite ? '(Lite)' : '(High)'}`, desc: 'Detects your device and picks the best mode automatically.' },
+                { id: 'lite', label: 'Lite', desc: 'Lower motion and effects for smoother performance.' },
+                { id: 'high', label: 'High', desc: 'Full effects and motion (best on desktops).' },
+              ].map((opt) => (
+                <label key={opt.id} className="flex items-start gap-3 p-2 rounded-lg border border-white/10 hover:bg-white/5">
+                  <input
+                    type="radio"
+                    name="perf"
+                    value={opt.id}
+                    checked={mode === opt.id}
+                    onChange={(e) => setMode(e.target.value)}
+                    className="mt-1"
+                  />
+                  <div>
+                    <div className="text-gray-100 text-sm font-medium">{opt.label}</div>
+                    <div className="text-gray-400 text-xs">{opt.desc}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+            <div className="flex justify-end mt-4">
+              <button onClick={() => setPerfOpen(false)} className="px-3 py-2 rounded-md bg-white/10 border border-white/20 text-sm hover:bg-white/15">Close</button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </>
   );
 }
