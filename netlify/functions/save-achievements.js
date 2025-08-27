@@ -5,8 +5,23 @@ let pool;
 
 function getPool() {
   if (pool) return pool;
-  if (!PG_URL) throw new Error('Supabase/Postgres URL is not set (SUPABASE_DB_URL/POSTGRES_URL/DATABASE_URL)');
-  pool = new Pool({ connectionString: PG_URL, max: 1, idleTimeoutMillis: 5000, connectionTimeoutMillis: 5000, ssl: { rejectUnauthorized: false } });
+  const hasDiscrete = process.env.SUPABASE_DB_HOST || process.env.SUPABASE_DB_PASSWORD;
+  if (!PG_URL && !hasDiscrete) {
+    throw new Error('Supabase/Postgres config not set. Provide SUPABASE_DB_URL (URL-encode password if it contains #) or discrete vars SUPABASE_DB_HOST, SUPABASE_DB_PORT, SUPABASE_DB_DATABASE, SUPABASE_DB_USER, SUPABASE_DB_PASSWORD');
+  }
+  const base = { max: 1, idleTimeoutMillis: 5000, connectionTimeoutMillis: 5000, ssl: { rejectUnauthorized: false } };
+  if (hasDiscrete) {
+    pool = new Pool({
+      ...base,
+      host: process.env.SUPABASE_DB_HOST,
+      port: Number(process.env.SUPABASE_DB_PORT || 5432),
+      database: process.env.SUPABASE_DB_DATABASE || 'postgres',
+      user: process.env.SUPABASE_DB_USER || 'postgres',
+      password: process.env.SUPABASE_DB_PASSWORD,
+    });
+  } else {
+    pool = new Pool({ ...base, connectionString: PG_URL });
+  }
   return pool;
 }
 

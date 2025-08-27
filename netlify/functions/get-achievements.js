@@ -7,8 +7,22 @@ let pool;
 
 function getPool() {
   if (pool) return pool;
-  if (!PG_URL) return null;
-  pool = new Pool({ connectionString: PG_URL, max: 1, idleTimeoutMillis: 5000, connectionTimeoutMillis: 5000, ssl: { rejectUnauthorized: false } });
+  const hasDiscrete = process.env.SUPABASE_DB_HOST || process.env.SUPABASE_DB_PASSWORD;
+  const base = { max: 1, idleTimeoutMillis: 5000, connectionTimeoutMillis: 5000, ssl: { rejectUnauthorized: false } };
+  if (hasDiscrete) {
+    pool = new Pool({
+      ...base,
+      host: process.env.SUPABASE_DB_HOST,
+      port: Number(process.env.SUPABASE_DB_PORT || 5432),
+      database: process.env.SUPABASE_DB_DATABASE || 'postgres',
+      user: process.env.SUPABASE_DB_USER || 'postgres',
+      password: process.env.SUPABASE_DB_PASSWORD,
+    });
+  } else if (PG_URL) {
+    pool = new Pool({ ...base, connectionString: PG_URL });
+  } else {
+    return null;
+  }
   return pool;
 }
 
