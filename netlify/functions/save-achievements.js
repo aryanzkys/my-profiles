@@ -5,6 +5,7 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const GITHUB_REPO = process.env.GITHUB_REPO; // e.g. owner/repo
 const GITHUB_BRANCH = process.env.GITHUB_BRANCH || 'main';
 const GITHUB_FILE_PATH = process.env.GITHUB_FILE_PATH || 'data/achievements.json';
+const FORCE_GITHUB = String(process.env.FORCE_GITHUB || '').toLowerCase() === 'true';
 
 // Prefer MongoDB Data API if configured to avoid TLS/IP allowlist issues on serverless
 const DATA_API_BASE = process.env.MONGODB_DATA_API_BASEURL; // e.g. https://ap-southeast-1.aws.data.mongodb-api.com/app/<app-id>/endpoint/data/v1
@@ -118,8 +119,8 @@ exports.handler = async function (event, context) {
   try {
     const body = event.body ? JSON.parse(event.body) : {};
 
-    // 0) GitHub (preferred). If GITHUB_REPO is set, require GitHub to succeed to avoid mismatch with reads.
-    if (GITHUB_REPO) {
+  // 0) GitHub (preferred). If GITHUB_REPO is set or FORCE_GITHUB, require GitHub save to avoid mismatch with reads.
+  if (GITHUB_REPO || FORCE_GITHUB) {
       if (!GITHUB_TOKEN) {
         throw new Error('GitHub storage configured (GITHUB_REPO set) but GITHUB_TOKEN is missing. Provide a token with Contents: Write.');
       }
@@ -127,13 +128,13 @@ exports.handler = async function (event, context) {
       return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify(result) };
     }
 
-    // If Data API is fully configured, use it
+  // If Data API is fully configured, use it (skipped when FORCE_GITHUB)
     if (DATA_API_BASE && DATA_API_KEY && DATA_SOURCE) {
       const result = await saveWithDataAPI(body);
       return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify(result) };
     }
 
-    // Fallback to direct driver (requires Atlas IP allowlist to permit Netlify egress IPs)
+  // Fallback to direct driver (requires Atlas IP allowlist to permit Netlify egress IPs) — skipped when FORCE_GITHUB
     const client = await getClient();
     const dbName = process.env.MONGODB_DB || 'myprofiles';
     const collectionName = process.env.MONGODB_COLLECTION || 'myprofiles';

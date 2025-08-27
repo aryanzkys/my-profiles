@@ -7,6 +7,7 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const GITHUB_REPO = process.env.GITHUB_REPO; // owner/repo
 const GITHUB_BRANCH = process.env.GITHUB_BRANCH || 'main';
 const GITHUB_FILE_PATH = process.env.GITHUB_FILE_PATH || 'data/achievements.json';
+const FORCE_GITHUB = String(process.env.FORCE_GITHUB || '').toLowerCase() === 'true';
 
 // Optional MongoDB Data API config
 const DATA_API_BASE = process.env.MONGODB_DATA_API_BASEURL;
@@ -35,8 +36,8 @@ async function getClient() {
 
 exports.handler = async function (event, context) {
   try {
-    // 0) Try GitHub first if configured
-    if (GITHUB_REPO) {
+    // 0) Try GitHub first if configured (or forced)
+    if (GITHUB_REPO || FORCE_GITHUB) {
       const [owner, repo] = GITHUB_REPO.split('/');
       const endpoint = `https://raw.githubusercontent.com/${owner}/${repo}/${encodeURIComponent(GITHUB_BRANCH)}/${GITHUB_FILE_PATH}`;
       // For public repos, avoid sending a bad token; for private, raw endpoint doesn't accept PAT in header, so fallback to contents API
@@ -60,9 +61,15 @@ exports.handler = async function (event, context) {
           throw new Error(`GitHub auth failed (${apiRes.status}). Check GITHUB_TOKEN scopes and repo access. Details: ${t}`);
         }
       }
+      // If forced GitHub, do not try DB; fallback to local JSON only
+      if (FORCE_GITHUB) {
+        const filePath = path.join(process.cwd(), 'data', 'achievements.json');
+        const raw = fs.readFileSync(filePath, 'utf8');
+        return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: raw };
+      }
     }
 
-    // 1) Try MongoDB Data API if configured
+    // 1) Try MongoDB Data API if configured (skipped when FORCE_GITHUB)
     if (DATA_API_BASE && DATA_API_KEY && DATA_SOURCE) {
       const database = process.env.MONGODB_DB || process.env.MONGODB_DATA_API_DB || 'myprofiles';
       const collection = process.env.MONGODB_COLLECTION || process.env.MONGODB_DATA_API_COLLECTION || 'myprofiles';
@@ -90,7 +97,7 @@ exports.handler = async function (event, context) {
       }
     }
 
-    // 2) Try MongoDB driver
+    // 2) Try MongoDB driver (skipped when FORCE_GITHUB)
     const client = await getClient();
     if (client) {
       const dbName = process.env.MONGODB_DB || 'myprofiles';

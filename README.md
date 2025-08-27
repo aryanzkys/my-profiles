@@ -39,7 +39,7 @@ Serve `out/` with any static host or push to the `gh-pages` branch.
 	- GitHub (recommended for static sites; simple and durable):
 	  - `GITHUB_TOKEN` (repo contents write)
 	  - `GITHUB_REPO` (e.g. `owner/repo`)
-	  - optional: `GITHUB_BRANCH` (default `main`), `GITHUB_FILE_PATH` (default `data/achievements.json`)
+	  - optional: `GITHUB_BRANCH` (default `main`), `GITHUB_FILE_PATH` (default `data/achievements.json`), `FORCE_GITHUB=true` (skip DB/Data API)
 	- MongoDB Driver (direct connection):
 	  - `MONGODB_URI`
 	  - `MONGODB_DB` (e.g. `myprofiles`)
