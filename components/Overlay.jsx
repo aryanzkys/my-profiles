@@ -28,7 +28,7 @@ export default function Overlay() {
   return (
     <div className="absolute inset-0 pointer-events-none z-10">
       {/* Top Navigation */}
-      <div className="w-full flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-center md:justify-end p-4">
+      <div className="w-full flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-center md:justify-end p-4 relative z-20">
         <div className="pointer-events-auto bg-black/40 backdrop-blur-md border border-white/10 rounded-xl px-2 py-2 flex gap-2 overflow-x-auto no-scrollbar max-w-full">
           <NavButton label="Home" active={section === 'home'} onClick={() => setSection('home')} />
           <NavButton label="About Me" active={section === 'about'} onClick={() => setSection('about')} />
@@ -52,7 +52,7 @@ export default function Overlay() {
       </div>
 
       {/* Center Content */}
-  <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-6">
+  <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-6 z-10 pointer-events-none">
         <AnimatePresence mode="wait">
           {section === 'home' && (
             <motion.div
@@ -61,7 +61,7 @@ export default function Overlay() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.35 }}
-              className="pointer-events-none text-center"
+      className="pointer-events-none text-center"
             >
               <h1 className="text-white text-2xl sm:text-3xl md:text-5xl font-bold drop-shadow-[0_4px_20px_rgba(0,255,255,0.35)]">
                 Hi, I'm Aryan – Computer Science Student

@@ -34,7 +34,7 @@ export default function About() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="w-full max-w-3xl text-center md:text-left"
+      className="w-full max-w-3xl text-center md:text-left max-h-[70vh] sm:max-h-[60vh] overflow-visible mb-4"
     >
       <h2 className="text-2xl md:text-3xl font-semibold text-cyan-300 mb-4 tracking-wide">
         About Me
@@ -59,7 +59,7 @@ export default function About() {
         {/* Gradient border shell */}
         <div className="relative rounded-2xl p-[1px] bg-gradient-to-r from-cyan-500/40 via-fuchsia-500/40 to-cyan-500/40">
           {/* Inner card */}
-          <div className="relative rounded-2xl border border-white/10 bg-black/60 backdrop-blur-md px-6 py-6 md:px-8 md:py-8 overflow-hidden">
+          <div className="relative rounded-2xl border border-white/10 bg-black/60 backdrop-blur-md px-4 py-4 md:px-8 md:py-8 overflow-hidden">
             {/* Light sweep following cursor */}
             <div
               className="pointer-events-none absolute inset-0 rounded-2xl"
@@ -70,15 +70,17 @@ export default function About() {
             />
 
             {/* Content */}
-            <p className="text-gray-200 leading-relaxed relative z-10">
+            <div className="relative z-10 max-h-[46vh] sm:max-h-[44vh] overflow-y-auto pr-1">
+            <p className="text-gray-200 leading-relaxed">
               Hello! My name is <span className="text-white font-medium">Aryan Zaky Prayogo</span>, an aspiring <span className="text-white font-medium">DevSecOps Engineer</span> majoring in <span className="text-white font-medium">Computer Science</span> at <span className="text-white font-medium">Brawijaya University</span>. I’m deeply passionate about cybersecurity, software development, and the intersection between technology and ethical leadership.
             </p>
-            <p className="text-gray-200 leading-relaxed mt-4 relative z-10">
+            <p className="text-gray-200 leading-relaxed mt-4">
               Over the past few years I have earned more than 20 national and international awards across diverse fields including science, languages, research, and entrepreneurship. I am also actively involved in various youth organizations and academic communities that focus on education, innovation, and sustainable development.
             </p>
-            <p className="text-gray-200 leading-relaxed mt-4 relative z-10">
+            <p className="text-gray-200 leading-relaxed mt-4">
               I believe in continuous learning, meaningful collaboration, and using technology as a force for good. This website is my digital portfolio, a place where you can explore my journey, achievements, and future projects.
             </p>
+            </div>
           </div>
         </div>
       </motion.div>
