@@ -77,9 +77,45 @@ export default function MiniChess() {
   const aiTimeout = useRef(null);
   const STORAGE_KEY = 'miniChess:v1';
 
+  // Storage helpers with fallbacks
+  const safeWrite = (key, value) => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(key, value);
+        // Mirror to sessionStorage as a fallback for some mobile contexts
+        try { sessionStorage.setItem(key, value); } catch {}
+        return true;
+      }
+    } catch {
+      try {
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem(key, value);
+          return true;
+        }
+      } catch {}
+    }
+    return false;
+  };
+
+  const safeRead = (key) => {
+    try {
+      if (typeof window !== 'undefined') {
+        const v = localStorage.getItem(key);
+        if (v != null) return v;
+      }
+    } catch {}
+    try {
+      if (typeof window !== 'undefined') {
+        const v = sessionStorage.getItem(key);
+        if (v != null) return v;
+      }
+    } catch {}
+    return null;
+  };
+
   useEffect(() => {
     try {
-      const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+      const raw = safeRead(STORAGE_KEY);
       if (raw) {
         const saved = JSON.parse(raw || '{}');
         if (Array.isArray(saved?.sanList) && saved.sanList.length > 0) {
@@ -142,7 +178,7 @@ export default function MiniChess() {
   useEffect(() => {
     try {
       const payload = { fen: game.fen(), playSide, orientation, difficulty, sanList: game.history(), v: 1 };
-      if (typeof window !== 'undefined') localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      safeWrite(STORAGE_KEY, JSON.stringify(payload));
     } catch {}
   }, [game, playSide, orientation, difficulty]);
 
@@ -154,7 +190,8 @@ export default function MiniChess() {
   };
 
   const resetProgress = () => {
-    try { if (typeof window !== 'undefined') localStorage.removeItem(STORAGE_KEY); } catch {}
+  try { if (typeof window !== 'undefined') localStorage.removeItem(STORAGE_KEY); } catch {}
+  try { if (typeof window !== 'undefined') sessionStorage.removeItem(STORAGE_KEY); } catch {}
     const g = new Chess();
     setGame(g);
   };
@@ -168,15 +205,25 @@ export default function MiniChess() {
     const result = next.move(move);
     if (result) {
       setGame(next);
+      // opportunistic save to improve reliability
+      try { safeWrite(STORAGE_KEY, JSON.stringify({ fen: next.fen(), playSide, orientation, difficulty, sanList: next.history(), v: 1 })); } catch {}
       return true;
     }
     return false;
   };
 
+  const saveProgressNow = () => {
+    try {
+      const payload = { fen: game.fen(), playSide, orientation, difficulty, sanList: game.history(), v: 1 };
+      safeWrite(STORAGE_KEY, JSON.stringify(payload));
+    } catch {}
+  };
+
   const controls = (
     <div className="flex flex-wrap items-center gap-2">
       <button className="px-3 py-1.5 rounded-md bg-white/10 border border-white/20 text-sm hover:bg-white/15" onClick={() => newGame(playSide)}>New Game</button>
-      <button className="px-3 py-1.5 rounded-md bg-white/10 border border-white/20 text-sm hover:bg-white/15" onClick={resetProgress} title="Clear saved progress">Reset Progress</button>
+  <button className="px-3 py-1.5 rounded-md bg-white/10 border border-white/20 text-sm hover:bg-white/15" onClick={saveProgressNow} title="Manually save your progress">Save Progress</button>
+  <button className="px-3 py-1.5 rounded-md bg-white/10 border border-white/20 text-sm hover:bg-white/15" onClick={resetProgress} title="Clear saved progress">Reset Progress</button>
       <button className={`px-3 py-1.5 rounded-md text-sm border ${orientation === 'white' ? 'bg-cyan-500/20 text-cyan-100 border-cyan-400/30' : 'bg-white/10 border-white/20 text-gray-200'}`} onClick={() => setOrientation('white')}>White view</button>
       <button className={`px-3 py-1.5 rounded-md text-sm border ${orientation === 'black' ? 'bg-cyan-500/20 text-cyan-100 border-cyan-400/30' : 'bg-white/10 border-white/20 text-gray-200'}`} onClick={() => setOrientation('black')}>Black view</button>
       <div className="ml-auto flex items-center gap-2">
