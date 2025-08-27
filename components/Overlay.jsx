@@ -25,6 +25,8 @@ export default function Overlay() {
   const [section, setSection] = useState('home');
   const { mode, setMode, isLite } = usePerformance();
   const [perfOpen, setPerfOpen] = useState(false);
+  const [miniOpen, setMiniOpen] = useState(false);
+  const [miniTab, setMiniTab] = useState('puzzle'); // 'puzzle' | 'analysis'
 
   return (
     <>
@@ -52,6 +54,16 @@ export default function Overlay() {
             <option value="high">High</option>
           </select>
         </div>
+        {/* Mini Games button only on Home */}
+        {section === 'home' && (
+          <button
+            onClick={() => setMiniOpen(true)}
+            className="pointer-events-auto bg-black/40 backdrop-blur-md border border-white/10 rounded-xl px-3 py-2 text-sm text-cyan-200 hover:text-white hover:bg-white/10"
+            aria-label="Open mini games"
+          >
+            Mini Games
+          </button>
+        )}
         {/* Mobile/Tablet performance button opens popup */}
         <button
           onClick={() => setPerfOpen(true)}
@@ -151,6 +163,94 @@ export default function Overlay() {
             </div>
             <div className="flex justify-end mt-4">
               <button onClick={() => setPerfOpen(false)} className="px-3 py-2 rounded-md bg-white/10 border border-white/20 text-sm hover:bg-white/15">Close</button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
+    {/* Mini Games Modal (Lichess) */}
+    <AnimatePresence>
+      {miniOpen && (
+        <motion.div
+          className="fixed inset-0 z-30 flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setMiniOpen(false)} />
+          <motion.div
+            className="relative z-10 w-full max-w-5xl bg-neutral-900/95 border border-white/10 rounded-2xl p-4 sm:p-5 shadow-2xl"
+            initial={{ y: 24, scale: 0.98, opacity: 0 }}
+            animate={{ y: 0, scale: 1, opacity: 1 }}
+            exit={{ y: 12, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+          >
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div>
+                <h3 className="text-white text-lg font-semibold leading-tight">Mini Games</h3>
+                <p className="text-gray-400 text-xs">Play chess right here via Lichess</p>
+              </div>
+              <button
+                onClick={() => setMiniOpen(false)}
+                className="px-3 py-1.5 rounded-md bg-white/10 border border-white/20 text-sm hover:bg-white/15"
+              >
+                Close
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex items-center gap-2 mb-3">
+              {[
+                { id: 'puzzle', label: 'Puzzle' },
+                { id: 'analysis', label: 'Analysis' },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setMiniTab(t.id)}
+                  className={`px-3 py-1.5 rounded-md text-sm border ${
+                    miniTab === t.id
+                      ? 'bg-cyan-500/20 text-cyan-100 border-cyan-400/30'
+                      : 'text-gray-300 hover:text-white hover:bg-white/10 border-white/10'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Content */}
+            <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/30">
+              {miniTab === 'puzzle' && (
+                <div className="w-full" style={{ aspectRatio: '10/11' }}>
+                  <iframe
+                    src="https://lichess.org/training/frame?theme=brown&bg=dark"
+                    style={{ width: '100%', height: '100%' }}
+                    allow="clipboard-write; fullscreen"
+                    allowTransparency={true}
+                    frameBorder="0"
+                    title="Lichess Puzzle"
+                  />
+                </div>
+              )}
+              {miniTab === 'analysis' && (
+                <div className="w-full" style={{ aspectRatio: '4/3' }}>
+                  <iframe
+                    src="https://lichess.org/embed/analysis?bg=dark&theme=brown"
+                    style={{ width: '100%', height: '100%' }}
+                    allow="clipboard-write; fullscreen"
+                    frameBorder="0"
+                    title="Lichess Analysis"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Tips */}
+            <div className="text-[11px] text-gray-400 mt-2 flex flex-wrap items-center gap-2">
+              <span>Tip: Use the Performance Lite mode if the board feels heavy.</span>
+              <span className="hidden sm:inline">•</span>
+              <span>If you’re on mobile, rotate to landscape for a bigger board.</span>
             </div>
           </motion.div>
         </motion.div>
