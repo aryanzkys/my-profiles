@@ -162,11 +162,15 @@ export default function MiniChess() {
     setThinking(true);
     aiTimeout.current && clearTimeout(aiTimeout.current);
     aiTimeout.current = setTimeout(() => {
-      const searchGame = new Chess(game.fen());
+      // Build a search copy with full history
+      const searchGame = new Chess();
+      for (const san of game.history()) searchGame.move(san);
       const depth = Math.min(Math.max(difficulty, 1), 3);
       const move = bestMove(searchGame, depth);
       if (move) {
-        const next = new Chess(game.fen());
+        // Apply to a fresh next game preserving full history
+        const next = new Chess();
+        for (const san of game.history()) next.move(san);
         next.move(move);
         setGame(next);
       }
@@ -201,7 +205,9 @@ export default function MiniChess() {
     const playerColor = playSide === 'white' ? 'w' : 'b';
     if (game.turn() !== playerColor) return false;
     const move = { from: sourceSquare, to: targetSquare, promotion: 'q' };
-    const next = new Chess(game.fen());
+    // Rebuild next from full history, then apply the player's move
+    const next = new Chess();
+    for (const san of game.history()) next.move(san);
     const result = next.move(move);
     if (result) {
       setGame(next);
