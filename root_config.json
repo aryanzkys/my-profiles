@@ -1,0 +1,5 @@
+{
+    "name": "my-profiles",
+    "provider_region": "aws-ap-southeast-1",
+    "deployment_model": "LOCAL"
+}
