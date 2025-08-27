@@ -74,6 +74,7 @@ export default function Contact() {
           {links.map((item) => {
             const Icon = item.icon;
             const isHttp = item.href.startsWith('http');
+            const copyValue = isHttp ? item.href : item.copyText;
             return (
               <li key={item.key} className="py-3">
                 <div className="flex items-center justify-between gap-3">
@@ -97,11 +98,11 @@ export default function Contact() {
                     >
                       {item.text}
                     </motion.span>
-                    {item.copyText ? (
+          {item.copyText ? (
                       <button
-                        onClick={() => onCopy(item.copyText, item.key)}
+            onClick={() => onCopy(copyValue, item.key)}
                         className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs border border-white/10 bg-white/5 hover:bg-white/10 text-gray-200 hover:text-white transition-colors"
-                        aria-label={`Copy ${item.label}`}
+            aria-label={`Copy ${item.label} ${isHttp ? 'link' : ''}`}
                       >
                         {copied === item.key ? (
                           <>
@@ -111,7 +112,7 @@ export default function Contact() {
                         ) : (
                           <>
                             <Copy className="h-3.5 w-3.5" />
-                            Copy
+              {isHttp ? 'Copy link' : 'Copy'}
                           </>
                         )}
                       </button>
