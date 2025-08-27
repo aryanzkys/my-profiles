@@ -79,6 +79,27 @@ export default function MiniChess() {
   const [playSide, setPlaySide] = useState('white'); // 'white' | 'black'
   const [status, setStatus] = useState('');
   const aiTimeout = useRef(null);
+  const STORAGE_KEY = 'miniChess:v1';
+
+  // Load saved state from localStorage
+  useEffect(() => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved?.fen) {
+          const g = new Chess(saved.fen);
+          setGame(g);
+          setFen(g.fen());
+        }
+        if (saved?.playSide) setPlaySide(saved.playSide);
+        if (saved?.orientation) setOrientation(saved.orientation);
+        if (typeof saved?.difficulty === 'number') setDifficulty(saved.difficulty);
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
 
   // Update status message
   useEffect(() => {
@@ -118,6 +139,16 @@ export default function MiniChess() {
     }, 200);
     return () => clearTimeout(aiTimeout.current);
   }, [game, difficulty, playSide]);
+
+  // Persist state to localStorage
+  useEffect(() => {
+    try {
+      const payload = { fen, playSide, orientation, difficulty, v: 1 };
+      if (typeof window !== 'undefined') localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch (e) {
+      // ignore write failures
+    }
+  }, [fen, playSide, orientation, difficulty]);
 
   // New game handler
   const newGame = (side = playSide) => {
