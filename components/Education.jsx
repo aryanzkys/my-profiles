@@ -156,7 +156,17 @@ export default function Education() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="text-white font-semibold">{item.title}</h3>
+                    <h3 className="text-white font-semibold flex items-center gap-2">
+                      {item.title === 'Brawijaya University' ? (
+                        <img
+                          src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Logo_Universitas_Brawijaya.svg/2036px-Logo_Universitas_Brawijaya.svg.png"
+                          alt="Brawijaya University logo"
+                          className="w-5 h-5 object-contain"
+                          loading="lazy"
+                        />
+                      ) : null}
+                      <span>{item.title}</span>
+                    </h3>
                     {item.subtitle ? (
                       <p className="text-gray-300 text-sm mt-0.5">{item.subtitle}</p>
                     ) : null}
