@@ -165,6 +165,14 @@ export default function Education() {
                           loading="lazy"
                         />
                       ) : null}
+                      {item.title === 'SMA Negeri 1 Singosari' ? (
+                        <img
+                          src="https://ngts.seameo-recfon.org/wp-content/uploads/2019/09/Logo-SMANESI-215x300.png"
+                          alt="SMA Negeri 1 Singosari logo"
+                          className="w-5 h-5 object-contain"
+                          loading="lazy"
+                        />
+                      ) : null}
                       <span>{item.title}</span>
                     </h3>
                     {item.subtitle ? (
