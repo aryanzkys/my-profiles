@@ -20,7 +20,8 @@ export default function Achievements() {
         `${basePath}/api/get-achievements`,
         '/api/get-achievements',
       ]));
-      for (const url of candidates) {
+      for (const base of candidates) {
+        const url = `${base}${base.includes('?') ? '&' : '?'}_=${Date.now()}`; // bust caches after admin saves
         try {
           const res = await fetch(url, { headers: { 'accept': 'application/json' } });
           if (!res.ok) continue;

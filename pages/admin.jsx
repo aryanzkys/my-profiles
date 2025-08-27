@@ -145,6 +145,26 @@ export default function AdminPage() {
     }
   };
 
+  const reloadFromBackend = async () => {
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+    const candidates = Array.from(new Set([
+      '/.netlify/functions/get-achievements',
+      `${basePath}/.netlify/functions/get-achievements`,
+      `${basePath}/api/get-achievements`,
+      '/api/get-achievements',
+    ]));
+    for (const url of candidates) {
+      try {
+        const res = await fetch(url, { headers: { accept: 'application/json' } });
+        if (!res.ok) continue;
+        const json = await res.json();
+        setData(deepClone(json));
+        setMessage((m) => (m ? `${m} • Reloaded from ${url}` : `Reloaded from ${url}`));
+        break;
+      } catch (_) {}
+    }
+  };
+
   const saveToDb = async () => {
     setSaving(true);
     setMessage('');
@@ -161,7 +181,7 @@ export default function AdminPage() {
         try {
           const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: payload });
           if (res.ok) {
-            setMessage(`Saved to MongoDB via ${url}`);
+            setMessage(`Saved via ${url}`);
             ok = true;
             break;
           } else {
@@ -173,6 +193,8 @@ export default function AdminPage() {
         }
       }
       if (!ok) throw new Error(lastErr || 'Unknown error');
+      // After save, reload from backend so UI reflects committed data (GitHub or DB)
+      await reloadFromBackend();
     } catch (e) {
       setMessage(`Save to DB failed: ${e.message}`);
     } finally {

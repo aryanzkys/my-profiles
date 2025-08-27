@@ -118,8 +118,11 @@ exports.handler = async function (event, context) {
   try {
     const body = event.body ? JSON.parse(event.body) : {};
 
-    // 0) GitHub (preferred on serverless if configured)
-    if (GITHUB_TOKEN && GITHUB_REPO) {
+    // 0) GitHub (preferred). If GITHUB_REPO is set, require GitHub to succeed to avoid mismatch with reads.
+    if (GITHUB_REPO) {
+      if (!GITHUB_TOKEN) {
+        throw new Error('GitHub storage configured (GITHUB_REPO set) but GITHUB_TOKEN is missing. Provide a token with Contents: Write.');
+      }
       const result = await saveWithGitHub(body);
       return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify(result) };
     }
