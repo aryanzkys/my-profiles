@@ -76,6 +76,8 @@ export default function MiniChess() {
   const [sanList, setSanList] = useState([]);
   const aiTimeout = useRef(null);
   const STORAGE_KEY = 'miniChess:v1';
+  const [showSaved, setShowSaved] = useState(false);
+  const toastTimeout = useRef(null);
 
   // Storage helpers with fallbacks
   const safeWrite = (key, value) => {
@@ -221,9 +223,18 @@ export default function MiniChess() {
   const saveProgressNow = () => {
     try {
       const payload = { fen: game.fen(), playSide, orientation, difficulty, sanList: game.history(), v: 1 };
-      safeWrite(STORAGE_KEY, JSON.stringify(payload));
+      const ok = safeWrite(STORAGE_KEY, JSON.stringify(payload));
+      // Show toast only for manual saves
+      if (ok) {
+        if (toastTimeout.current) clearTimeout(toastTimeout.current);
+        setShowSaved(true);
+        toastTimeout.current = setTimeout(() => setShowSaved(false), 1600);
+      }
     } catch {}
   };
+
+  // Cleanup toast timer on unmount
+  useEffect(() => () => { try { clearTimeout(toastTimeout.current); } catch {} }, []);
 
   const controls = (
     <div className="flex flex-wrap items-center gap-2">
@@ -296,6 +307,34 @@ export default function MiniChess() {
           )}
         </div>
       </div>
+      {showSaved && (
+        <div
+          className="fixed bottom-6 right-6 z-[1000]"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex items-center gap-3 rounded-xl border border-emerald-400/30 bg-emerald-500/15 backdrop-blur px-4 py-3 shadow-lg text-emerald-100 transition-all duration-300 animate-[fadeInUp_0.25s_ease-out]">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10Z" stroke="#34d399" strokeWidth="1.5" fill="rgba(52,211,153,0.08)"/>
+              <path d="M8 12.5l2.5 2.5L16 9.5" stroke="#34d399" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <div className="text-sm">
+              <div className="font-medium">Progress saved</div>
+              <div className="text-emerald-200/80 text-xs">Your chess game is stored locally.</div>
+            </div>
+            <button
+              onClick={() => setShowSaved(false)}
+              className="ml-2 rounded-md p-1 text-emerald-200/70 hover:text-emerald-100 hover:bg-emerald-500/10 transition"
+              aria-label="Close saved notification"
+              title="Close"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
