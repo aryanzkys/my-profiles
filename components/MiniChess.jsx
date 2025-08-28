@@ -78,6 +78,8 @@ export default function MiniChess() {
   const STORAGE_KEY = 'miniChess:v1';
   const [showSaved, setShowSaved] = useState(false);
   const toastTimeout = useRef(null);
+  const boardBoxRef = useRef(null);
+  const [boardSize, setBoardSize] = useState(320);
 
   // Storage helpers with fallbacks
   const safeWrite = (key, value) => {
@@ -188,6 +190,24 @@ export default function MiniChess() {
     } catch {}
   }, [game, playSide, orientation, difficulty]);
 
+  // Resize observer to fit board within available area (no scrolling)
+  useEffect(() => {
+    const el = boardBoxRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const cr = entry.contentRect;
+        // leave a small padding inside
+        const maxW = Math.max(0, cr.width - 8);
+        const maxH = Math.max(0, cr.height - 8);
+        const size = Math.floor(Math.max(140, Math.min(maxW, maxH)));
+        setBoardSize(size);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const newGame = (side = playSide) => {
     const g = new Chess();
     setGame(g);
@@ -260,11 +280,11 @@ export default function MiniChess() {
   );
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="h-full min-h-0 flex flex-col gap-3">
       {controls}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/30 p-2">
-          <div className="w-full" style={{ aspectRatio: '1/1', maxHeight: '60vh' }}>
+      <div className="flex-1 min-h-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/30 p-2 flex items-center justify-center">
+          <div ref={boardBoxRef} className="w-full h-full flex items-center justify-center">
             <Chessboard
               id="mini-chessboard"
               position={fen}
@@ -275,13 +295,14 @@ export default function MiniChess() {
               customDarkSquareStyle={{ backgroundColor: '#3b4e57' }}
               animationDuration={200}
               arePiecesDraggable={!thinking && !game.isGameOver()}
+              boardWidth={boardSize}
             />
           </div>
         </div>
-        <div className="rounded-xl border border-white/10 bg-black/30 p-3 flex flex-col gap-2">
+        <div className="rounded-xl border border-white/10 bg-black/30 p-3 flex flex-col gap-2 min-h-0">
           <div className="text-sm text-gray-200">{status}</div>
           <div className="text-xs text-gray-400">• Drag pieces to move. Promotions auto-queen.</div>
-          <div className="rounded-lg border border-white/10 bg-black/20 p-2 max-h-56 overflow-y-auto">
+          <div className="rounded-lg border border-white/10 bg-black/20 p-2 min-h-0 overflow-y-auto">
             {sanList.length === 0 ? (
               <div className="text-xs text-gray-500">No moves yet.</div>
             ) : (

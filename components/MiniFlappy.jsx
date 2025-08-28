@@ -5,6 +5,7 @@ export default function MiniFlappy() {
   const canvasRef = useRef(null);
   const rafRef = useRef(null);
   const runningRef = useRef(false);
+  const boxRef = useRef(null);
   const [running, setRunning] = useState(false);
   const [paused, setPaused] = useState(false);
   const [score, setScore] = useState(0);
@@ -49,24 +50,37 @@ export default function MiniFlappy() {
 
   const resizeCanvas = () => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    const parent = canvas.parentElement;
+    const parent = boxRef.current || (canvas ? canvas.parentElement : null);
+    if (!canvas || !parent) return;
     const rect = parent.getBoundingClientRect();
-  // Keep a 3:4 aspect ratio and fit within parent box
-  const targetW = rect.width;
-  const targetH = Math.min(rect.height, Math.floor((rect.width * 4) / 3));
+    // Fit 3:4 within parent box
+    let targetW = rect.width;
+    let targetH = Math.floor((targetW * 4) / 3);
+    if (targetH > rect.height) {
+      targetH = rect.height;
+      targetW = Math.floor((targetH * 3) / 4);
+    }
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.style.width = `${targetW}px`;
     canvas.style.height = `${targetH}px`;
-    canvas.width = Math.floor(targetW * dpr);
-    canvas.height = Math.floor(targetH * dpr);
+    canvas.width = Math.max(100, Math.floor(targetW * dpr));
+    canvas.height = Math.max(100, Math.floor(targetH * dpr));
   };
 
   useEffect(() => {
     resizeCanvas();
     const onResize = () => resizeCanvas();
     window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    const el = boxRef.current;
+    let ro;
+    if (el && 'ResizeObserver' in window) {
+      ro = new ResizeObserver(() => resizeCanvas());
+      ro.observe(el);
+    }
+    return () => {
+      window.removeEventListener('resize', onResize);
+      if (ro) ro.disconnect();
+    };
   }, []);
 
   const resetGame = () => {
@@ -343,10 +357,10 @@ export default function MiniFlappy() {
         </div>
       </div>
       <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/30 p-2">
-        <div className="w-full" style={{ aspectRatio: '3 / 4' }}>
+        <div ref={boxRef} className="w-full h-full flex items-center justify-center" style={{ aspectRatio: '3 / 4' }}>
           <canvas
             ref={canvasRef}
-            className="block w-full h-full touch-manipulation select-none"
+            className="block touch-manipulation select-none"
             onClick={flap}
             onTouchStart={(e) => { e.preventDefault(); flap(); }}
           />
