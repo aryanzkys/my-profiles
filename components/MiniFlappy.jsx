@@ -52,9 +52,9 @@ export default function MiniFlappy() {
     if (!canvas) return;
     const parent = canvas.parentElement;
     const rect = parent.getBoundingClientRect();
-    // Keep a pleasant 3:4 aspect ratio and fit within parent
-    const targetW = rect.width;
-    const targetH = Math.min(rect.height, Math.floor((rect.width * 4) / 3));
+  // Keep a 3:4 aspect ratio and fit within parent box
+  const targetW = rect.width;
+  const targetH = Math.min(rect.height, Math.floor((rect.width * 4) / 3));
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.style.width = `${targetW}px`;
     canvas.style.height = `${targetH}px`;
@@ -120,19 +120,21 @@ export default function MiniFlappy() {
   const togglePause = () => {
     if (!runningRef.current) return;
     const now = performance.now();
-    if (!paused) {
+    if (!pausedRef.current) {
       setPaused(true);
+      pausedRef.current = true;
     } else {
       // adjust lastPipe timestamp to avoid burst spawn
       STATE.current.lastPipe = now;
       setPaused(false);
+      pausedRef.current = false;
       loop(now);
     }
   };
 
   const loop = (t) => {
-    if (!runningRef.current) return;
-    if (paused) return;
+  if (!runningRef.current) return;
+  if (pausedRef.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -154,7 +156,7 @@ export default function MiniFlappy() {
     STATE.current.birdY += STATE.current.velY * dt;
 
     // Pipes spawn/move
-    if (STATE.current.pipes.length === 0 || t - STATE.current.lastPipe > STATE.current.pipeInterval) {
+  if (STATE.current.pipes.length === 0 || t - STATE.current.lastPipe > STATE.current.pipeInterval) {
       spawnPipe(H, dynamicGapPx);
       STATE.current.lastPipe = t;
     }
@@ -341,7 +343,7 @@ export default function MiniFlappy() {
         </div>
       </div>
       <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/30 p-2">
-        <div className="w-full" style={{ aspectRatio: '3 / 4', maxHeight: '70vh' }}>
+        <div className="w-full" style={{ aspectRatio: '3 / 4' }}>
           <canvas
             ref={canvasRef}
             className="block w-full h-full touch-manipulation select-none"

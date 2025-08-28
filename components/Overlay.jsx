@@ -202,7 +202,7 @@ function MiniGamesModal({ onClose }) {
           Close
         </button>
       </div>
-      <div className="mb-4 flex gap-2">
+  <div className="mb-4 flex gap-2">
         <button
           onClick={() => setTab('chess')}
           className={`px-3 py-1.5 rounded-lg border text-sm ${tab === 'chess' ? 'bg-white/15 border-white/20 text-white' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
@@ -212,7 +212,7 @@ function MiniGamesModal({ onClose }) {
           className={`px-3 py-1.5 rounded-lg border text-sm ${tab === 'flappy' ? 'bg-white/15 border-white/20 text-white' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
         >Flappy Bird</button>
       </div>
-      <div className="flex-1 min-h-0 overflow-auto pr-1">
+  <div className="flex-1 min-h-0 overflow-hidden">
         {tab === 'chess' ? <MiniChess /> : <MiniFlappy />}
       </div>
     </div>

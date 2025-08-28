@@ -260,11 +260,11 @@ export default function MiniChess() {
   );
 
   return (
-    <div className="flex flex-col gap-3 max-h-[70vh] overflow-auto pr-1">
+    <div className="flex flex-col gap-3">
       {controls}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/30 p-2">
-          <div className="w-full" style={{ aspectRatio: '1/1' }}>
+          <div className="w-full" style={{ aspectRatio: '1/1', maxHeight: '60vh' }}>
             <Chessboard
               id="mini-chessboard"
               position={fen}
