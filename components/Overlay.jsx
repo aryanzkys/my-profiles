@@ -160,7 +160,7 @@ export default function Overlay() {
         )}
       </AnimatePresence>
 
-      {/* Mini Games Modal (Tabbed) */}
+  {/* Mini Games Modal (Tabbed) */}
       <AnimatePresence>
         {miniOpen && (
           <motion.div
@@ -171,13 +171,13 @@ export default function Overlay() {
           >
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setMiniOpen(false)} />
             <motion.div
-              className="relative z-10 w-full max-w-5xl bg-neutral-900/95 border border-white/10 rounded-2xl p-4 sm:p-5 shadow-2xl"
+      className="relative z-10 w-[min(1000px,92vw)] max-h-[86vh] overflow-hidden bg-neutral-900/95 border border-white/10 rounded-2xl p-4 sm:p-5 shadow-2xl"
               initial={{ y: 24, scale: 0.98, opacity: 0 }}
               animate={{ y: 0, scale: 1, opacity: 1 }}
               exit={{ y: 12, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 260, damping: 22 }}
             >
-              <MiniGamesModal onClose={() => setMiniOpen(false)} />
+      <MiniGamesModal onClose={() => setMiniOpen(false)} />
             </motion.div>
           </motion.div>
         )}
@@ -189,7 +189,7 @@ export default function Overlay() {
 function MiniGamesModal({ onClose }) {
   const [tab, setTab] = useState('chess');
   return (
-    <div>
+    <div className="flex flex-col h-full">
       <div className="mb-3 flex items-center justify-between">
         <div>
           <h3 className="text-white text-lg font-semibold leading-tight">Mini Games</h3>
@@ -212,7 +212,9 @@ function MiniGamesModal({ onClose }) {
           className={`px-3 py-1.5 rounded-lg border text-sm ${tab === 'flappy' ? 'bg-white/15 border-white/20 text-white' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
         >Flappy Bird</button>
       </div>
-      {tab === 'chess' ? <MiniChess /> : <MiniFlappy />}
+      <div className="flex-1 min-h-0 overflow-auto pr-1">
+        {tab === 'chess' ? <MiniChess /> : <MiniFlappy />}
+      </div>
     </div>
   );
 }

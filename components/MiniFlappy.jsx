@@ -12,6 +12,8 @@ export default function MiniFlappy() {
   const [ready, setReady] = useState(true);
   const [muted, setMuted] = useState(false);
   const audioCtxRef = useRef(null);
+  const pausedRef = useRef(false);
+  const mutedRef = useRef(false);
 
   const STATE = useRef({
     birdY: 0,
@@ -41,14 +43,18 @@ export default function MiniFlappy() {
     } catch {}
   }, []);
 
+  // keep refs in sync for stable key handlers
+  useEffect(() => { pausedRef.current = paused; }, [paused]);
+  useEffect(() => { mutedRef.current = muted; }, [muted]);
+
   const resizeCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const parent = canvas.parentElement;
     const rect = parent.getBoundingClientRect();
-    // Keep a pleasant aspect ratio
+    // Keep a pleasant 3:4 aspect ratio and fit within parent
     const targetW = rect.width;
-    const targetH = Math.min(rect.height, rect.width * 1.6);
+    const targetH = Math.min(rect.height, Math.floor((rect.width * 4) / 3));
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.style.width = `${targetW}px`;
     canvas.style.height = `${targetH}px`;
@@ -232,18 +238,38 @@ export default function MiniFlappy() {
   // Input handlers
   useEffect(() => {
     const onKey = (e) => {
-      if (e.code === 'Space' || e.code === 'ArrowUp') {
+      const code = e.code;
+      if (code === 'Space' || code === 'ArrowUp') {
         e.preventDefault();
         flap();
-      } else if (e.code === 'KeyP') {
+        return;
+      }
+      if (code === 'KeyP') {
         e.preventDefault();
-        togglePause();
-      } else if (e.code === 'KeyM') {
+        if (!runningRef.current) return;
+        if (!pausedRef.current) {
+          setPaused(true);
+        } else {
+          const now = performance.now();
+          STATE.current.lastPipe = now;
+          setPaused(false);
+          loop(now);
+        }
+        return;
+      }
+      if (code === 'KeyM') {
         e.preventDefault();
-        toggleMute();
-      } else if (e.code === 'Enter' && !runningRef.current) {
+        setMuted((m) => {
+          const nm = !m;
+          try { localStorage.setItem(STORAGE_MUTE, nm ? '1' : '0'); } catch {}
+          return nm;
+        });
+        return;
+      }
+      if (code === 'Enter' && !runningRef.current) {
         e.preventDefault();
         start();
+        return;
       }
     };
     window.addEventListener('keydown', onKey, { passive: false });
@@ -259,7 +285,7 @@ export default function MiniFlappy() {
   };
 
   const playTone = (freq = 600, duration = 0.08, type = 'sine', gain = 0.15) => {
-    if (muted || !audioCtxRef.current) return;
+    if (mutedRef.current || !audioCtxRef.current) return;
     const ctx = audioCtxRef.current;
     const t0 = ctx.currentTime;
     const osc = ctx.createOscillator();
@@ -275,7 +301,7 @@ export default function MiniFlappy() {
   };
 
   const playNoise = (duration = 0.2, gain = 0.2) => {
-    if (muted || !audioCtxRef.current) return;
+    if (mutedRef.current || !audioCtxRef.current) return;
     const ctx = audioCtxRef.current;
     const t0 = ctx.currentTime;
     const bufferSize = Math.floor(ctx.sampleRate * duration);
@@ -315,7 +341,7 @@ export default function MiniFlappy() {
         </div>
       </div>
       <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/30 p-2">
-        <div className="w-full" style={{ aspectRatio: '3 / 4' }}>
+        <div className="w-full" style={{ aspectRatio: '3 / 4', maxHeight: '70vh' }}>
           <canvas
             ref={canvasRef}
             className="block w-full h-full touch-manipulation select-none"
