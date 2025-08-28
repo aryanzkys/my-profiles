@@ -356,7 +356,7 @@ export default function MiniFlappy() {
           <span>Best: <span className="text-white">{best}</span></span>
         </div>
       </div>
-      <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/30 p-2">
+      <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/30 p-2 min-h-[50vh]">
         <div ref={boxRef} className="w-full h-full flex items-center justify-center" style={{ aspectRatio: '3 / 4' }}>
           <canvas
             ref={canvasRef}

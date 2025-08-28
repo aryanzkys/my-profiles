@@ -170,8 +170,8 @@ export default function Overlay() {
             exit={{ opacity: 0 }}
           >
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setMiniOpen(false)} />
-            <motion.div
-      className="relative z-10 w-[min(1000px,92vw)] max-h-[86vh] overflow-hidden bg-neutral-900/95 border border-white/10 rounded-2xl p-4 sm:p-5 shadow-2xl"
+    <motion.div
+  className="relative z-10 w-[min(1280px,96vw)] max-h-[92vh] overflow-hidden bg-neutral-900/95 border border-white/10 rounded-2xl p-4 sm:p-5 shadow-2xl"
               initial={{ y: 24, scale: 0.98, opacity: 0 }}
               animate={{ y: 0, scale: 1, opacity: 1 }}
               exit={{ y: 12, opacity: 0 }}

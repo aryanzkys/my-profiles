@@ -282,7 +282,7 @@ export default function MiniChess() {
   return (
     <div className="h-full min-h-0 flex flex-col gap-3">
       {controls}
-      <div className="flex-1 min-h-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+  <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] sm:grid-cols-2 gap-3">
         <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/30 p-2 flex items-center justify-center">
           <div ref={boardBoxRef} className="w-full h-full flex items-center justify-center">
             <Chessboard
