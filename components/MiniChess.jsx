@@ -80,6 +80,7 @@ export default function MiniChess() {
   const toastTimeout = useRef(null);
   const boardBoxRef = useRef(null);
   const [boardSize, setBoardSize] = useState(320);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Storage helpers with fallbacks
   const safeWrite = (key, value) => {
@@ -197,10 +198,10 @@ export default function MiniChess() {
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const cr = entry.contentRect;
-        // leave a small padding inside
-        const maxW = Math.max(0, cr.width - 8);
-        const maxH = Math.max(0, cr.height - 8);
-        const size = Math.floor(Math.max(140, Math.min(maxW, maxH)));
+        // Fit square board within available box
+        const maxW = Math.max(0, Math.floor(cr.width));
+        const maxH = Math.max(0, Math.floor(cr.height));
+        const size = Math.max(140, Math.min(maxW, maxH));
         setBoardSize(size);
       }
     });
@@ -256,35 +257,40 @@ export default function MiniChess() {
   // Cleanup toast timer on unmount
   useEffect(() => () => { try { clearTimeout(toastTimeout.current); } catch {} }, []);
 
-  const controls = (
-    <div className="flex flex-wrap items-center gap-2">
-      <button className="px-3 py-1.5 rounded-md bg-white/10 border border-white/20 text-sm hover:bg-white/15" onClick={() => newGame(playSide)}>New Game</button>
-  <button className="px-3 py-1.5 rounded-md bg-white/10 border border-white/20 text-sm hover:bg-white/15" onClick={saveProgressNow} title="Manually save your progress">Save Progress</button>
-  <button className="px-3 py-1.5 rounded-md bg-white/10 border border-white/20 text-sm hover:bg-white/15" onClick={resetProgress} title="Clear saved progress">Reset Progress</button>
-      <button className={`px-3 py-1.5 rounded-md text-sm border ${orientation === 'white' ? 'bg-cyan-500/20 text-cyan-100 border-cyan-400/30' : 'bg-white/10 border-white/20 text-gray-200'}`} onClick={() => setOrientation('white')}>White view</button>
-      <button className={`px-3 py-1.5 rounded-md text-sm border ${orientation === 'black' ? 'bg-cyan-500/20 text-cyan-100 border-cyan-400/30' : 'bg-white/10 border-white/20 text-gray-200'}`} onClick={() => setOrientation('black')}>Black view</button>
-      <div className="ml-auto flex items-center gap-2">
-        <label className="text-xs text-gray-300">Side</label>
-        <select value={playSide} onChange={(e) => newGame(e.target.value)} className="bg-white/5 border border-white/10 rounded-md text-sm text-gray-200 px-2 py-1 outline-none">
-          <option value="white">White</option>
-          <option value="black">Black</option>
-        </select>
-        <label className="text-xs text-gray-300">Difficulty</label>
-        <select value={difficulty} onChange={(e) => setDifficulty(Number(e.target.value))} className="bg-white/5 border border-white/10 rounded-md text-sm text-gray-200 px-2 py-1 outline-none">
-          <option value={1}>Easy</option>
-          <option value={2}>Medium</option>
-          <option value={3}>Hard</option>
-        </select>
+  // compact settings UI inside moves panel
+  const settingsPanel = (
+    <div className="rounded-lg border border-white/10 bg-black/10 p-2">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button className="px-2.5 py-1 rounded-md bg-white/10 border border-white/20 text-xs hover:bg-white/15" onClick={() => newGame(playSide)}>New Game</button>
+          <button className="px-2.5 py-1 rounded-md bg-white/10 border border-white/20 text-xs hover:bg-white/15" onClick={saveProgressNow} title="Manually save your progress">Save</button>
+          <button className="px-2.5 py-1 rounded-md bg-white/10 border border-white/20 text-xs hover:bg-white/15" onClick={resetProgress} title="Clear saved progress">Reset</button>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 justify-end">
+          <button className={`px-2.5 py-1 rounded-md text-xs border ${orientation === 'white' ? 'bg-cyan-500/20 text-cyan-100 border-cyan-400/30' : 'bg-white/10 border-white/20 text-gray-200'}`} onClick={() => setOrientation('white')}>White</button>
+          <button className={`px-2.5 py-1 rounded-md text-xs border ${orientation === 'black' ? 'bg-cyan-500/20 text-cyan-100 border-cyan-400/30' : 'bg-white/10 border-white/20 text-gray-200'}`} onClick={() => setOrientation('black')}>Black</button>
+          <label className="text-[11px] text-gray-300">Side</label>
+          <select value={playSide} onChange={(e) => newGame(e.target.value)} className="bg-white/5 border border-white/10 rounded-md text-xs text-gray-200 px-2 py-1 outline-none">
+            <option value="white">White</option>
+            <option value="black">Black</option>
+          </select>
+          <label className="text-[11px] text-gray-300">Level</label>
+          <select value={difficulty} onChange={(e) => setDifficulty(Number(e.target.value))} className="bg-white/5 border border-white/10 rounded-md text-xs text-gray-200 px-2 py-1 outline-none">
+            <option value={1}>Easy</option>
+            <option value={2}>Medium</option>
+            <option value={3}>Hard</option>
+          </select>
+        </div>
       </div>
     </div>
   );
 
   return (
     <div className="h-full min-h-0 flex flex-col gap-3">
-      {controls}
-  <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] sm:grid-cols-2 gap-3">
-        <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/30 p-2 flex items-center justify-center">
-          <div ref={boardBoxRef} className="w-full h-full flex items-center justify-center">
+  <div className="flex-1 min-h-0 grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_320px] lg:grid-cols-[minmax(0,1fr)_360px] gap-3">
+        <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/30 p-2">
+          <div className="w-full h-full grid place-items-center" style={{ aspectRatio: '1 / 1' }}>
+            <div ref={boardBoxRef} className="w-full h-full flex items-center justify-center">
             <Chessboard
               id="mini-chessboard"
               position={fen}
@@ -297,12 +303,24 @@ export default function MiniChess() {
               arePiecesDraggable={!thinking && !game.isGameOver()}
               boardWidth={boardSize}
             />
+            </div>
           </div>
         </div>
         <div className="rounded-xl border border-white/10 bg-black/30 p-3 flex flex-col gap-2 min-h-0">
-          <div className="text-sm text-gray-200">{status}</div>
+          <div className="flex items-center gap-2">
+            <div className="text-sm text-gray-200 flex-1">{status}</div>
+            <button
+              onClick={() => setShowSettings((v) => !v)}
+              className="px-2.5 py-1 rounded-md bg-white/10 border border-white/20 text-xs text-gray-200 hover:bg-white/15"
+              title="Settings"
+              aria-expanded={showSettings}
+            >
+              Settings
+            </button>
+          </div>
           <div className="text-xs text-gray-400">• Drag pieces to move. Promotions auto-queen.</div>
-          <div className="rounded-lg border border-white/10 bg-black/20 p-2 min-h-0 overflow-y-auto">
+          {showSettings && settingsPanel}
+          <div className="rounded-lg border border-white/10 bg-black/20 p-2 min-h-0 overflow-y-auto break-words pr-1">
             {sanList.length === 0 ? (
               <div className="text-xs text-gray-500">No moves yet.</div>
             ) : (
