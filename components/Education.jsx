@@ -1,6 +1,7 @@
 import { motion, useScroll, useSpring } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import defaultEducation from '../data/education.json';
+import { useData } from './DataContext';
 
 const fallbackTimeline = defaultEducation;
 
@@ -10,7 +11,8 @@ const itemVariants = {
 };
 
 export default function Education() {
-  const [timeline, setTimeline] = useState(fallbackTimeline);
+  const { education: prefetched, refreshEducation } = useData();
+  const [timeline, setTimeline] = useState(prefetched || fallbackTimeline);
   const scrollRef = useRef(null);
   const listRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: listRef, container: scrollRef, offset: ['start 0.9', 'end 0.1'] });
@@ -77,29 +79,10 @@ export default function Education() {
     };
   }, [cursorY]);
 
+  // Sync with prefetched updates
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-      const candidates = Array.from(new Set([
-        '/.netlify/functions/get-education',
-        `${basePath}/.netlify/functions/get-education`,
-      ]));
-      for (const url of candidates) {
-        try {
-          const res = await fetch(url, { headers: { accept: 'application/json' } });
-          if (!res.ok) continue;
-          const json = await res.json();
-          if (!cancelled && Array.isArray(json) && json.length) {
-            setTimeline(json);
-            break;
-          }
-        } catch (_) {}
-      }
-    }
-    load();
-    return () => { cancelled = true; };
-  }, []);
+    if (Array.isArray(prefetched) && prefetched.length) setTimeline(prefetched);
+  }, [prefetched]);
 
   return (
     <motion.div

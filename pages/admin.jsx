@@ -346,9 +346,11 @@ export default function AdminPage() {
           lastErr = `Request failed on ${url}: ${e.message}`;
         }
       }
-      if (!ok) throw new Error(lastErr || 'Unknown error');
-      // After save, reload from backend so UI reflects committed data (GitHub or DB)
-      await reloadFromBackend();
+  if (!ok) throw new Error(lastErr || 'Unknown error');
+  // After save, notify app to refresh caches immediately
+  window.dispatchEvent(new Event('data:refresh:achievements'));
+  // Also reload admin view
+  await reloadFromBackend();
     } catch (e) {
       setMessage(`Save to DB failed: ${e.message}`);
     } finally {
@@ -394,8 +396,9 @@ export default function AdminPage() {
           else { lastErr = `HTTP ${res.status} on ${url}: ${await res.text()}`; }
         } catch (e) { lastErr = `Request failed on ${url}: ${e.message}`; }
       }
-      if (!ok) throw new Error(lastErr || 'Unknown error');
-      await reloadEducation();
+  if (!ok) throw new Error(lastErr || 'Unknown error');
+  window.dispatchEvent(new Event('data:refresh:education'));
+  await reloadEducation();
     } catch (e) { setMessage(`Save education failed: ${e.message}`); }
     finally { setSaving(false); setSavingKind(null); }
   };
@@ -427,8 +430,9 @@ export default function AdminPage() {
           else { lastErr = `HTTP ${res.status} on ${url}: ${await res.text()}`; }
         } catch (e) { lastErr = `Request failed on ${url}: ${e.message}`; }
       }
-      if (!ok) throw new Error(lastErr || 'Unknown error');
-      await reloadOrganizations();
+  if (!ok) throw new Error(lastErr || 'Unknown error');
+  window.dispatchEvent(new Event('data:refresh:organizations'));
+  await reloadOrganizations();
     } catch (e) { setMessage(`Save organizations failed: ${e.message}`); }
     finally { setSaving(false); setSavingKind(null); }
   };

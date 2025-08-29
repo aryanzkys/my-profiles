@@ -1,43 +1,21 @@
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
+import { useData } from './DataContext';
 import { ExternalLink, Eye, X } from 'lucide-react';
 import achievementsData from '../data/achievements.json';
 
 // State is initialized from local JSON, but will be overridden by remote data if available
 // Remote sources tried in order: Netlify Function, Next.js dev API
 export default function Achievements() {
-  const [achievementsByYear, setAchievements] = useState(achievementsData);
+  const { achievementsByYear: prefetched, refreshAchievements } = useData();
+  const [achievementsByYear, setAchievements] = useState(prefetched || achievementsData);
   const years = useMemo(() => Object.keys(achievementsByYear).map(Number).sort((a, b) => b - a), [achievementsByYear]);
   const [openCert, setOpenCert] = useState(null); // { url, title }
 
+  // Keep state in sync if prefetched data arrives later or updates
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-      const candidates = Array.from(new Set([
-        '/.netlify/functions/get-achievements',
-        `${basePath}/.netlify/functions/get-achievements`,
-        `${basePath}/api/get-achievements`,
-        '/api/get-achievements',
-      ]));
-      for (const base of candidates) {
-        const url = `${base}${base.includes('?') ? '&' : '?'}_=${Date.now()}`; // bust caches after admin saves
-        try {
-          const res = await fetch(url, { headers: { 'accept': 'application/json' } });
-          if (!res.ok) continue;
-          const json = await res.json();
-          if (!cancelled && json && typeof json === 'object') {
-            setAchievements(json);
-            break;
-          }
-        } catch (_) {
-          // ignore and try next
-        }
-      }
-    }
-    load();
-    return () => { cancelled = true; };
-  }, []);
+    if (prefetched && typeof prefetched === 'object') setAchievements(prefetched);
+  }, [prefetched]);
 
 const itemVariants = {
   hidden: { opacity: 0, y: 10 },

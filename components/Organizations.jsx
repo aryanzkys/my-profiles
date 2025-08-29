@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import defaultOrganizations from '../data/organizations.json';
+import { useData } from './DataContext';
 
 const fallbackOrganizations = defaultOrganizations;
 
@@ -10,7 +11,8 @@ const itemVariants = {
 };
 
 export default function Organizations() {
-  const [organizations, setOrganizations] = useState(fallbackOrganizations);
+  const { organizations: prefetched, refreshOrganizations } = useData();
+  const [organizations, setOrganizations] = useState(prefetched || fallbackOrganizations);
   const [filter, setFilter] = useState('all'); // all | active | past
   const [query, setQuery] = useState('');
 
@@ -40,29 +42,10 @@ export default function Organizations() {
     </button>
   );
 
+  // Sync with prefetched updates
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-      const candidates = Array.from(new Set([
-        '/.netlify/functions/get-organizations',
-        `${basePath}/.netlify/functions/get-organizations`,
-      ]));
-      for (const url of candidates) {
-        try {
-          const res = await fetch(url, { headers: { accept: 'application/json' } });
-          if (!res.ok) continue;
-          const json = await res.json();
-          if (!cancelled && Array.isArray(json)) {
-            setOrganizations(json);
-            break;
-          }
-        } catch (_) {}
-      }
-    }
-    load();
-    return () => { cancelled = true; };
-  }, []);
+    if (Array.isArray(prefetched)) setOrganizations(prefetched);
+  }, [prefetched]);
 
   return (
     <motion.div
