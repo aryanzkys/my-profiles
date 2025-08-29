@@ -5,6 +5,7 @@ import educationData from '../data/education.json';
 import orgsData from '../data/organizations.json';
 import { AuthProvider, useAuth } from '../components/AuthProvider';
 import { useRouter } from 'next/router';
+import { getAuth, updateProfile, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 
 function deepClone(obj) {
   return JSON.parse(JSON.stringify(obj));
@@ -28,6 +29,12 @@ function AdminInner() {
   const router = useRouter();
   const [showSignout, setShowSignout] = useState(false);
   const [signoutBusy, setSignoutBusy] = useState(false);
+  // Admin Profile state
+  const [displayName, setDisplayName] = useState('');
+  const [pwCurrent, setPwCurrent] = useState('');
+  const [pwNew, setPwNew] = useState('');
+  const [pwConfirm, setPwConfirm] = useState('');
+  const [pwVisible, setPwVisible] = useState({ current: false, next: false, confirm: false });
   const [selected, setSelected] = useState(null);
   const mouseRef = useRef({ x: 0, y: 0 });
 
@@ -90,6 +97,13 @@ function AdminInner() {
     })();
   }, []);
 
+  // Initialize profile fields from user
+  useEffect(() => {
+    if (user) {
+      setDisplayName(user.displayName || '');
+    }
+  }, [user]);
+
   useEffect(() => {
     const onKey = (e) => {
       if (!user) return;
@@ -101,6 +115,7 @@ function AdminInner() {
           if (tab === 'achievements') saveToDb();
           else if (tab === 'education') saveEdu();
           else if (tab === 'organizations') saveOrgs();
+          else if (tab === 'admin-profile') onSaveDisplayName();
         }
       }
       if (!e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -110,7 +125,7 @@ function AdminInner() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [user, tab, data, edu, orgs]);
+  }, [user, tab, data, edu, orgs, displayName, pwCurrent, pwNew, pwConfirm]);
 
   const onMouseMove = useCallback((e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -379,6 +394,41 @@ function AdminInner() {
     } catch (e) { setMessage(`Import failed: ${e.message}`); }
   };
 
+  const onSaveDisplayName = async () => {
+    if (!user) return;
+    if (!displayName || displayName.length < 2) { setMessage('Name too short'); return; }
+    setSaving(true); setSavingKind('profile'); setMessage('');
+    try {
+      const auth = getAuth();
+      await updateProfile(auth.currentUser, { displayName });
+      triggerSuccess('Profile name updated');
+    } catch (e) {
+      setMessage(`Save profile failed: ${e?.message || 'Unknown error'}`);
+    } finally { setSaving(false); setSavingKind(null); }
+  };
+
+  const onChangePassword = async () => {
+    if (!user) return;
+    if (!pwNew || pwNew.length < 8) { setMessage('New password must be at least 8 characters'); return; }
+    if (pwNew !== pwConfirm) { setMessage('New password and confirmation do not match'); return; }
+    setSaving(true); setSavingKind('password'); setMessage('');
+    try {
+      const auth = getAuth();
+      const current = auth.currentUser;
+      // If provider is email, reauthenticate with current password
+      if (user?.providerData?.some(p => p.providerId === 'password')) {
+        if (!pwCurrent) { setMessage('Enter your current password'); setSaving(false); setSavingKind(null); return; }
+        const cred = EmailAuthProvider.credential(user.email, pwCurrent);
+        await reauthenticateWithCredential(current, cred);
+      }
+      await updatePassword(current, pwNew);
+      setPwCurrent(''); setPwNew(''); setPwConfirm('');
+      triggerSuccess('Password updated');
+    } catch (e) {
+      setMessage(`Password update failed: ${e?.message || 'Unknown error'}`);
+    } finally { setSaving(false); setSavingKind(null); }
+  };
+
   return (
     <div className="min-h-screen relative text-gray-100" onMouseMove={onMouseMove}>
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
@@ -431,6 +481,7 @@ function AdminInner() {
                   if (tab === 'achievements') saveToDb();
                   else if (tab === 'education') saveEdu();
                   else if (tab === 'organizations') saveOrgs();
+                  else if (tab === 'admin-profile') onSaveDisplayName();
                 }}
                 disabled={saving}
                 className="px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30"
@@ -442,9 +493,9 @@ function AdminInner() {
             </div>
           </div>
           <div className="mb-4 flex gap-2">
-            {['achievements','education','organizations'].map((t) => (
+            {['achievements','education','organizations','admin-profile'].map((t) => (
               <button key={t} onClick={() => setTab(t)} className={`px-3 py-2 rounded-md border relative overflow-hidden ${tab===t? 'bg-cyan-500/20 border-cyan-400/40 text-cyan-200':'bg-white/5 border-white/10 hover:bg-white/10'}`}>
-                <span className="relative z-10">{t.charAt(0).toUpperCase()+t.slice(1)}</span>
+                <span className="relative z-10">{t==='admin-profile' ? 'Admin Profile' : t.charAt(0).toUpperCase()+t.slice(1)}</span>
                 <span className="absolute inset-0 opacity-0 group-hover:opacity-100" />
               </button>
             ))}
@@ -496,7 +547,8 @@ function AdminInner() {
                         ) : (
                           (() => {
                             const item = (data[selected.year]||[])[selected.idx] || {};
-                            const url = item.cert; const preview = getDrivePreviewUrl(url);
+                            const url = item.cert;
+                            const preview = getDrivePreviewUrl(url);
                             return preview ? (
                               <div className="aspect-video rounded-md overflow-hidden border border-white/10">
                                 <iframe src={preview} className="w-full h-full" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture" />
@@ -587,6 +639,74 @@ function AdminInner() {
               </div>
             </section>
           )}
+
+          {tab === 'admin-profile' && (
+            <section className="bg-white/5 border border-white/10 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-white">Admin Profile</h2>
+                <div className="text-xs text-gray-400">Customize your dashboard identity & credentials</div>
+              </div>
+
+              {/* Display Name Card */}
+              <motion.div layout whileHover={{ scale: 1.01 }} className="bg-black/30 border border-white/10 rounded-lg p-4 mb-4 relative overflow-hidden">
+                <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full" style={{ background: 'radial-gradient(circle at center, rgba(34,211,238,.18), transparent 70%)' }} />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm text-cyan-300 font-medium">Profile Name</div>
+                    <div className="text-xs text-gray-400">Shown on the welcome screen</div>
+                  </div>
+                </div>
+                <div className="mt-3 grid gap-2 md:grid-cols-[minmax(0,1fr)_auto] items-center">
+                  <input value={displayName} onChange={(e)=>setDisplayName(e.target.value)} placeholder="Your name" className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2 outline-none focus:ring-1 focus:ring-cyan-400" />
+                  <button
+                    onClick={() => onSaveDisplayName()}
+                    disabled={saving}
+                    className="md:ml-3 px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30 disabled:opacity-60"
+                  >
+                    {saving && savingKind==='profile' ? 'Saving Profile…' : 'Save Name'}
+                  </button>
+                </div>
+              </motion.div>
+
+              {/* Credentials Card */}
+              <motion.div layout whileHover={{ scale: 1.01 }} className="bg-black/30 border border-white/10 rounded-lg p-4">
+                <div className="text-sm text-cyan-300 font-medium">Credentials</div>
+                <div className="text-xs text-gray-400">Your email is visible. For security, the current password can’t be displayed—use Change Password.</div>
+                <div className="mt-3 grid gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-300 mb-1">Email</label>
+                    <input value={user?.email || ''} readOnly className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2 text-gray-400" />
+                  </div>
+                  <div className="grid md:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs text-gray-300 mb-1">Current password</label>
+                      <div className="relative">
+                        <input type={pwVisible.current?'text':'password'} value={pwCurrent} onChange={(e)=>setPwCurrent(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2 pr-10" placeholder="••••••••" />
+                        <button type="button" onClick={()=>setPwVisible(v=>({...v,current:!v.current}))} className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-200">{pwVisible.current?'Hide':'Show'}</button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-300 mb-1">New password</label>
+                      <div className="relative">
+                        <input type={pwVisible.next?'text':'password'} value={pwNew} onChange={(e)=>setPwNew(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2 pr-10" placeholder="At least 8 characters" />
+                        <button type="button" onClick={()=>setPwVisible(v=>({...v,next:!v.next}))} className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-200">{pwVisible.next?'Hide':'Show'}</button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-300 mb-1">Confirm new password</label>
+                      <div className="relative">
+                        <input type={pwVisible.confirm?'text':'password'} value={pwConfirm} onChange={(e)=>setPwConfirm(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2 pr-10" placeholder="Repeat new password" />
+                        <button type="button" onClick={()=>setPwVisible(v=>({...v,confirm:!v.confirm}))} className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-200">{pwVisible.confirm?'Hide':'Show'}</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-2">
+                    <button onClick={onChangePassword} disabled={saving} className="px-3 py-2 rounded-md bg-fuchsia-600/20 border border-fuchsia-500/40 text-fuchsia-200 hover:bg-fuchsia-600/30 disabled:opacity-60">{saving && savingKind==='password' ? 'Updating Password…' : 'Change Password'}</button>
+                  </div>
+                </div>
+              </motion.div>
+            </section>
+          )}
         </div>
       </div>
 
@@ -608,7 +728,7 @@ function AdminInner() {
                 <motion.div className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-fuchsia-300 shadow-[0_0_10px_rgba(232,121,249,0.9)]" animate={{ rotate: -360 }} transition={{ repeat: Infinity, duration: 3.2, ease: 'linear' }} style={{ originY: '44px', originX: '0px' }} />
               </div>
               <div className="mt-4 text-cyan-200 font-medium tracking-wide">
-                Saving {savingKind==='achievements'?'Achievements':savingKind==='education'?'Education':savingKind==='organizations'?'Organizations':'Data'} to DB
+                {savingKind==='password' ? 'Updating Password' : savingKind==='profile' ? 'Saving Profile' : `Saving ${savingKind==='achievements'?'Achievements':savingKind==='education'?'Education':savingKind==='organizations'?'Organizations':'Data'} to DB`}
                 <motion.span
                   className="inline-block ml-1"
                   animate={{ opacity: [0.4, 1, 0.4] }}
@@ -617,7 +737,7 @@ function AdminInner() {
                   ...
                 </motion.span>
               </div>
-              <div className="mt-1 text-xs text-cyan-200/70">Please keep this tab open while we write {savingKind==='achievements'?'Achievements':savingKind==='education'?'Education':savingKind==='organizations'?'Organizations':'data'} to the database</div>
+              <div className="mt-1 text-xs text-cyan-200/70">{savingKind==='password' ? 'Please keep this tab open while we update your password' : savingKind==='profile' ? 'Please keep this tab open while we update your profile' : `Please keep this tab open while we write ${savingKind==='achievements'?'Achievements':savingKind==='education'?'Education':savingKind==='organizations'?'Organizations':'data'} to the database`}</div>
             </motion.div>
           </motion.div>
         )}
