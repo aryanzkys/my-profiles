@@ -10,6 +10,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
+  reload,
 } from 'firebase/auth';
 
 const AuthCtx = createContext(null);
@@ -134,7 +135,23 @@ export function AuthProvider({ children }) {
 
   const logout = () => signOut(getAuth());
 
-  const value = useMemo(() => ({ user, loading, initError, themeDark, setThemeDark, signInWithGoogle, emailLogin, emailSignup, logout }), [user, loading, initError, themeDark]);
+  // Force-refresh the current user and update context (use after updateProfile, etc.)
+  const refreshUser = async () => {
+    try {
+      const auth = getAuth();
+      if (auth.currentUser) {
+        await reload(auth.currentUser);
+        // Clone to ensure React detects a state change even if Firebase mutates the same object
+        setUser({ ...auth.currentUser });
+        return auth.currentUser;
+      }
+    } catch (e) {
+      console.warn('refreshUser failed:', e?.message || e);
+    }
+    return null;
+  };
+
+  const value = useMemo(() => ({ user, loading, initError, themeDark, setThemeDark, signInWithGoogle, emailLogin, emailSignup, logout, refreshUser }), [user, loading, initError, themeDark]);
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }
 

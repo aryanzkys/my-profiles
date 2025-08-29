@@ -25,7 +25,7 @@ function AdminInner() {
   const [message, setMessage] = useState('');
   const [success, setSuccess] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const router = useRouter();
   const [showSignout, setShowSignout] = useState(false);
   const [signoutBusy, setSignoutBusy] = useState(false);
@@ -401,6 +401,7 @@ function AdminInner() {
     try {
       const auth = getAuth();
       await updateProfile(auth.currentUser, { displayName });
+      await refreshUser();
       triggerSuccess('Profile name updated');
     } catch (e) {
       setMessage(`Save profile failed: ${e?.message || 'Unknown error'}`);
