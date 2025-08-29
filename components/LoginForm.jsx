@@ -2,9 +2,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from './AuthProvider';
+import { useRouter } from 'next/router';
 
 export default function LoginForm() {
-  const { signInWithGoogle, emailLogin, emailSignup, themeDark, setThemeDark, loading, user } = useAuth();
+  const { signInWithGoogle, emailLogin, emailSignup, themeDark, setThemeDark, loading, user, initError } = useAuth();
+  const router = useRouter();
   const [mode, setMode] = useState('login'); // login | signup
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -40,6 +42,25 @@ export default function LoginForm() {
     setBusy(true); setMsg('');
     try { await signInWithGoogle(); } catch (err) { setMsg(err?.message || 'Gagal login Google'); } finally { setBusy(false); }
   };
+
+  // Redirect when authenticated
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace('/admin-dashboard');
+    }
+  }, [loading, user, router]);
+
+  if (initError) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-black text-gray-100 p-6">
+        <div className="max-w-md w-full rounded-xl border border-red-500/40 bg-red-500/10 p-6 text-center">
+          <div className="text-lg font-semibold text-red-200 mb-2">Auth configuration error</div>
+          <div className="text-sm text-red-300 mb-4">{initError}</div>
+          <div className="text-xs text-gray-400">Check your environment variables in .env.local and rebuild.</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen grid place-items-center bg-black relative text-gray-100">

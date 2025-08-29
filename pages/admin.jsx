@@ -613,11 +613,22 @@ function AdminInner() {
 }
 
 function AdminGate() {
-  const { user, loading } = useAuth();
+  const { user, loading, initError } = useAuth();
   const router = useRouter();
   useEffect(() => {
-    if (!loading && !user) router.replace('/login');
-  }, [loading, user, router]);
+    if (!loading && !user && !initError) router.replace('/login');
+  }, [loading, user, initError, router]);
+  if (initError) {
+    return (
+      <div className="min-h-[40vh] grid place-items-center text-center p-6">
+        <div className="max-w-md w-full rounded-xl border border-red-500/40 bg-red-500/10 p-6">
+          <div className="text-lg font-semibold text-red-200 mb-2">Auth configuration error</div>
+          <div className="text-sm text-red-300 mb-2">{initError}</div>
+          <div className="text-xs text-gray-400">Check .env.local Firebase keys and rebuild.</div>
+        </div>
+      </div>
+    );
+  }
   if (!user) {
     return <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="max-w-md mx-auto mt-24 text-center text-gray-300">Redirecting to login…</motion.div>;
   }

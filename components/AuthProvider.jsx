@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { initializeApp, getApps } from 'firebase/app';
+import { getAnalytics, isSupported as analyticsSupported } from 'firebase/analytics';
 import {
   getAuth,
   GoogleAuthProvider,
@@ -17,6 +18,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [themeDark, setThemeDark] = useState(true);
+  const [initError, setInitError] = useState(null);
   const recaptchaSiteKeyV3 = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY_V3 || '';
   const recaptchaVerifiedRef = useRef(false);
 
@@ -27,14 +29,33 @@ export function AuthProvider({ children }) {
       authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
       projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
       appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
     };
-    if (!getApps().length) initializeApp(cfg);
-    const auth = getAuth();
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
+    try {
+      // Validate minimal config to prevent client-side crash
+      if (!cfg.apiKey || !cfg.authDomain || !cfg.projectId || !cfg.appId) {
+        throw new Error('Firebase config missing. Set NEXT_PUBLIC_FIREBASE_API_KEY, AUTH_DOMAIN, PROJECT_ID, and APP_ID.');
+      }
+      if (!getApps().length) {
+        const app = initializeApp(cfg);
+        // Optional analytics in browser only
+        if (typeof window !== 'undefined') {
+          analyticsSupported().then((ok) => { if (ok && process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID) getAnalytics(app); }).catch(() => {});
+        }
+      }
+      const auth = getAuth();
+      const unsub = onAuthStateChanged(auth, (u) => {
+        setUser(u);
+        setLoading(false);
+      });
+      return () => unsub();
+    } catch (e) {
+      console.error('Auth init failed:', e);
+      setInitError(e?.message || 'Auth init failed');
       setLoading(false);
-    });
-    return () => unsub();
+      return () => {};
+    }
   }, []);
 
   // reCAPTCHA v3 loader (optional but recommended)
@@ -57,10 +78,28 @@ export function AuthProvider({ children }) {
           return;
         }
         window.grecaptcha.ready(() => {
-          window.grecaptcha.execute(recaptchaSiteKeyV3, { action }).then((token) => {
-            // In a full implementation, send token to server for verification.
-            recaptchaVerifiedRef.current = !!token;
-            resolve(true);
+          window.grecaptcha.execute(recaptchaSiteKeyV3, { action }).then(async (token) => {
+            try {
+              const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+              const candidates = Array.from(new Set([
+                '/.netlify/functions/verify-recaptcha',
+                `${basePath}/.netlify/functions/verify-recaptcha`,
+              ]));
+              let verified = false;
+              for (const url of candidates) {
+                try {
+                  const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token, action }) });
+                  if (res.ok) {
+                    const j = await res.json();
+                    if (j && j.ok) { verified = true; break; }
+                  }
+                } catch {}
+              }
+              recaptchaVerifiedRef.current = verified;
+              resolve(verified);
+            } catch {
+              resolve(false);
+            }
           }).catch(() => resolve(false));
         });
       };
@@ -69,6 +108,7 @@ export function AuthProvider({ children }) {
   };
 
   const signInWithGoogle = async () => {
+  if (initError) throw new Error(initError);
     const ok = await runRecaptcha('google_login');
     if (!ok) throw new Error('reCAPTCHA failed');
     const auth = getAuth();
@@ -77,6 +117,7 @@ export function AuthProvider({ children }) {
   };
 
   const emailLogin = async (email, password) => {
+  if (initError) throw new Error(initError);
     const ok = await runRecaptcha('email_login');
     if (!ok) throw new Error('reCAPTCHA failed');
     const auth = getAuth();
@@ -84,6 +125,7 @@ export function AuthProvider({ children }) {
   };
 
   const emailSignup = async (email, password) => {
+  if (initError) throw new Error(initError);
     const ok = await runRecaptcha('email_signup');
     if (!ok) throw new Error('reCAPTCHA failed');
     const auth = getAuth();
@@ -92,7 +134,7 @@ export function AuthProvider({ children }) {
 
   const logout = () => signOut(getAuth());
 
-  const value = useMemo(() => ({ user, loading, themeDark, setThemeDark, signInWithGoogle, emailLogin, emailSignup, logout }), [user, loading, themeDark]);
+  const value = useMemo(() => ({ user, loading, initError, themeDark, setThemeDark, signInWithGoogle, emailLogin, emailSignup, logout }), [user, loading, initError, themeDark]);
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }
 
