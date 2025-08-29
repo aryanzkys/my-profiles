@@ -12,9 +12,10 @@ export default function About() {
   const rotateX = useTransform(sy, [0, 1], [8, -8]);
   const [glow, setGlow] = useState({ x: '50%', y: '50%' });
   const audioCtxRef = useRef(null);
+  const [avatarIdx, setAvatarIdx] = useState(0);
 
   // Tiny audio blip on hover
-  const playBlip = (freq = 620, dur = 0.07, vol = 0.15) => {
+  const playBlip = (freq = 620, dur = 0.18, vol = 0.1) => {
     try {
       // Lazy init
       if (!audioCtxRef.current && typeof window !== 'undefined') {
@@ -24,16 +25,36 @@ export default function About() {
       const ctx = audioCtxRef.current;
       if (!ctx) return;
       const t0 = ctx.currentTime;
-      const osc = ctx.createOscillator();
+      // Main tone (triangle) + soft overtone (sine one octave up)
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
+      const lp = ctx.createBiquadFilter();
       const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, t0);
-      gain.gain.setValueAtTime(0, t0);
-      gain.gain.linearRampToValueAtTime(vol, t0 + 0.01);
+      lp.type = 'lowpass';
+      lp.frequency.setValueAtTime(2400, t0);
+      osc1.type = 'triangle';
+      osc2.type = 'sine';
+      // Gentle downward glide for elegance
+      osc1.frequency.setValueAtTime(freq * 1.03, t0);
+      osc1.frequency.exponentialRampToValueAtTime(freq, t0 + dur * 0.7);
+      osc2.frequency.setValueAtTime(freq * 2.06, t0);
+      osc2.frequency.exponentialRampToValueAtTime(freq * 2, t0 + dur * 0.7);
+      // Envelope
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.linearRampToValueAtTime(vol, t0 + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(t0);
-      osc.stop(t0 + dur + 0.02);
+      // Mix with subtle overtone
+      const g1 = ctx.createGain();
+      const g2 = ctx.createGain();
+      g1.gain.setValueAtTime(1.0, t0);
+      g2.gain.setValueAtTime(0.35, t0);
+      osc1.connect(g1).connect(lp);
+      osc2.connect(g2).connect(lp);
+      lp.connect(gain).connect(ctx.destination);
+      osc1.start(t0);
+      osc2.start(t0);
+      osc1.stop(t0 + dur + 0.05);
+      osc2.stop(t0 + dur + 0.05);
     } catch {}
   };
 
@@ -121,7 +142,7 @@ export default function About() {
             <div className="relative z-10 max-h-[46vh] sm:max-h-[44vh] overflow-y-auto pr-1">
               {/* Hero row */}
               <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 mb-4">
-                {/* Holographic avatar with user photo */}
+                {/* Holographic avatar with user photo + robust Drive fallbacks */}
                 <motion.div
                   whileHover={{ scale: 1.03 }}
                   className="relative shrink-0 h-24 w-24 md:h-28 md:w-28 rounded-full p-[2px] bg-gradient-to-b from-cyan-400/60 via-fuchsia-400/60 to-cyan-400/60"
@@ -129,13 +150,27 @@ export default function About() {
                   onMouseEnter={() => playBlip(760)}
                 >
                   <div className="relative h-full w-full rounded-full border border-white/10 bg-black/60 grid place-items-center overflow-hidden">
-                    <img
-                      src="https://drive.google.com/uc?export=view&id=16eYXOk2dvgevVIq3_wpCR1W9LVlhWuEU"
-                      alt="Aryan Zaky Prayogo"
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                      decoding="async"
-                    />
+                    {(() => {
+                      const id = '16eYXOk2dvgevVIq3_wpCR1W9LVlhWuEU';
+                      const candidates = [
+                        `https://drive.google.com/uc?export=view&id=${id}`,
+                        `https://drive.google.com/uc?export=download&id=${id}`,
+                        `https://lh3.googleusercontent.com/d/${id}=s2048`,
+                        `https://drive.google.com/thumbnail?id=${id}&sz=w2000`,
+                      ];
+                      const src = candidates[Math.min(avatarIdx, candidates.length - 1)];
+                      return (
+                        <img
+                          src={src}
+                          alt="Aryan Zaky Prayogo"
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                          referrerPolicy="no-referrer"
+                          onError={() => setAvatarIdx((i) => i + 1)}
+                        />
+                      );
+                    })()}
                     <div className="absolute inset-0 holo" />
                   </div>
                 </motion.div>
