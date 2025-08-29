@@ -8,8 +8,9 @@ export default function Dashboard() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [phase, setPhase] = useState('intro'); // intro -> warp
-
-  const name = user?.displayName || 'Aryan Zaky Prayogo';
+  const displayName = (user?.displayName || '').trim();
+  const emailLocal = (user?.email || '').split('@')[0] || '';
+  const name = displayName || emailLocal || 'Admin';
   const email = user?.email || 'prayogoaryan63@gmail.com';
 
   useEffect(() => {

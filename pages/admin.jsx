@@ -658,7 +658,7 @@ function AdminInner() {
                   </div>
                 </div>
                 <div className="mt-3 grid gap-2 md:grid-cols-[minmax(0,1fr)_auto] items-center">
-                  <input value={displayName} onChange={(e)=>setDisplayName(e.target.value)} placeholder="Your name" className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2 outline-none focus:ring-1 focus:ring-cyan-400" />
+                  <input value={displayName} onChange={(e)=>setDisplayName(e.target.value)} placeholder="Type your display name (optional)" className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2 outline-none focus:ring-1 focus:ring-cyan-400" />
                   <button
                     onClick={() => onSaveDisplayName()}
                     disabled={saving}
