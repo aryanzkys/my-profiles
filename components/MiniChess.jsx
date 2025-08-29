@@ -74,6 +74,9 @@ export default function MiniChess() {
   const [playSide, setPlaySide] = useState('white');
   const [status, setStatus] = useState('');
   const [sanList, setSanList] = useState([]);
+  // UI highlights
+  const [optionSquares, setOptionSquares] = useState({});
+  const [moveSquares, setMoveSquares] = useState({});
   const aiTimeout = useRef(null);
   const STORAGE_KEY = 'miniChess:v1';
   const [showSaved, setShowSaved] = useState(false);
@@ -261,6 +264,19 @@ export default function MiniChess() {
     const result = next.move(move);
     if (result) {
       setGame(next);
+      // highlight last move
+      setMoveSquares({
+        [result.from]: {
+          background:
+            'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.12) 35%, rgba(0,0,0,0.0) 36%)',
+        },
+        [result.to]: {
+          background:
+            'radial-gradient(circle at 50% 50%, rgba(0,255,180,0.25) 0%, rgba(0,255,180,0.18) 34%, rgba(0,0,0,0) 35%)',
+        },
+      });
+      // clear drag options
+      setOptionSquares({});
       // opportunistic save to improve reliability
       try { safeWrite(STORAGE_KEY, JSON.stringify({ fen: next.fen(), playSide, orientation, difficulty, sanList: next.history(), v: 1 })); } catch {}
       return true;
@@ -358,7 +374,7 @@ export default function MiniChess() {
   return (
     <div className="h-full min-h-0 flex flex-col gap-3">
   <div className="flex-1 min-h-0 grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_320px] lg:grid-cols-[minmax(0,1fr)_360px] gap-3">
-        <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/30 p-2">
+        <div className="relative rounded-xl overflow-visible border border-white/10 bg-black/30 p-2">
           <div className="w-full h-full" style={{ aspectRatio: '1 / 1' }}>
             <div
               ref={boardBoxRef}
@@ -369,12 +385,34 @@ export default function MiniChess() {
               position={fen}
               boardOrientation={orientation}
               onPieceDrop={onDrop}
-              customBoardStyle={{ borderRadius: 12 }}
+              customBoardStyle={{ borderRadius: 12, position: 'relative', zIndex: 20 }}
               customLightSquareStyle={{ backgroundColor: '#b9cbd3' }}
               customDarkSquareStyle={{ backgroundColor: '#3b4e57' }}
               animationDuration={200}
               arePiecesDraggable={!thinking && !game.isGameOver()}
               boardWidth={boardSize}
+              // Drag UX: show legal moves
+              onPieceDragBegin={(_, sourceSquare) => {
+                try {
+                  const moves = game.moves({ square: sourceSquare, verbose: true }) || [];
+                  const newSquares = {};
+                  for (const m of moves) {
+                    newSquares[m.to] = {
+                      background:
+                        'radial-gradient(circle at 50% 50%, rgba(0,255,180,0.28) 0%, rgba(0,255,180,0.2) 26%, rgba(0,0,0,0) 27%)',
+                    };
+                  }
+                  newSquares[sourceSquare] = {
+                    background:
+                      'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.16) 34%, rgba(0,0,0,0) 35%)',
+                  };
+                  setOptionSquares(newSquares);
+                } catch {
+                  setOptionSquares({});
+                }
+              }}
+              onPieceDragEnd={() => setOptionSquares({})}
+              customSquareStyles={{ ...moveSquares, ...optionSquares }}
             />
             </div>
           </div>

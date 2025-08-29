@@ -62,7 +62,7 @@ export default function Projects() {
               className={`px-3 py-1.5 rounded-lg border text-sm ${tab === 'flappy' ? 'bg-white/15 border-white/20 text-white' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'}`}
             >Flappy Bird</button>
           </div>
-          <div className="min-h-[60vh] max-h-[64vh] overflow-hidden rounded-xl border border-white/10 bg-black/30 p-2">
+          <div className="min-h-[60vh] max-h-[64vh] overflow-visible rounded-xl border border-white/10 bg-black/30 p-2 relative">
             {tab === 'chess' ? <MiniChess /> : <MiniFlappy />}
           </div>
         </div>
