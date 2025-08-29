@@ -385,7 +385,7 @@ export default function MiniChess() {
               position={fen}
               boardOrientation={orientation}
               onPieceDrop={onDrop}
-              customBoardStyle={{ borderRadius: 12, position: 'relative', zIndex: 20 }}
+              customBoardStyle={{ borderRadius: 12, position: 'relative', zIndex: 20, touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
               customLightSquareStyle={{ backgroundColor: '#b9cbd3' }}
               customDarkSquareStyle={{ backgroundColor: '#3b4e57' }}
               animationDuration={200}
