@@ -82,6 +82,7 @@ export default function MiniChess() {
   const [boardSize, setBoardSize] = useState(320);
   const [boardScale, setBoardScale] = useState(1); // 0.6 .. 1.0
   const [boardResetSpin, setBoardResetSpin] = useState(false);
+  const [boardAnchor, setBoardAnchor] = useState('top'); // 'top' | 'center'
   const [showSettings, setShowSettings] = useState(false);
 
   // Storage helpers with fallbacks
@@ -147,6 +148,11 @@ export default function MiniChess() {
         const num = Number(bs);
         if (!Number.isNaN(num) && num > 0 && num <= 1.2) setBoardScale(num);
       }
+    } catch {}
+    // UI prefs: board anchor
+    try {
+      const ba = safeRead('miniChess:boardAnchor');
+      if (ba === 'top' || ba === 'center') setBoardAnchor(ba);
     } catch {}
   }, []);
 
@@ -225,6 +231,10 @@ export default function MiniChess() {
   useEffect(() => {
     try { if (typeof window !== 'undefined') localStorage.setItem('miniChess:boardScale', String(boardScale)); } catch {}
   }, [boardScale]);
+  // persist boardAnchor
+  useEffect(() => {
+    try { if (typeof window !== 'undefined') localStorage.setItem('miniChess:boardAnchor', boardAnchor); } catch {}
+  }, [boardAnchor]);
 
   const newGame = (side = playSide) => {
     const g = new Chess();
@@ -297,6 +307,11 @@ export default function MiniChess() {
             <option value={2}>Medium</option>
             <option value={3}>Hard</option>
           </select>
+          <label className="text-[11px] text-gray-300">Anchor</label>
+          <select value={boardAnchor} onChange={(e) => setBoardAnchor(e.target.value)} className="bg-white/5 border border-white/10 rounded-md text-xs text-gray-200 px-2 py-1 outline-none">
+            <option value="center">Center</option>
+            <option value="top">Top-left</option>
+          </select>
         </div>
         <div className="col-span-2 flex items-center gap-3">
           <label className="text-[11px] text-gray-300">Board size</label>
@@ -344,8 +359,11 @@ export default function MiniChess() {
     <div className="h-full min-h-0 flex flex-col gap-3">
   <div className="flex-1 min-h-0 grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_320px] lg:grid-cols-[minmax(0,1fr)_360px] gap-3">
         <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/30 p-2">
-          <div className="w-full h-full grid place-items-center" style={{ aspectRatio: '1 / 1' }}>
-            <div ref={boardBoxRef} className="w-full h-full flex items-center justify-center">
+          <div className="w-full h-full" style={{ aspectRatio: '1 / 1' }}>
+            <div
+              ref={boardBoxRef}
+              className={`w-full h-full flex ${boardAnchor === 'center' ? 'items-center justify-center' : 'items-start justify-start'}`}
+            >
             <Chessboard
               id="mini-chessboard"
               position={fen}
@@ -360,7 +378,7 @@ export default function MiniChess() {
             />
             </div>
           </div>
-        </div>
+  </div>
         <div className="rounded-xl border border-white/10 bg-black/30 p-3 flex flex-col gap-2 min-h-0">
           <div className="flex items-center gap-2">
             <div className="text-sm text-gray-200 flex-1">{status}</div>
@@ -399,7 +417,7 @@ export default function MiniChess() {
           {game.isGameOver() && (
             <button className="self-start px-3 py-1.5 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-sm text-cyan-100 hover:bg-cyan-500/25" onClick={() => newGame(playSide)}>Play Again</button>
           )}
-        </div>
+  </div>
       </div>
       {showSaved && (
         <div
@@ -426,7 +444,7 @@ export default function MiniChess() {
                 <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
               </svg>
             </button>
-          </div>
+    </div>
         </div>
       )}
     </div>
