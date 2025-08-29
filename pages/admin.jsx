@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import achievementsData from '../data/achievements.json';
 import educationData from '../data/education.json';
 import orgsData from '../data/organizations.json';
@@ -20,6 +21,8 @@ export default function AdminPage() {
   const [message, setMessage] = useState('');
   const [authorized, setAuthorized] = useState(false);
   const [pass, setPass] = useState('');
+  const [selected, setSelected] = useState(null); // {year, idx}
+  const mouseRef = useRef({ x: 0, y: 0 });
 
   const years = useMemo(
     () => Object.keys(data).sort((a, b) => Number(b) - Number(a)),
@@ -99,6 +102,33 @@ export default function AdminPage() {
     })();
   }, []);
 
+  // Keyboard shortcuts: Ctrl+S save to DB, Ctrl+Shift+S save to file, R reload achievements, N add year
+  useEffect(() => {
+    const onKey = (e) => {
+      if (!authorized) return;
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        if (e.shiftKey) saveToFile(); else saveToDb();
+      }
+      if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+        if (e.key.toLowerCase() === 'r') { reloadFromBackend(); }
+        if (e.key.toLowerCase() === 'n' && tab === 'achievements') { addYear(); }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [authorized, tab, data]);
+
+  // Neon grid background with parallax
+  const onMouseMove = useCallback((e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    mouseRef.current = { x, y };
+    e.currentTarget.style.setProperty('--mx', x);
+    e.currentTarget.style.setProperty('--my', y);
+  }, []);
+
   const addYear = () => {
     const y = prompt('Add Year (e.g., 2026):');
     if (!y) return;
@@ -119,6 +149,32 @@ export default function AdminPage() {
     setData(next);
   };
 
+  const reorderAchievement = (year, from, to) => {
+    if (from === to) return;
+    const arr = Array.from(data[year] || []);
+    const [m] = arr.splice(from, 1);
+    arr.splice(to, 0, m);
+    setData({ ...data, [year]: arr });
+  };
+
+  // Drag & drop within a year
+  const onDragStartItem = (year, idx, e) => {
+    e.dataTransfer.setData('text/plain', JSON.stringify({ year, idx }));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+  const onDragOverItem = (e) => {
+    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+  };
+  const onDropItem = (year, idx, e) => {
+    e.preventDefault();
+    try {
+      const { year: fromYear, idx: fromIdx } = JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
+      if (fromYear === year && Number.isInteger(fromIdx)) {
+        reorderAchievement(year, fromIdx, idx);
+      }
+    } catch {}
+  };
+
   const removeItem = (year, idx) => {
     const next = deepClone(data);
     next[year].splice(idx, 1);
@@ -134,6 +190,17 @@ export default function AdminPage() {
       next[year][idx] = { ...item, [key]: value };
     }
     setData(next);
+  };
+
+  // Google Drive preview helpers
+  const getDriveId = (url) => {
+    if (!url) return null;
+    const m = url.match(/\/d\/([A-Za-z0-9_-]+)/) || url.match(/[?&]id=([A-Za-z0-9_-]+)/);
+    return m ? m[1] : null;
+  };
+  const getDrivePreviewUrl = (url) => {
+    const id = getDriveId(url);
+    return id ? `https://drive.google.com/file/d/${id}/preview` : null;
   };
 
   const normalize = (d) => {
@@ -397,10 +464,29 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-slate-900 to-black text-gray-100 p-6">
+    <div className="min-h-screen relative text-gray-100" onMouseMove={onMouseMove}>
+      {/* Neon robotic grid background */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute inset-0" style={{
+          background: `radial-gradient(1200px 600px at calc(var(--mx,0.5)*100%) calc(var(--my,0.3)*100%), rgba(34,211,238,0.15), transparent 60%), radial-gradient(800px 400px at 50% 0%, rgba(59,130,246,0.12), transparent 70%)`
+        }} />
+        <div className="absolute inset-0 opacity-25" style={{
+          backgroundImage: `linear-gradient(transparent 96%, rgba(148,163,184,0.2) 97%), linear-gradient(90deg, transparent 96%, rgba(148,163,184,0.2) 97%)`,
+          backgroundSize: '40px 40px',
+          transform: 'perspective(800px) rotateX(45deg) translateY(-10%)',
+          transformOrigin: 'top center'
+        }} />
+        <div className="absolute inset-0 bg-black/70" />
+      </div>
+      <div className="relative p-6">
       {!authorized ? (
-        <div className="max-w-md mx-auto mt-24 bg-white/5 border border-white/10 rounded-xl p-6">
-          <h1 className="text-xl font-semibold text-white mb-3">Admin Access</h1>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="max-w-md mx-auto mt-24 bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur">
+          <h1 className="text-xl font-semibold text-white mb-3 flex items-center gap-2">
+            <span className="inline-grid place-items-center h-6 w-6 rounded-full bg-cyan-500/20 border border-cyan-400/30">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2l3 3-3 3-3-3 3-3Z" stroke="#67e8f9" strokeWidth="1.5"/><circle cx="12" cy="14" r="7" stroke="#67e8f9" strokeWidth="1.2"/></svg>
+            </span>
+            Admin Access
+          </h1>
           <p className="text-sm text-gray-300 mb-4">Enter admin key to continue.</p>
           <input
             type="password"
@@ -434,16 +520,31 @@ export default function AdminPage() {
               Clear
             </button>
           </div>
-        </div>
+        </motion.div>
       ) : (
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-semibold text-cyan-300">Admin Panel</h1>
+          <div className="flex items-center gap-3">
+            <div className="relative h-12 w-12 rounded-xl bg-cyan-500/10 border border-cyan-400/30 overflow-hidden">
+              <div className="absolute inset-0 opacity-40" style={{ background: 'conic-gradient(from 0deg, transparent, rgba(34,211,238,0.3), transparent 30%)' }} />
+              <div className="absolute inset-0 animate-pulse bg-cyan-500/5" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold text-cyan-300">Admin Panel</h1>
+              <div className="text-xs text-gray-400">Robotic black theme • Interactive editor</div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={reloadFromBackend} className="px-3 py-2 rounded-md bg-white/5 border border-white/10 hover:bg-white/10" title="Reload achievements (R)">Reload</button>
+            <button onClick={saveToFile} className="px-3 py-2 rounded-md bg-cyan-600/20 border border-cyan-500/40 text-cyan-200 hover:bg-cyan-600/30" title="Save to file (Ctrl+Shift+S)">Save to File</button>
+            <button onClick={saveToDb} disabled={saving} className="px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30" title="Save to DB (Ctrl+S)">{saving ? 'Saving…' : 'Save to DB'}</button>
+          </div>
         </div>
         <div className="mb-4 flex gap-2">
           {['achievements','education','organizations'].map((t) => (
-            <button key={t} onClick={() => setTab(t)} className={`px-3 py-2 rounded-md border ${tab===t? 'bg-cyan-500/20 border-cyan-400/40 text-cyan-200':'bg-white/5 border-white/10 hover:bg-white/10'}`}>
-              {t.charAt(0).toUpperCase()+t.slice(1)}
+            <button key={t} onClick={() => setTab(t)} className={`px-3 py-2 rounded-md border relative overflow-hidden ${tab===t? 'bg-cyan-500/20 border-cyan-400/40 text-cyan-200':'bg-white/5 border-white/10 hover:bg-white/10'}`}>
+              <span className="relative z-10">{t.charAt(0).toUpperCase()+t.slice(1)}</span>
+              <span className="absolute inset-0 opacity-0 group-hover:opacity-100" />
             </button>
           ))}
         </div>
@@ -452,75 +553,44 @@ export default function AdminPage() {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-cyan-300">Achievements</h2>
           <div className="flex gap-2">
-            <button
-              onClick={addYear}
-              className="px-3 py-2 rounded-md bg-white/5 border border-white/10 hover:bg-white/10"
-            >
-              Add Year
-            </button>
-            <button
-              onClick={importFromFile}
-              className="px-3 py-2 rounded-md bg-white/5 border border-white/10 hover:bg-white/10"
-              title="Import achievements.json"
-            >
-              Import JSON
-            </button>
-            <button
-              onClick={downloadJson}
-              className="px-3 py-2 rounded-md bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 hover:bg-cyan-500/30"
-              title="Download achievements.json"
-            >
-              Download JSON
-            </button>
-            <button
-              onClick={saveToFile}
-              className="px-3 py-2 rounded-md bg-cyan-600/20 border border-cyan-500/40 text-cyan-200 hover:bg-cyan-600/30"
-              title="Save achievements.json to a chosen file"
-            >
-              Save to File
-            </button>
-            <button
-              onClick={saveDev}
-              disabled={!isDev() || saving}
-              className="px-3 py-2 rounded-md bg-fuchsia-500/20 border border-fuchsia-400/40 text-fuchsia-200 disabled:opacity-50 hover:bg-fuchsia-500/30"
-              title={isDev() ? 'Save to data/achievements.json (dev only)' : 'Disabled in production'}
-            >
-              {saving ? 'Saving…' : 'Save (dev)'}
-            </button>
-            <button
-              onClick={saveToDb}
-              disabled={saving}
-              className="px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30"
-              title="Save to MongoDB via Netlify Function"
-            >
-              {saving ? 'Saving…' : 'Save to DB'}
-            </button>
+            <button onClick={addYear} className="px-3 py-2 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Add Year</button>
+            <button onClick={importFromFile} className="px-3 py-2 rounded-md bg-white/5 border border-white/10 hover:bg-white/10" title="Import achievements.json">Import JSON</button>
+            <button onClick={downloadJson} className="px-3 py-2 rounded-md bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 hover:bg-cyan-500/30" title="Download achievements.json">Download JSON</button>
+            <button onClick={saveDev} disabled={!isDev() || saving} className="px-3 py-2 rounded-md bg-fuchsia-500/20 border border-fuchsia-400/40 text-fuchsia-200 disabled:opacity-50 hover:bg-fuchsia-500/30" title={isDev() ? 'Save to data/achievements.json (dev only)' : 'Disabled in production'}>{saving ? 'Saving…' : 'Save (dev)'}</button>
           </div>
         </div>)}
 
-        {message && (
-          <div className="mb-4 text-sm text-gray-300 bg-white/5 border border-white/10 rounded-md p-3">
-            {message}
-          </div>
-        )}
+        <AnimatePresence>
+          {message && (
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="mb-4 text-sm text-gray-300 bg-white/5 border border-white/10 rounded-md p-3 shadow-lg">
+              {message}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
   {tab === 'achievements' && (<div className="space-y-8">
           {years.map((year) => (
             <section key={year} className="bg-white/5 border border-white/10 rounded-xl p-4">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-white">{year}</h2>
-                <button
-                  onClick={() => addItem(year)}
-                  className="px-2 py-1 rounded-md bg-white/10 border border-white/20 text-sm hover:bg-white/15"
-                >
-                  + Add Item
-                </button>
+                <button onClick={() => addItem(year)} className="px-2 py-1 rounded-md bg-white/10 border border-white/20 text-sm hover:bg-white/15">+ Add Item</button>
               </div>
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-4">
+                <div className="space-y-3">
                 {(data[year] || []).map((it, idx) => {
                   const item = typeof it === 'string' ? { text: it } : it;
                   return (
-                    <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start bg-black/30 border border-white/10 rounded-lg p-3">
+                    <motion.div
+                      key={idx}
+                      layout
+                      draggable
+                      onDragStart={(e) => onDragStartItem(year, idx, e)}
+                      onDragOver={onDragOverItem}
+                      onDrop={(e) => onDropItem(year, idx, e)}
+                      whileHover={{ scale: 1.01 }}
+                      className={`grid grid-cols-1 md:grid-cols-12 gap-3 items-start bg-black/30 border ${selected && selected.year===year && selected.idx===idx ? 'border-cyan-400/50' : 'border-white/10'} rounded-lg p-3 cursor-grab active:cursor-grabbing`}
+                      onClick={() => setSelected({ year, idx })}
+                    >
                       <div className="md:col-span-6">
                         <label className="block text-xs text-gray-300 mb-1">Text</label>
                         <input
@@ -547,9 +617,29 @@ export default function AdminPage() {
                           Delete
                         </button>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
+                </div>
+                <div className="rounded-lg bg-black/40 border border-white/10 p-3 min-h-[220px]">
+                  <div className="text-sm text-gray-300 mb-2">Live Preview</div>
+                  {!selected ? (
+                    <div className="text-xs text-gray-500">Select an item to preview the certificate link.</div>
+                  ) : (
+                    (() => {
+                      const item = (data[selected.year]||[])[selected.idx] || {};
+                      const url = item.cert;
+                      const preview = getDrivePreviewUrl(url);
+                      return preview ? (
+                        <div className="aspect-video rounded-md overflow-hidden border border-white/10">
+                          <iframe src={preview} className="w-full h-full" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture" />
+                        </div>
+                      ) : (
+                        <div className="text-xs text-gray-500">No valid Google Drive link detected. Paste a link like https://drive.google.com/file/d/FILE_ID/view</div>
+                      );
+                    })()
+                  )}
+                </div>
               </div>
             </section>
           ))}
@@ -566,7 +656,7 @@ export default function AdminPage() {
             </div>
             <div className="space-y-3">
               {edu.map((it, idx) => (
-                <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start bg-black/30 border border-white/10 rounded-lg p-3">
+                <motion.div key={idx} layout whileHover={{ scale: 1.01 }} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start bg-black/30 border border-white/10 rounded-lg p-3">
                   <div className="md:col-span-4">
                     <label className="block text-xs text-gray-300 mb-1">Title</label>
                     <input className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2" value={it.title} onChange={(e)=>updateEdu(idx,'title',e.target.value)} />
@@ -582,7 +672,7 @@ export default function AdminPage() {
                   <div className="md:col-span-1 flex md:justify-end">
                     <button onClick={()=>removeEdu(idx)} className="px-3 py-2 rounded-md bg-red-500/20 border border-red-400/40 text-red-200 hover:bg-red-500/30">Delete</button>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </section>
@@ -599,7 +689,7 @@ export default function AdminPage() {
             </div>
             <div className="space-y-3">
               {orgs.map((it, idx) => (
-                <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start bg-black/30 border border-white/10 rounded-lg p-3">
+                <motion.div key={idx} layout whileHover={{ scale: 1.01 }} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start bg-black/30 border border-white/10 rounded-lg p-3">
                   <div className="md:col-span-5">
                     <label className="block text-xs text-gray-300 mb-1">Organization</label>
                     <input className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2" value={it.org} onChange={(e)=>updateOrg(idx,'org',e.target.value)} />
@@ -615,13 +705,14 @@ export default function AdminPage() {
                   <div className="md:col-span-1 flex md:justify-end">
                     <button onClick={()=>removeOrg(idx)} className="px-3 py-2 rounded-md bg-red-500/20 border border-red-400/40 text-red-200 hover:bg-red-500/30">Delete</button>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </section>
         )}
-  </div>
-  )}
+        </div>
+      )}
+      </div>
     </div>
   );
 }
