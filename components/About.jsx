@@ -1,3 +1,4 @@
+import dynamic from 'next/dynamic';
 import { useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 
@@ -10,6 +11,35 @@ export default function About() {
   const rotateY = useTransform(sx, [0, 1], [-8, 8]);
   const rotateX = useTransform(sy, [0, 1], [8, -8]);
   const [glow, setGlow] = useState({ x: '50%', y: '50%' });
+  const audioCtxRef = useRef(null);
+
+  // Tiny audio blip on hover
+  const playBlip = (freq = 620, dur = 0.07, vol = 0.15) => {
+    try {
+      // Lazy init
+      if (!audioCtxRef.current && typeof window !== 'undefined') {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        audioCtxRef.current = new Ctx();
+      }
+      const ctx = audioCtxRef.current;
+      if (!ctx) return;
+      const t0 = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t0);
+      gain.gain.setValueAtTime(0, t0);
+      gain.gain.linearRampToValueAtTime(vol, t0 + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.02);
+    } catch {}
+  };
+
+  // Optional Spline micro-objects inside the card
+  const MicroSpline = dynamic(() => import('./MicroSpline'), { ssr: false });
+  const microScene = process.env.NEXT_PUBLIC_SPLINE_MICRO_URL; // set to a tiny scene URL for orbiting micro-object
 
   const onMove = (e) => {
     const el = cardRef.current;
@@ -91,14 +121,21 @@ export default function About() {
             <div className="relative z-10 max-h-[46vh] sm:max-h-[44vh] overflow-y-auto pr-1">
               {/* Hero row */}
               <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 mb-4">
-                {/* Holographic avatar */}
+                {/* Holographic avatar with user photo */}
                 <motion.div
                   whileHover={{ scale: 1.03 }}
                   className="relative shrink-0 h-24 w-24 md:h-28 md:w-28 rounded-full p-[2px] bg-gradient-to-b from-cyan-400/60 via-fuchsia-400/60 to-cyan-400/60"
                   style={{ transformStyle: 'preserve-3d' }}
+                  onMouseEnter={() => playBlip(760)}
                 >
                   <div className="relative h-full w-full rounded-full border border-white/10 bg-black/60 grid place-items-center overflow-hidden">
-                    <div className="text-cyan-200 font-semibold tracking-wider select-none">AZP</div>
+                    <img
+                      src="https://drive.google.com/uc?export=view&id=16eYXOk2dvgevVIq3_wpCR1W9LVlhWuEU"
+                      alt="Aryan Zaky Prayogo"
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                    />
                     <div className="absolute inset-0 holo" />
                   </div>
                 </motion.div>
@@ -146,8 +183,9 @@ export default function About() {
                 <motion.a
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
-                  href="mailto:aryanzkys@gmail.com"
+                  href="mailto:prayogoaryan63@gmail.com?subject=Hi%20Aryan%20—%20from%20your%20portfolio&body=Halo%20Aryan,%20saya%20ingin%20menghubungi%20Anda%20mengenai..."
                   className="inline-flex items-center gap-2 rounded-lg px-4 py-2 border border-emerald-400/40 bg-emerald-600/15 text-emerald-200 hover:bg-emerald-600/25"
+                  onMouseEnter={() => playBlip(640)}
                 >
                   <span>Contact Me</span>
                 </motion.a>
@@ -156,6 +194,7 @@ export default function About() {
                   whileTap={{ scale: 0.98 }}
                   onClick={() => window.dispatchEvent(new CustomEvent('nav:section', { detail: 'achievements' }))}
                   className="inline-flex items-center gap-2 rounded-lg px-4 py-2 border border-cyan-400/40 bg-cyan-600/15 text-cyan-200 hover:bg-cyan-600/25"
+                  onMouseEnter={() => playBlip(720)}
                 >
                   <span>View Achievements</span>
                 </motion.button>
@@ -165,6 +204,7 @@ export default function About() {
                   href="https://github.com/aryanzkys"
                   target="_blank" rel="noreferrer"
                   className="inline-flex items-center gap-2 rounded-lg px-4 py-2 border border-white/20 bg-white/10 text-gray-100 hover:bg-white/15"
+                  onMouseEnter={() => playBlip(520)}
                 >
                   <span>GitHub</span>
                 </motion.a>
@@ -173,6 +213,37 @@ export default function About() {
           </div>
         </div>
       </motion.div>
+
+      {/* Orbiting micro-objects inside the card (top-right), Spline if provided else fallback */}
+      <div className="pointer-events-none absolute right-6 md:right-10 -mt-40 md:-mt-44 h-28 w-28 md:h-32 md:w-32">
+        <motion.div
+          className="relative h-full w-full"
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 18, ease: 'linear' }}
+        >
+          {microScene ? (
+            <MicroSpline scene={microScene} className="absolute inset-0 scale-[0.45]" />
+          ) : (
+            <>
+              {[0,1,2].map((i) => (
+                <motion.span
+                  key={i}
+                  className="absolute h-2 w-2 rounded-full"
+                  style={{
+                    left: i === 0 ? '50%' : i === 1 ? '8%' : '82%',
+                    top: i === 0 ? '0%' : i === 1 ? '64%' : '36%',
+                    translateX: '-50%',
+                    background: i !== 1 ? 'rgba(34,211,238,.95)' : 'rgba(232,121,249,.95)',
+                    boxShadow: i !== 1 ? '0 0 12px rgba(34,211,238,.9)' : '0 0 12px rgba(232,121,249,.9)'
+                  }}
+                  animate={{ y: [0, -3, 0] }}
+                  transition={{ repeat: Infinity, duration: 2.6 + i * 0.4, ease: 'easeInOut' }}
+                />
+              ))}
+            </>
+          )}
+        </motion.div>
+      </div>
     </motion.div>
   );
 }
