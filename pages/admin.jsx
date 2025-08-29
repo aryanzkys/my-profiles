@@ -95,7 +95,13 @@ function AdminInner() {
       if (!user) return;
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
-        if (e.shiftKey) saveToFile(); else saveToDb();
+        if (e.shiftKey) {
+          if (tab === 'achievements') saveToFile();
+        } else {
+          if (tab === 'achievements') saveToDb();
+          else if (tab === 'education') saveEdu();
+          else if (tab === 'organizations') saveOrgs();
+        }
       }
       if (!e.ctrlKey && !e.metaKey && !e.altKey) {
         if (e.key.toLowerCase() === 'r') { reloadFromBackend(); }
@@ -104,7 +110,7 @@ function AdminInner() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [user, tab, data]);
+  }, [user, tab, data, edu, orgs]);
 
   const onMouseMove = useCallback((e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -401,9 +407,37 @@ function AdminInner() {
               </div>
             </div>
             <div className="flex gap-2">
-              <button onClick={reloadFromBackend} className="px-3 py-2 rounded-md bg-white/5 border border-white/10 hover:bg-white/10" title="Reload achievements (R)">Reload</button>
-              <button onClick={saveToFile} className="px-3 py-2 rounded-md bg-cyan-600/20 border border-cyan-500/40 text-cyan-200 hover:bg-cyan-600/30" title="Save to file (Ctrl+Shift+S)">Save to File</button>
-              <button onClick={saveToDb} disabled={saving} className="px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30" title="Save to DB (Ctrl+S)">{saving ? 'Saving…' : 'Save to DB'}</button>
+              <button
+                onClick={() => {
+                  if (tab === 'achievements') reloadFromBackend();
+                  else if (tab === 'education') reloadEducation();
+                  else if (tab === 'organizations') reloadOrganizations();
+                }}
+                className="px-3 py-2 rounded-md bg-white/5 border border-white/10 hover:bg-white/10"
+                title={`Reload ${tab}`}
+              >
+                Reload
+              </button>
+              <button
+                onClick={() => { if (tab === 'achievements') saveToFile(); }}
+                className="px-3 py-2 rounded-md bg-cyan-600/20 border border-cyan-500/40 text-cyan-200 hover:bg-cyan-600/30 disabled:opacity-50"
+                title={tab === 'achievements' ? 'Save achievements.json locally (Ctrl+Shift+S)' : 'Available only in Achievements tab'}
+                disabled={tab !== 'achievements'}
+              >
+                Save to File
+              </button>
+              <button
+                onClick={() => {
+                  if (tab === 'achievements') saveToDb();
+                  else if (tab === 'education') saveEdu();
+                  else if (tab === 'organizations') saveOrgs();
+                }}
+                disabled={saving}
+                className="px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30"
+                title={`Save ${tab} to DB (Ctrl+S)`}
+              >
+                {saving ? `Saving ${savingKind==='achievements'?'Achievements':savingKind==='education'?'Education':savingKind==='organizations'?'Organizations':'Data'}…` : 'Save to DB'}
+              </button>
               <button onClick={() => setShowSignout(true)} className="px-3 py-2 rounded-md bg-red-600/20 border border-red-500/40 text-red-200 hover:bg-red-600/30" title="Sign out">Sign out</button>
             </div>
           </div>
@@ -494,7 +528,7 @@ function AdminInner() {
                 <h2 className="text-xl font-semibold text-white">Education</h2>
                 <div className="flex gap-2">
                   <button onClick={addEdu} className="px-2 py-1 rounded-md bg-white/10 border border-white/20 text-sm hover:bg-white/15">+ Add</button>
-                  <button onClick={saveEdu} disabled={saving} className="px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30">{saving?'Saving…':'Save to DB'}</button>
+                  <button onClick={saveEdu} disabled={saving} title="Save education to DB (Ctrl+S)" className="px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30">{saving?'Saving Education…':'Save to DB'}</button>
                 </div>
               </div>
               <div className="space-y-3">
@@ -527,7 +561,7 @@ function AdminInner() {
                 <h2 className="text-xl font-semibold text-white">Organizations</h2>
                 <div className="flex gap-2">
                   <button onClick={addOrg} className="px-2 py-1 rounded-md bg-white/10 border border-white/20 text-sm hover:bg-white/15">+ Add</button>
-                  <button onClick={saveOrgs} disabled={saving} className="px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30">{saving?'Saving…':'Save to DB'}</button>
+                  <button onClick={saveOrgs} disabled={saving} title="Save organizations to DB (Ctrl+S)" className="px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30">{saving?'Saving Organizations…':'Save to DB'}</button>
                 </div>
               </div>
               <div className="space-y-3">
@@ -557,7 +591,7 @@ function AdminInner() {
       </div>
 
       <AnimatePresence>
-        {saving && savingKind && (
+  {saving && savingKind && (
           <motion.div key="saving-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 grid place-items-center">
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
             <div className="absolute inset-0 opacity-20" style={{
@@ -574,7 +608,7 @@ function AdminInner() {
                 <motion.div className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-fuchsia-300 shadow-[0_0_10px_rgba(232,121,249,0.9)]" animate={{ rotate: -360 }} transition={{ repeat: Infinity, duration: 3.2, ease: 'linear' }} style={{ originY: '44px', originX: '0px' }} />
               </div>
               <div className="mt-4 text-cyan-200 font-medium tracking-wide">
-                Saving {savingKind} to DB
+                Saving {savingKind==='achievements'?'Achievements':savingKind==='education'?'Education':savingKind==='organizations'?'Organizations':'Data'} to DB
                 <motion.span
                   className="inline-block ml-1"
                   animate={{ opacity: [0.4, 1, 0.4] }}
@@ -583,7 +617,7 @@ function AdminInner() {
                   ...
                 </motion.span>
               </div>
-              <div className="mt-1 text-xs text-cyan-200/70">Please keep this tab open</div>
+              <div className="mt-1 text-xs text-cyan-200/70">Please keep this tab open while we write {savingKind==='achievements'?'Achievements':savingKind==='education'?'Education':savingKind==='organizations'?'Organizations':'data'} to the database</div>
             </motion.div>
           </motion.div>
         )}
