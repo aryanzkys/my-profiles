@@ -376,6 +376,8 @@ export default function MiniFlappyPhaser() {
     try { localStorage.setItem(VOL_KEY, String(v)); } catch {}
     const game = gameRef.current; if (!game) return;
     const scene = game.scene.getScene('FlappyScene');
+  // ensure audio context is ready on user interaction
+  try { scene.ensureAudio?.(); } catch {}
     scene.masterVolume = v;
     scene.updateWhooshGain?.();
   };
@@ -407,7 +409,12 @@ export default function MiniFlappyPhaser() {
   const toggleMute = () => {
     const game = gameRef.current; if (!game) return;
     const scene = game.scene.getScene('FlappyScene');
-    scene.toggleMute();
+  // ensure audio context can apply mute immediately
+  try { scene.ensureAudio?.(); } catch {}
+  // toggle and also update React state in case callback isn't triggered
+  try { scene.toggleMute(); } catch {}
+  try { if (typeof scene.muted === 'boolean') setMuted(scene.muted); } catch {}
+  try { scene.updateWhooshGain?.(); } catch {}
   };
 
   return (
@@ -431,11 +438,11 @@ export default function MiniFlappyPhaser() {
         </div>
         <div className="ml-auto flex items-center gap-2 text-sm text-gray-300">
           <span>Vol</span>
-          <button className="px-2 py-1 rounded-md bg-white/10 border border-white/20 text-[11px] text-gray-200 hover:bg-white/15 active:scale-95 transition" onClick={() => changeVolume(Math.max(0, +(volume - 0.05).toFixed(2)))} title="Softer">−</button>
+          <button className="px-2 py-1 rounded-md bg-white/10 border border-white/20 text-[11px] text-gray-200 hover:bg-white/15 active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed" onClick={() => changeVolume(Math.max(0, +(volume - 0.05).toFixed(2)))} disabled={volume <= 0} title="Softer">−</button>
           <input type="range" min={0} max={100} value={Math.round(volume*100)}
             onChange={(e) => changeVolume(Number(e.target.value)/100)}
             className="w-28 accent-white/80" />
-          <button className="px-2 py-1 rounded-md bg-white/10 border border-white/20 text-[11px] text-gray-200 hover:bg-white/15 active:scale-95 transition" onClick={() => changeVolume(Math.min(1, +(volume + 0.05).toFixed(2)))} title="Louder">+</button>
+          <button className="px-2 py-1 rounded-md bg-white/10 border border-white/20 text-[11px] text-gray-200 hover:bg-white/15 active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed" onClick={() => changeVolume(Math.min(1, +(volume + 0.05).toFixed(2)))} disabled={volume >= 1} title="Louder">+</button>
           <button className={`h-7 w-7 inline-grid place-items-center rounded-full bg-white/10 border border-white/20 text-gray-200 hover:bg-white/15 active:scale-95 transition ${uiSpin.vol ? 'rotate-180' : ''}`} onClick={resetVolume} title="Reset volume" aria-label="Reset volume">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-80">
               <path d="M21 12a9 9 0 1 1-3.43-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
