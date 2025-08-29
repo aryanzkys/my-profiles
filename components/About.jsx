@@ -34,9 +34,9 @@ export default function About() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="w-full max-w-3xl text-center md:text-left max-h-[70vh] sm:max-h-[60vh] overflow-visible mb-4"
+      className="w-full max-w-4xl text-center md:text-left max-h-[70vh] sm:max-h-[60vh] overflow-visible mb-4"
     >
-      <h2 className="text-2xl md:text-3xl font-semibold text-cyan-300 mb-4 tracking-wide">
+      <h2 className="text-2xl md:text-3xl font-semibold bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-cyan-300 bg-clip-text text-transparent mb-4 tracking-wide">
         About Me
       </h2>
 
@@ -69,17 +69,106 @@ export default function About() {
               }}
             />
 
+            {/* Floating particles (subtle) */}
+            <div className="pointer-events-none absolute inset-0 overflow-hidden">
+              {[...Array(8)].map((_, i) => (
+                <motion.span
+                  key={i}
+                  className="absolute h-1.5 w-1.5 rounded-full"
+                  style={{
+                    left: `${10 + (i * 11) % 80}%`,
+                    top: `${20 + (i * 13) % 60}%`,
+                    background: i % 2 ? 'rgba(34,211,238,.9)' : 'rgba(232,121,249,.9)',
+                    boxShadow: i % 2 ? '0 0 10px rgba(34,211,238,.9)' : '0 0 10px rgba(232,121,249,.9)'
+                  }}
+                  animate={{ y: [0, -6, 0], x: [0, 4, 0], opacity: [0.9, 0.5, 0.9] }}
+                  transition={{ duration: 3 + i * 0.25, repeat: Infinity, ease: 'easeInOut' }}
+                />
+              ))}
+            </div>
+
             {/* Content */}
             <div className="relative z-10 max-h-[46vh] sm:max-h-[44vh] overflow-y-auto pr-1">
-            <p className="text-gray-200 leading-relaxed">
-              Hello! My name is <span className="text-white font-medium">Aryan Zaky Prayogo</span>, an aspiring <span className="text-white font-medium">DevSecOps Engineer</span> majoring in <span className="text-white font-medium">Computer Science</span> at <span className="text-white font-medium">Brawijaya University</span>. I’m deeply passionate about cybersecurity, software development, and the intersection between technology and ethical leadership.
-            </p>
-            <p className="text-gray-200 leading-relaxed mt-4">
-              Over the past few years I have earned more than 20 national and international awards across diverse fields including science, languages, research, and entrepreneurship. I am also actively involved in various youth organizations and academic communities that focus on education, innovation, and sustainable development.
-            </p>
-            <p className="text-gray-200 leading-relaxed mt-4">
-              I believe in continuous learning, meaningful collaboration, and using technology as a force for good. This website is my digital portfolio, a place where you can explore my journey, achievements, and future projects.
-            </p>
+              {/* Hero row */}
+              <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 mb-4">
+                {/* Holographic avatar */}
+                <motion.div
+                  whileHover={{ scale: 1.03 }}
+                  className="relative shrink-0 h-24 w-24 md:h-28 md:w-28 rounded-full p-[2px] bg-gradient-to-b from-cyan-400/60 via-fuchsia-400/60 to-cyan-400/60"
+                  style={{ transformStyle: 'preserve-3d' }}
+                >
+                  <div className="relative h-full w-full rounded-full border border-white/10 bg-black/60 grid place-items-center overflow-hidden">
+                    <div className="text-cyan-200 font-semibold tracking-wider select-none">AZP</div>
+                    <div className="absolute inset-0 holo" />
+                  </div>
+                </motion.div>
+
+                <div className="text-center md:text-left">
+                  <div className="text-xl md:text-2xl font-semibold text-white">
+                    Aryan Zaky Prayogo
+                  </div>
+                  <div className="text-cyan-300/90 text-sm md:text-base">Aspiring DevSecOps Engineer • Computer Science</div>
+                  <div className="text-gray-400 text-xs md:text-sm">Security • Automation • Reliability • Research</div>
+                </div>
+              </div>
+
+              {/* Body */}
+              <p className="text-gray-200 leading-relaxed">
+                Hello! My name is <span className="text-white font-medium">Aryan Zaky Prayogo</span>, an aspiring <span className="text-white font-medium">DevSecOps Engineer</span> majoring in <span className="text-white font-medium">Computer Science</span> at <span className="text-white font-medium">Brawijaya University</span>. I’m passionate about cybersecurity, software development, and the intersection of technology and ethical leadership.
+              </p>
+              <p className="text-gray-200 leading-relaxed mt-4">
+                I’ve earned 20+ awards spanning science, languages, research, and entrepreneurship. I’m active in youth organizations and academic communities focused on education, innovation, and sustainable development.
+              </p>
+              <p className="text-gray-200 leading-relaxed mt-4">
+                I believe in continuous learning, meaningful collaboration, and using technology for good. Explore my journey, achievements, and projects here.
+              </p>
+
+              {/* Stat pills */}
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                {[
+                  ['Awards 20+', 'from-cyan-500/30 to-cyan-400/20'],
+                  ['Organizations 10+', 'from-fuchsia-500/30 to-fuchsia-400/20'],
+                  ['DevSecOps • Automation', 'from-cyan-500/30 to-fuchsia-400/20'],
+                  ['Research & Innovation', 'from-fuchsia-500/30 to-cyan-400/20'],
+                ].map(([label, grad], i) => (
+                  <motion.span
+                    key={label}
+                    whileHover={{ scale: 1.06, rotate: i % 2 ? -1 : 1 }}
+                    className={`text-xs md:text-[13px] px-3 py-1 rounded-full border border-white/10 bg-gradient-to-r ${grad} text-gray-100 shadow-[0_0_24px_rgba(34,211,238,0.08)]`}
+                  >
+                    {label}
+                  </motion.span>
+                ))}
+              </div>
+
+              {/* CTA buttons */}
+              <div className="mt-5 flex flex-wrap gap-3">
+                <motion.a
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  href="mailto:aryanzkys@gmail.com"
+                  className="inline-flex items-center gap-2 rounded-lg px-4 py-2 border border-emerald-400/40 bg-emerald-600/15 text-emerald-200 hover:bg-emerald-600/25"
+                >
+                  <span>Contact Me</span>
+                </motion.a>
+                <motion.button
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => window.dispatchEvent(new CustomEvent('nav:section', { detail: 'achievements' }))}
+                  className="inline-flex items-center gap-2 rounded-lg px-4 py-2 border border-cyan-400/40 bg-cyan-600/15 text-cyan-200 hover:bg-cyan-600/25"
+                >
+                  <span>View Achievements</span>
+                </motion.button>
+                <motion.a
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  href="https://github.com/aryanzkys"
+                  target="_blank" rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg px-4 py-2 border border-white/20 bg-white/10 text-gray-100 hover:bg-white/15"
+                >
+                  <span>GitHub</span>
+                </motion.a>
+              </div>
             </div>
           </div>
         </div>

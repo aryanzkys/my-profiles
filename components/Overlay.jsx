@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import About from './About';
 import Achievements from './Achievements';
@@ -28,6 +28,16 @@ export default function Overlay() {
   const { mode, setMode, isLite } = usePerformance();
   const [perfOpen, setPerfOpen] = useState(false);
   const [miniOpen, setMiniOpen] = useState(false);
+
+  // Listen for cross-component navigation requests (e.g., from About CTA)
+  useEffect(() => {
+    const handler = (e) => {
+      const target = e?.detail;
+      if (typeof target === 'string') setSection(target);
+    };
+    window.addEventListener('nav:section', handler);
+    return () => window.removeEventListener('nav:section', handler);
+  }, []);
 
   return (
     <>
