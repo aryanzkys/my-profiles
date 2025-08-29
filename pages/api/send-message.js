@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       instagram: instagram.startsWith('@') ? instagram : (instagram ? '@' + instagram : '-'),
       initials,
       message: message.trim(),
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
 
     const arr = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));

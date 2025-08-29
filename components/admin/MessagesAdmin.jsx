@@ -61,7 +61,14 @@ export default function MessagesAdmin() {
       <div className="grid gap-2">
         {rows.map(r => (
           <div key={r.id} className="rounded-lg border border-white/10 bg-black/40 p-3">
-            <div className="text-[11px] text-gray-400">{new Date(r.createdAt).toLocaleString()}</div>
+            <div className="text-[11px] text-gray-400">
+              {(() => {
+                const iso = r.created_at || r.createdAt;
+                const d = iso ? new Date(iso) : null;
+                const valid = d && !isNaN(d.getTime());
+                return valid ? d.toLocaleString() : '-';
+              })()}
+            </div>
             <div className="text-sm text-cyan-200">{r.initials} <span className="text-gray-400">{r.instagram}</span></div>
             <div className="text-gray-200 text-sm whitespace-pre-wrap">{r.message}</div>
             <div className="mt-2 flex justify-end">

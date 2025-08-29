@@ -129,7 +129,7 @@ export default function MessageToAryan() {
                   onChange={(e)=>onInstagramChange(e.target.value)}
                   placeholder="@yourusername"
                   className={classNames(
-                    "w-full bg-black/40 border rounded-md px-3 py-2 pr-10 outline-none focus:ring-1",
+                    "w-full bg-black/40 border rounded-md px-3 py-2 pr-10 outline-none focus:ring-1 text-gray-100 placeholder-gray-500 caret-cyan-300",
                     igValid===true ? "border-emerald-400/40 focus:ring-emerald-400/40" : igValid===false ? "border-red-400/40 focus:ring-red-400/40" : "border-white/10 focus:ring-cyan-400/40"
                   )}
                 />
@@ -157,7 +157,7 @@ export default function MessageToAryan() {
                 value={initials}
                 onChange={(e)=>setInitials(e.target.value)}
                 placeholder="e.g., AJ • Ary • AnonymousJedi"
-                className={classNames("w-full bg-black/40 border rounded-md px-3 py-2 outline-none focus:ring-1", errors.initials?"border-red-400/40 focus:ring-red-400/40":"border-white/10 focus:ring-cyan-400/40")}
+                className={classNames("w-full bg-black/40 border rounded-md px-3 py-2 outline-none focus:ring-1 text-gray-100 placeholder-gray-500 caret-cyan-300", errors.initials?"border-red-400/40 focus:ring-red-400/40":"border-white/10 focus:ring-cyan-400/40")}
               />
               {errors.initials && <div className="text-xs text-red-400 mt-1">{errors.initials}</div>}
             </div>
@@ -171,7 +171,7 @@ export default function MessageToAryan() {
                   onChange={(e)=>setMessage(e.target.value.slice(0, maxLen+2))}
                   rows={5}
                   placeholder="Type your message to Aryan here..."
-                  className={classNames("w-full bg-black/40 border rounded-md px-3 py-2 outline-none resize-y min-h-[120px] focus:ring-1", errors.message?"border-red-400/40 focus:ring-red-400/40":"border-white/10 focus:ring-cyan-400/40")}
+                  className={classNames("w-full bg-black/40 border rounded-md px-3 py-2 outline-none resize-y min-h-[120px] focus:ring-1 text-gray-100 placeholder-gray-500 caret-cyan-300", errors.message?"border-red-400/40 focus:ring-red-400/40":"border-white/10 focus:ring-cyan-400/40")}
                 />
                 <div className="absolute bottom-1 right-2 text-[11px] text-gray-400">{remaining} / {maxLen}</div>
               </div>
