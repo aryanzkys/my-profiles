@@ -7,7 +7,7 @@ import Organizations from './Organizations';
 import Contact from './Contact';
 import { usePerformance } from './PerformanceContext';
 import MiniChess from './MiniChess';
-import MiniFlappy from './MiniFlappy';
+import MiniFlappy from './MiniFlappyPhaser';
 
 const NavButton = ({ label, active, onClick }) => (
   <button

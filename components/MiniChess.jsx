@@ -80,6 +80,8 @@ export default function MiniChess() {
   const toastTimeout = useRef(null);
   const boardBoxRef = useRef(null);
   const [boardSize, setBoardSize] = useState(320);
+  const [boardScale, setBoardScale] = useState(1); // 0.6 .. 1.0
+  const [boardResetSpin, setBoardResetSpin] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
   // Storage helpers with fallbacks
@@ -136,6 +138,14 @@ export default function MiniChess() {
         if (saved?.playSide === 'white' || saved?.playSide === 'black') setPlaySide(saved.playSide);
         if (saved?.orientation === 'white' || saved?.orientation === 'black') setOrientation(saved.orientation);
         if (typeof saved?.difficulty === 'number') setDifficulty(saved.difficulty);
+      }
+    } catch {}
+    // UI prefs: board scale
+    try {
+      const bs = safeRead('miniChess:boardScale');
+      if (bs != null) {
+        const num = Number(bs);
+        if (!Number.isNaN(num) && num > 0 && num <= 1.2) setBoardScale(num);
       }
     } catch {}
   }, []);
@@ -195,19 +205,26 @@ export default function MiniChess() {
   useEffect(() => {
     const el = boardBoxRef.current;
     if (!el) return;
+    const compute = (cr) => {
+      const maxW = Math.max(0, Math.floor(cr.width));
+      const maxH = Math.max(0, Math.floor(cr.height));
+      const base = Math.max(140, Math.min(maxW, maxH));
+      const scaled = Math.max(140, Math.floor(base * boardScale));
+      setBoardSize(Math.min(scaled, base)); // never exceed container
+    };
     const ro = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const cr = entry.contentRect;
-        // Fit square board within available box
-        const maxW = Math.max(0, Math.floor(cr.width));
-        const maxH = Math.max(0, Math.floor(cr.height));
-        const size = Math.max(140, Math.min(maxW, maxH));
-        setBoardSize(size);
-      }
+      for (const entry of entries) compute(entry.contentRect);
     });
     ro.observe(el);
+    // also compute once immediately
+    try { compute(el.getBoundingClientRect()); } catch {}
     return () => ro.disconnect();
-  }, []);
+  }, [boardScale]);
+
+  // persist boardScale
+  useEffect(() => {
+    try { if (typeof window !== 'undefined') localStorage.setItem('miniChess:boardScale', String(boardScale)); } catch {}
+  }, [boardScale]);
 
   const newGame = (side = playSide) => {
     const g = new Chess();
@@ -280,6 +297,44 @@ export default function MiniChess() {
             <option value={2}>Medium</option>
             <option value={3}>Hard</option>
           </select>
+        </div>
+        <div className="col-span-2 flex items-center gap-3">
+          <label className="text-[11px] text-gray-300">Board size</label>
+          <input
+            type="range"
+            min={60}
+            max={100}
+            value={Math.round(boardScale * 100)}
+            onChange={(e) => setBoardScale(Math.max(0.6, Math.min(1, Number(e.target.value) / 100)))}
+            className="w-48 accent-white/80"
+          />
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              className="px-2 py-1 rounded-md bg-white/10 border border-white/20 text-[11px] text-gray-200 hover:bg-white/15 active:scale-95 transition"
+              onClick={() => setBoardScale((s) => Math.max(0.6, +(s - 0.05).toFixed(2)))}
+              title="Decrease"
+            >−</button>
+            <span className="text-xs text-gray-400 w-10 text-center tabular-nums">{Math.round(boardScale * 100)}%</span>
+            <button
+              type="button"
+              className="px-2 py-1 rounded-md bg-white/10 border border-white/20 text-[11px] text-gray-200 hover:bg-white/15 active:scale-95 transition"
+              onClick={() => setBoardScale((s) => Math.min(1, +(s + 0.05).toFixed(2)))}
+              title="Increase"
+            >+</button>
+            <button
+              type="button"
+              className={`ml-2 h-7 w-7 inline-grid place-items-center rounded-full bg-white/10 border border-white/20 text-gray-200 hover:bg-white/15 active:scale-95 transition ${boardResetSpin ? 'rotate-180' : ''}`}
+              onClick={() => { setBoardScale(1); setBoardResetSpin(true); setTimeout(() => setBoardResetSpin(false), 350); }}
+              title="Reset to default"
+              aria-label="Reset board size"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-80">
+                <path d="M21 12a9 9 0 1 1-3.43-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M21 5v6h-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
