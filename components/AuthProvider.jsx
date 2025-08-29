@@ -59,6 +59,24 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Initialize theme from localStorage and keep html class in sync
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('theme:dark');
+      if (saved === 'true' || saved === 'false') {
+        setThemeDark(saved === 'true');
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try { localStorage.setItem('theme:dark', themeDark ? 'true' : 'false'); } catch {}
+    if (typeof document !== 'undefined') {
+      const el = document.documentElement;
+      if (themeDark) el.classList.add('dark'); else el.classList.remove('dark');
+    }
+  }, [themeDark]);
+
   // reCAPTCHA v3 loader (optional but recommended)
   useEffect(() => {
     if (!recaptchaSiteKeyV3) return;
