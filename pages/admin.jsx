@@ -18,7 +18,10 @@ export default function AdminPage() {
   const [edu, setEdu] = useState(() => deepClone(educationData));
   const [orgs, setOrgs] = useState(() => deepClone(orgsData));
   const [saving, setSaving] = useState(false);
+  const [savingKind, setSavingKind] = useState(null); // 'achievements' | 'education' | 'organizations' | null
   const [message, setMessage] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
   const [authorized, setAuthorized] = useState(false);
   const [pass, setPass] = useState('');
   const [selected, setSelected] = useState(null); // {year, idx}
@@ -212,6 +215,13 @@ export default function AdminPage() {
     return out;
   };
 
+  const triggerSuccess = (msg) => {
+    setSuccessMsg(msg || 'Saved successfully');
+    setSuccess(true);
+    // Auto-hide success after a moment
+    setTimeout(() => setSuccess(false), 1600);
+  };
+
   const saveDev = async () => {
     if (!isDev()) return;
     setSaving(true);
@@ -308,7 +318,8 @@ export default function AdminPage() {
   };
 
   const saveToDb = async () => {
-    setSaving(true);
+  setSaving(true);
+  setSavingKind('achievements');
     setMessage('');
     try {
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -324,6 +335,7 @@ export default function AdminPage() {
           const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: payload });
           if (res.ok) {
             setMessage(`Saved via ${url}`);
+            triggerSuccess('Achievements saved');
             ok = true;
             break;
           } else {
@@ -340,7 +352,8 @@ export default function AdminPage() {
     } catch (e) {
       setMessage(`Save to DB failed: ${e.message}`);
     } finally {
-      setSaving(false);
+  setSaving(false);
+  setSavingKind(null);
     }
   };
 
@@ -363,7 +376,8 @@ export default function AdminPage() {
     setEdu(next);
   };
   const saveEdu = async () => {
-    setSaving(true);
+  setSaving(true);
+  setSavingKind('education');
     setMessage('');
     try {
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -376,14 +390,14 @@ export default function AdminPage() {
       for (const url of candidates) {
         try {
           const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: payload });
-          if (res.ok) { setMessage(`Saved education via ${url}`); ok = true; break; }
+      if (res.ok) { setMessage(`Saved education via ${url}`); triggerSuccess('Education saved'); ok = true; break; }
           else { lastErr = `HTTP ${res.status} on ${url}: ${await res.text()}`; }
         } catch (e) { lastErr = `Request failed on ${url}: ${e.message}`; }
       }
       if (!ok) throw new Error(lastErr || 'Unknown error');
       await reloadEducation();
     } catch (e) { setMessage(`Save education failed: ${e.message}`); }
-    finally { setSaving(false); }
+    finally { setSaving(false); setSavingKind(null); }
   };
 
   // Organizations editors
@@ -395,7 +409,8 @@ export default function AdminPage() {
     setOrgs(next);
   };
   const saveOrgs = async () => {
-    setSaving(true);
+  setSaving(true);
+  setSavingKind('organizations');
     setMessage('');
     try {
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -408,14 +423,14 @@ export default function AdminPage() {
       for (const url of candidates) {
         try {
           const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: payload });
-          if (res.ok) { setMessage(`Saved organizations via ${url}`); ok = true; break; }
+      if (res.ok) { setMessage(`Saved organizations via ${url}`); triggerSuccess('Organizations saved'); ok = true; break; }
           else { lastErr = `HTTP ${res.status} on ${url}: ${await res.text()}`; }
         } catch (e) { lastErr = `Request failed on ${url}: ${e.message}`; }
       }
       if (!ok) throw new Error(lastErr || 'Unknown error');
       await reloadOrganizations();
     } catch (e) { setMessage(`Save organizations failed: ${e.message}`); }
-    finally { setSaving(false); }
+    finally { setSaving(false); setSavingKind(null); }
   };
 
   const saveToFile = async () => {
@@ -478,7 +493,7 @@ export default function AdminPage() {
         }} />
         <div className="absolute inset-0 bg-black/70" />
       </div>
-      <div className="relative p-6">
+  <div className="relative p-6">
       {!authorized ? (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="max-w-md mx-auto mt-24 bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur">
           <h1 className="text-xl font-semibold text-white mb-3 flex items-center gap-2">
@@ -713,6 +728,82 @@ export default function AdminPage() {
         </div>
       )}
       </div>
+
+      {/* Saving overlay */}
+      <AnimatePresence>
+        {saving && savingKind && (
+          <motion.div
+            key="saving-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 grid place-items-center"
+          >
+            {/* Dim/backdrop with subtle grid */}
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <div className="absolute inset-0 opacity-20" style={{
+              backgroundImage: `linear-gradient(transparent 96%, rgba(148,163,184,0.18) 97%), linear-gradient(90deg, transparent 96%, rgba(148,163,184,0.18) 97%)`,
+              backgroundSize: '32px 32px',
+              transform: 'perspective(900px) rotateX(50deg) translateY(-12%)',
+              transformOrigin: 'top center'
+            }} />
+
+            {/* Loader card */}
+            <motion.div
+              initial={{ y: 8, scale: 0.98 }}
+              animate={{ y: 0, scale: 1 }}
+              exit={{ y: -8, opacity: 0 }}
+              className="relative z-10 w-[min(92vw,440px)] rounded-2xl border border-cyan-400/30 bg-gradient-to-b from-cyan-500/10 via-slate-900/60 to-black/70 p-6 text-center shadow-[0_0_40px_rgba(34,211,238,0.15)]"
+            >
+              {/* Animated rings */}
+              <div className="relative mx-auto h-28 w-28">
+                <div className="absolute inset-0 rounded-full border border-cyan-400/30" />
+                <div className="absolute inset-0 rounded-full border-t-2 border-cyan-300 animate-spin" style={{ boxShadow: '0 0 24px rgba(34,211,238,.45)' }} />
+                {/* Orbiting dots */}
+                <motion.div className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 rounded-full bg-cyan-300 shadow-[0_0_14px_rgba(34,211,238,0.9)]" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2.2, ease: 'linear' }} style={{ originY: '56px', originX: '0px' }} />
+                <motion.div className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-fuchsia-300 shadow-[0_0_10px_rgba(232,121,249,0.9)]" animate={{ rotate: -360 }} transition={{ repeat: Infinity, duration: 3.2, ease: 'linear' }} style={{ originY: '44px', originX: '0px' }} />
+              </div>
+              <div className="mt-4 text-cyan-200 font-medium tracking-wide">
+                Saving {savingKind} to DB
+                <motion.span
+                  className="inline-block ml-1"
+                  animate={{ opacity: [0.4, 1, 0.4] }}
+                  transition={{ repeat: Infinity, duration: 1.2 }}
+                >
+                  ...
+                </motion.span>
+              </div>
+              <div className="mt-1 text-xs text-cyan-200/70">Please keep this tab open</div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Success pulse/toast */}
+      <AnimatePresence>
+        {success && (
+          <motion.div
+            key="save-success"
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            className="fixed top-4 left-1/2 z-40 -translate-x-1/2"
+          >
+            <motion.div
+              initial={{ scale: 0.96 }}
+              animate={{ scale: 1 }}
+              className="relative flex items-center gap-3 rounded-xl border border-emerald-400/40 bg-emerald-600/15 px-4 py-2 text-emerald-200 shadow-[0_0_30px_rgba(16,185,129,0.15)]"
+            >
+              {/* Checkmark SVG with path animation */}
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" className="drop-shadow-[0_0_10px_rgba(16,185,129,0.6)]">
+                <motion.circle cx="12" cy="12" r="10" stroke="#34d399" strokeWidth="1.2" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.6 }} />
+                <motion.path d="M7 12.5l3.2 3.2L17 8.8" stroke="#a7f3d0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.6, delay: 0.1 }} />
+              </svg>
+              <div className="text-sm font-medium">{successMsg || 'Saved successfully'}</div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
