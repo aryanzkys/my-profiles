@@ -391,6 +391,9 @@ export default function MiniChess() {
               animationDuration={200}
               arePiecesDraggable={!thinking && !game.isGameOver()}
               boardWidth={boardSize}
+              snapToCursor={false}
+              allowDragOutsideBoard={false}
+              dropOffBoardAction="snapback"
               // Drag UX: show legal moves
               onPieceDragBegin={(_, sourceSquare) => {
                 try {
