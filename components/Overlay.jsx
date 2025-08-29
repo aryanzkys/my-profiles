@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import About from './About';
 import Achievements from './Achievements';
@@ -9,6 +10,7 @@ import Projects from './Projects';
 import { usePerformance } from './PerformanceContext';
 import MiniChess from './MiniChess';
 import MiniFlappy from './MiniFlappyPhaser';
+const MessageToAryan = dynamic(() => import('./MessageToAryan'), { ssr: false });
 
 const NavButton = ({ label, active, onClick }) => (
   <button
@@ -52,7 +54,8 @@ export default function Overlay() {
               ['education', 'Education'],
               ['organizations', 'Organizations'],
               ['projects', 'Projects'],
-              ['contact', 'Contact'],
+                ['contact', 'Contact'],
+                ['message', 'Message'],
             ].map(([id, label]) => (
               <NavButton key={id} label={label} active={section === id} onClick={() => setSection(id)} />
             ))}
@@ -115,6 +118,11 @@ export default function Overlay() {
           {section === 'contact' && (
             <motion.div key="contact" className="pointer-events-auto">
               <Contact />
+            </motion.div>
+          )}
+          {section === 'message' && (
+            <motion.div key="message" className="pointer-events-auto">
+              <MessageToAryan />
             </motion.div>
           )}
         </AnimatePresence>
