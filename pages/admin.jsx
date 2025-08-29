@@ -24,7 +24,10 @@ function AdminInner() {
   const [message, setMessage] = useState('');
   const [success, setSuccess] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const router = useRouter();
+  const [showSignout, setShowSignout] = useState(false);
+  const [signoutBusy, setSignoutBusy] = useState(false);
   const [selected, setSelected] = useState(null);
   const mouseRef = useRef({ x: 0, y: 0 });
 
@@ -401,6 +404,7 @@ function AdminInner() {
               <button onClick={reloadFromBackend} className="px-3 py-2 rounded-md bg-white/5 border border-white/10 hover:bg-white/10" title="Reload achievements (R)">Reload</button>
               <button onClick={saveToFile} className="px-3 py-2 rounded-md bg-cyan-600/20 border border-cyan-500/40 text-cyan-200 hover:bg-cyan-600/30" title="Save to file (Ctrl+Shift+S)">Save to File</button>
               <button onClick={saveToDb} disabled={saving} className="px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30" title="Save to DB (Ctrl+S)">{saving ? 'Saving…' : 'Save to DB'}</button>
+              <button onClick={() => setShowSignout(true)} className="px-3 py-2 rounded-md bg-red-600/20 border border-red-500/40 text-red-200 hover:bg-red-600/30" title="Sign out">Sign out</button>
             </div>
           </div>
           <div className="mb-4 flex gap-2">
@@ -604,6 +608,56 @@ function AdminInner() {
                 <motion.path d="M7 12.5l3.2 3.2L17 8.8" stroke="#a7f3d0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.6, delay: 0.1 }} />
               </svg>
               <div className="text-sm font-medium">{successMsg || 'Saved successfully'}</div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sign-out confirm modal */}
+      <AnimatePresence>
+        {showSignout && (
+          <motion.div key="signout-modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 grid place-items-center">
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <div className="absolute inset-0 opacity-20" style={{
+              backgroundImage: `linear-gradient(transparent 96%, rgba(148,163,184,0.18) 97%), linear-gradient(90deg, transparent 96%, rgba(148,163,184,0.18) 97%)`,
+              backgroundSize: '32px 32px',
+              transform: 'perspective(900px) rotateX(50deg) translateY(-12%)',
+              transformOrigin: 'top center'
+            }} />
+            <motion.div initial={{ y: 8, scale: 0.98 }} animate={{ y: 0, scale: 1 }} exit={{ y: -8, opacity: 0 }} className="relative z-10 w-[min(92vw,460px)] rounded-2xl p-[1px] bg-gradient-to-r from-cyan-500/40 via-fuchsia-500/40 to-cyan-500/40">
+              <div className="rounded-2xl border border-white/10 bg-black/70 backdrop-blur-md p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="h-9 w-9 rounded-lg bg-red-500/15 border border-red-400/30" />
+                  <div>
+                    <div className="text-lg font-semibold text-cyan-200">Sign out of Admin?</div>
+                    <div className="text-xs text-gray-400">{user?.email || 'You are signed in'}</div>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-300 mb-4">You will be redirected to the login screen.</div>
+                <div className="flex justify-end gap-2">
+                  <button disabled={signoutBusy} onClick={() => setShowSignout(false)} className="px-3 py-2 rounded-md bg-white/10 border border-white/20 hover:bg-white/15 disabled:opacity-50">Cancel</button>
+                  <button
+                    onClick={async () => {
+                      setSignoutBusy(true);
+                      try {
+                        await logout();
+                        setShowSignout(false);
+                        setSuccessMsg('Signed out');
+                        setSuccess(true);
+                        setTimeout(() => router.replace('/login'), 700);
+                      } catch (e) {
+                        setMessage(`Sign out failed: ${e?.message || 'Unknown error'}`);
+                      } finally {
+                        setSignoutBusy(false);
+                      }
+                    }}
+                    disabled={signoutBusy}
+                    className="px-3 py-2 rounded-md bg-red-600/20 border border-red-500/40 text-red-200 hover:bg-red-600/30 disabled:opacity-50"
+                  >
+                    {signoutBusy ? 'Signing out…' : 'Sign out'}
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </motion.div>
         )}

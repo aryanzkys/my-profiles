@@ -32,7 +32,8 @@ export default function LoginForm() {
       if (mode === 'login') await emailLogin(email, password);
       else await emailSignup(email, password);
     } catch (err) {
-      setMsg(err?.message || 'Gagal otentikasi');
+      const code = err?.code ? ` (${err.code})` : '';
+      setMsg((err?.message || 'Gagal otentikasi') + code);
     } finally {
       setBusy(false);
     }
@@ -40,7 +41,7 @@ export default function LoginForm() {
 
   const onGoogle = async () => {
     setBusy(true); setMsg('');
-    try { await signInWithGoogle(); } catch (err) { setMsg(err?.message || 'Gagal login Google'); } finally { setBusy(false); }
+    try { await signInWithGoogle(); } catch (err) { const code = err?.code ? ` (${err.code})` : ''; setMsg((err?.message || 'Gagal login Google') + code); } finally { setBusy(false); }
   };
 
   // Redirect when authenticated
@@ -103,12 +104,12 @@ export default function LoginForm() {
             <input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2 outline-none focus:ring-1 focus:ring-cyan-400" placeholder="••••••••" />
             {errors.password && <div className="text-xs text-red-300 mt-1">{errors.password}</div>}
 
-            <button disabled={!canSubmit || busy} className="mt-4 w-full px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30 disabled:opacity-60">
+            <button disabled={!canSubmit || busy || loading} className="mt-4 w-full px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30 disabled:opacity-60">
               {busy ? 'Processing…' : (mode==='login' ? 'Login' : 'Create Account')}
             </button>
 
             <div className="my-3 text-center text-xs text-gray-400">or</div>
-            <button type="button" onClick={onGoogle} disabled={busy} className="w-full px-3 py-2 rounded-md bg-white/10 border border-white/20 hover:bg-white/15">
+            <button type="button" onClick={onGoogle} disabled={busy || loading} className="w-full px-3 py-2 rounded-md bg-white/10 border border-white/20 hover:bg-white/15 disabled:opacity-60">
               Continue with Google
             </button>
 
