@@ -1,4 +1,5 @@
 "use client";
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 
 function PoliceLine({ delay = 0, reverse = false }) {
@@ -20,7 +21,52 @@ function PoliceLine({ delay = 0, reverse = false }) {
   );
 }
 
+function HoloHex({ className = '', delay = 0, size = 80, stroke = 'rgba(34,211,238,0.5)' }) {
+  return (
+    <motion.svg
+      viewBox="0 0 100 100"
+      width={size}
+      height={size}
+      className={`pointer-events-none ${className}`}
+      initial={{ y: 0, rotate: 0, opacity: 0.5 }}
+      animate={{ y: [0, -10, 0], rotate: [0, 6, 0], opacity: [0.4, 0.8, 0.4] }}
+      transition={{ repeat: Infinity, duration: 8, ease: 'easeInOut', delay }}
+    >
+      <polygon
+        points="50,5 95,28 95,72 50,95 5,72 5,28"
+        fill="none"
+        stroke={stroke}
+        strokeWidth="1.5"
+      />
+      <motion.polygon
+        points="50,15 85,33 85,67 50,85 15,67 15,33"
+        fill="none"
+        stroke={stroke}
+        strokeWidth="0.8"
+        animate={{ pathLength: [0.2, 1, 0.2] }}
+        transition={{ repeat: Infinity, duration: 4, ease: 'linear', delay }}
+        strokeDasharray="1 1"
+      />
+    </motion.svg>
+  );
+}
+
 export default function ShutdownOverlay() {
+  const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
+  const maxTilt = 6; // degrees
+  const onMove = (e) => {
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = (e.clientX - cx) / (rect.width / 2);
+    const dy = (e.clientY - cy) / (rect.height / 2);
+    const ry = Math.max(-1, Math.min(1, dx)) * maxTilt; // rotateY with x
+    const rx = -Math.max(-1, Math.min(1, dy)) * maxTilt; // rotateX with y (invert)
+    setTilt({ rx, ry });
+  };
+  const onLeave = () => setTilt({ rx: 0, ry: 0 });
+
   return (
     <div className="absolute inset-0 z-50 grid place-items-center bg-black/90 backdrop-blur-sm">
       {/* Moving police lines */}
@@ -37,21 +83,63 @@ export default function ShutdownOverlay() {
         <div className="absolute top-2/3 w-full -rotate-4 opacity-70">
           <PoliceLine delay={3.6} reverse />
         </div>
+
+        {/* Floating holo hexes */}
+        <HoloHex className="absolute left-10 top-10" delay={0.4} size={90} />
+        <HoloHex className="absolute right-16 bottom-12" delay={1.1} size={70} stroke="rgba(250,204,21,0.5)" />
+        <HoloHex className="absolute right-1/3 top-8" delay={2.2} size={60} stroke="rgba(147,197,253,0.5)" />
       </div>
 
       {/* Center content */}
-      <motion.div initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 240, damping: 22 }} className="relative z-10 w-[min(92vw,860px)] rounded-3xl p-[1px] bg-gradient-to-r from-yellow-400/30 via-red-500/30 to-yellow-400/30 shadow-[0_0_40px_rgba(250,204,21,0.2)]">
-        <div className="rounded-3xl border border-white/10 bg-black/80 p-6 sm:p-10 text-center">
+      <motion.div
+        initial={{ opacity: 0, y: 12, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 240, damping: 22 }}
+        className="relative z-10 w-[min(92vw,860px)] rounded-3xl p-[1px] bg-gradient-to-r from-yellow-400/30 via-red-500/30 to-yellow-400/30 shadow-[0_0_40px_rgba(250,204,21,0.2)]"
+        onMouseMove={onMove}
+        onMouseLeave={onLeave}
+        whileHover={{ scale: 1.005 }}
+        style={{ rotateX: tilt.rx, rotateY: tilt.ry, transformPerspective: 900 }}
+      >
+        <div className="rounded-3xl border border-white/10 bg-black/80 p-6 sm:p-10 text-center relative overflow-hidden">
+          {/* subtle scanline */}
+          <motion.div
+            className="pointer-events-none absolute -inset-x-10 -top-10 h-10 bg-gradient-to-b from-white/5 to-transparent"
+            initial={{ y: '-120%' }}
+            animate={{ y: ['-120%', '140%'] }}
+            transition={{ repeat: Infinity, duration: 3.5, ease: 'linear' }}
+          />
           <div className="mx-auto mb-6 h-24 w-24 sm:h-32 sm:w-32 rounded-2xl border border-yellow-400/40 bg-yellow-500/10 relative overflow-hidden">
             <div className="absolute inset-0 opacity-40" style={{ background: 'conic-gradient(from 0deg, transparent, rgba(250,204,21,0.4), rgba(248,113,113,0.35), transparent 30%)' }} />
             <motion.div className="absolute inset-0" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 10, ease: 'linear' }}>
               <div className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 rounded-full bg-yellow-300 shadow-[0_0_14px_rgba(250,204,21,0.9)]" style={{ transformOrigin: '0 64px' }} />
             </motion.div>
+            {/* Breathing glow */}
+            <motion.div
+              className="absolute inset-0 rounded-2xl"
+              initial={{ boxShadow: '0 0 0px rgba(250,204,21,0.0)' }}
+              animate={{ boxShadow: ['0 0 0px rgba(250,204,21,0.0)','0 0 28px rgba(250,204,21,0.25)','0 0 0px rgba(250,204,21,0.0)'] }}
+              transition={{ repeat: Infinity, duration: 3.2, ease: 'easeInOut' }}
+            />
             <svg viewBox="0 0 24 24" className="absolute inset-0 m-auto h-14 w-14 sm:h-20 sm:w-20 text-yellow-300 drop-shadow-[0_0_20px_rgba(250,204,21,0.4)]" fill="currentColor">
               <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
             </svg>
           </div>
-          <h2 className="text-yellow-300 text-2xl sm:text-3xl font-semibold">We’re currently performing some maintenance on this website.</h2>
+          <div className="relative inline-block">
+            <h2 className="text-yellow-300 text-2xl sm:text-3xl font-semibold relative z-10">We’re currently performing some maintenance on this website.</h2>
+            {/* Holographic sheen overlay */}
+            <motion.span
+              aria-hidden
+              className="absolute inset-0 select-none pointer-events-none text-transparent bg-clip-text"
+              style={{
+                backgroundImage: 'linear-gradient(120deg, rgba(34,211,238,0.0) 20%, rgba(34,211,238,0.8) 35%, rgba(59,130,246,0.9) 50%, rgba(250,204,21,0.85) 65%, rgba(34,211,238,0.0) 80%)',
+                backgroundSize: '200% 100%'
+              }}
+              initial={{ backgroundPosition: '0% 50%', opacity: 0.5 }}
+              animate={{ backgroundPosition: ['0% 50%','100% 50%','0% 50%'], opacity: [0.4, 0.7, 0.4] }}
+              transition={{ repeat: Infinity, duration: 6, ease: 'linear' }}
+            >We’re currently performing some maintenance on this website.</motion.span>
+          </div>
           <p className="text-gray-300 mt-2">Please check back soon, everything will be back online shortly.</p>
           <motion.div
             className="mt-4 text-base sm:text-lg font-medium text-yellow-200 drop-shadow-[0_0_12px_rgba(250,204,21,0.35)]"
