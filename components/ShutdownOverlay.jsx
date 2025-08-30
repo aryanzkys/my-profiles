@@ -51,8 +51,16 @@ export default function ShutdownOverlay() {
               <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
             </svg>
           </div>
-          <h2 className="text-yellow-300 text-2xl sm:text-3xl font-semibold">This website is currently under development.</h2>
-          <p className="text-gray-300 mt-2">We will reopen it once the work is complete.</p>
+          <h2 className="text-yellow-300 text-2xl sm:text-3xl font-semibold">We’re currently performing some maintenance on this website.</h2>
+          <p className="text-gray-300 mt-2">Please check back soon, everything will be back online shortly.</p>
+          <motion.div
+            className="mt-4 text-base sm:text-lg font-medium text-yellow-200 drop-shadow-[0_0_12px_rgba(250,204,21,0.35)]"
+            initial={{ opacity: 0.7, y: 2 }}
+            animate={{ opacity: [0.7, 1, 0.85, 1], y: [2, 0, 0, 0] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            – Aryan
+          </motion.div>
         </div>
       </motion.div>
     </div>
