@@ -11,6 +11,8 @@ export default function DevSection() {
   const [dragging, setDragging] = useState(false);
   const [pos, setPos] = useState(0); // 0..1 visual position for slider
   const trackRef = useRef(null);
+  const [pending, setPending] = useState(null); // null | boolean, optimistic visual
+  const busy = pending !== null || saving; // busy while saving or pending transition
 
   const fetchFlags = async () => {
     setLoading(true); setError('');
@@ -43,6 +45,9 @@ export default function DevSection() {
         `${basePath}/api/set-site-flags`,
       ]));
       const body = JSON.stringify({ shutdown: next });
+      // Optimistic UI: move knob immediately
+      setPending(next);
+      setPos(next ? 1 : 0);
       let ok = false; let lastErr = '';
       for (const url of urls) {
         try { const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body }); if (r.ok) { ok = true; break; } else lastErr = `HTTP ${r.status}`; } catch (e) { lastErr = e?.message || 'Network'; }
@@ -52,15 +57,22 @@ export default function DevSection() {
       // Broadcast to other tabs
       try { localStorage.setItem('site:flags', JSON.stringify({ shutdown: next, ts: Date.now() })); window.dispatchEvent(new Event('site:flags:updated')); } catch {}
     } catch (e) { setError(e?.message || 'Failed to save'); }
-    finally { setSaving(false); setTimeout(()=>setSaved(false), 1500); }
+    finally {
+      setSaving(false);
+      setPending(null);
+      // Snap pos to actual state on failure
+      setPos((prev) => (shutdown ? 1 : 0));
+      setTimeout(()=>setSaved(false), 1500);
+    }
   };
 
   useEffect(() => { fetchFlags(); }, []);
 
   // Keep slider knob in sync with state when not dragging
   useEffect(() => {
-    if (!dragging) setPos(shutdown ? 1 : 0);
-  }, [shutdown, dragging]);
+    // When not dragging and no pending transition, sync to state
+    if (!dragging && pending === null) setPos(shutdown ? 1 : 0);
+  }, [shutdown, dragging, pending]);
 
   // Pointer/drag handlers
   const startDrag = (clientX) => {
@@ -121,22 +133,24 @@ export default function DevSection() {
               tabIndex={0}
               onClick={(e) => {
                 // Ignore click if drag just occurred; quick toggle on simple click
-                if (!dragging && !saving && !loading) saveFlags(!shutdown);
+                if (!dragging && !busy && !loading) saveFlags(!(pending ?? shutdown));
               }}
               onMouseDown={(e) => startDrag(e.clientX)}
               onTouchStart={(e) => startDrag(e.touches?.[0]?.clientX)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (!saving && !loading) saveFlags(!shutdown); }
-                if (e.key === 'ArrowLeft') { e.preventDefault(); if (!saving && !loading && shutdown) saveFlags(false); }
-                if (e.key === 'ArrowRight') { e.preventDefault(); if (!saving && !loading && !shutdown) saveFlags(true); }
+                const current = pending ?? shutdown;
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (!busy && !loading) saveFlags(!current); }
+                if (e.key === 'ArrowLeft') { e.preventDefault(); if (!busy && !loading && current) saveFlags(false); }
+                if (e.key === 'ArrowRight') { e.preventDefault(); if (!busy && !loading && !current) saveFlags(true); }
               }}
-              className={`relative inline-flex h-9 w-20 select-none items-center rounded-full border transition-colors outline-none focus:ring-2 focus:ring-cyan-400/50 ${
-                shutdown ? 'bg-gradient-to-r from-red-600/50 via-red-500/40 to-red-400/30 border-red-400/40' : 'bg-white/10 border-white/20'
-              } ${saving ? 'opacity-70 cursor-wait' : 'cursor-pointer active:scale-[0.99]'} ${dragging ? 'ring-1 ring-cyan-300/40' : ''}`}
+              aria-busy={busy}
+              className={`relative inline-flex h-9 w-24 select-none items-center rounded-full border transition-colors outline-none focus:ring-2 focus:ring-cyan-400/50 ${
+                (pending ?? shutdown) ? 'bg-gradient-to-r from-red-600/50 via-red-500/40 to-red-400/30 border-red-400/40' : 'bg-white/10 border-white/20'
+              } ${busy ? 'cursor-wait' : 'cursor-pointer active:scale-[0.99]'} ${dragging ? 'ring-1 ring-cyan-300/40' : ''}`}
             >
               {/* Track labels */}
-              <span className={`pointer-events-none absolute left-2 text-[10px] font-semibold tracking-wide ${shutdown ? 'text-white/30' : 'text-cyan-200/90'}`}>OFF</span>
-              <span className={`pointer-events-none absolute right-2 text-[10px] font-semibold tracking-wide ${shutdown ? 'text-red-200/90' : 'text-white/30'}`}>ON</span>
+              <span className={`pointer-events-none absolute left-2 text-[10px] font-semibold tracking-wide transition-colors ${ (pending ?? shutdown) ? 'text-white/30' : 'text-cyan-200/90'}`}>OFF</span>
+              <span className={`pointer-events-none absolute right-2 text-[10px] font-semibold tracking-wide transition-colors ${ (pending ?? shutdown) ? 'text-red-200/90' : 'text-white/30'}`}>ON</span>
 
               {/* Progress glow */}
               <div
@@ -150,18 +164,39 @@ export default function DevSection() {
                     transition: dragging ? 'none' : 'background 150ms linear',
                   }}
                 />
+                {busy && (
+                  <motion.div
+                    className="absolute inset-y-0 w-16 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                    initial={{ x: '-40%' }}
+                    animate={{ x: '140%' }}
+                    transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
+                  />
+                )}
               </div>
 
               {/* Knob */}
               <motion.span
                 layout
                 transition={{ type: 'spring', stiffness: 500, damping: 32 }}
-                className={`h-7 w-7 rounded-full shadow-md border ${shutdown ? 'border-red-300/60' : 'border-cyan-200/60'}`}
+                className={`h-7 w-7 rounded-full shadow-md border ${ (pending ?? shutdown) ? 'border-red-300/60' : 'border-cyan-200/60'}`}
                 style={{
-                  background: shutdown ? 'linear-gradient(180deg, #fca5a5, #ef4444)' : 'linear-gradient(180deg, #67e8f9, #22d3ee)',
-                  transform: `translateX(${4 + pos * 28}px)`, // 4px -> 32px travel
+                  background: (pending ?? shutdown) ? 'linear-gradient(180deg, #fca5a5, #ef4444)' : 'linear-gradient(180deg, #67e8f9, #22d3ee)',
+                  transform: `translateX(${4 + pos * 32}px)`, // adjusted for wider track
                 }}
               />
+
+              {/* Loading spinner overlay on knob */}
+              {busy && (
+                <motion.div
+                  className="absolute h-7 w-7 rounded-full grid place-items-center"
+                  style={{ left: `${4 + pos * 32}px` }}
+                  initial={{ rotate: 0 }}
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 0.9, ease: 'linear' }}
+                >
+                  <div className="h-5 w-5 rounded-full border-2 border-white/40 border-t-white/90 border-r-white/70" />
+                </motion.div>
+              )}
             </div>
           </div>
 
