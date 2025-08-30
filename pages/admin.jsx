@@ -6,6 +6,7 @@ import orgsData from '../data/organizations.json';
 import { AuthProvider, useAuth } from '../components/AuthProvider';
 import dynamic from 'next/dynamic';
 const MessagesAdmin = dynamic(() => import('../components/admin/MessagesAdmin'), { ssr: false });
+const DevSection = dynamic(() => import('../components/AdminPanel/DevSection'), { ssr: false });
 import { useRouter } from 'next/router';
 import { getAuth, updateProfile, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 
@@ -496,7 +497,7 @@ function AdminInner() {
             </div>
           </div>
           <div className="mb-4 flex gap-2">
-            {['achievements','education','organizations','messages','admin-profile'].map((t) => (
+            {['achievements','education','organizations','messages','dev','admin-profile'].map((t) => (
               <button key={t} onClick={() => setTab(t)} className={`px-3 py-2 rounded-md border relative overflow-hidden ${tab===t? 'bg-cyan-500/20 border-cyan-400/40 text-cyan-200':'bg-white/5 border-white/10 hover:bg-white/10'}`}>
                 <span className="relative z-10">{t==='admin-profile' ? 'Admin Profile' : t.charAt(0).toUpperCase()+t.slice(1)}</span>
                 <span className="absolute inset-0 opacity-0 group-hover:opacity-100" />
@@ -646,6 +647,12 @@ function AdminInner() {
           {tab === 'messages' && (
             <section className="bg-white/5 border border-white/10 rounded-xl p-4">
               <MessagesAdmin />
+            </section>
+          )}
+
+          {tab === 'dev' && (
+            <section className="bg-white/5 border border-white/10 rounded-xl p-4">
+              <DevSection />
             </section>
           )}
 
