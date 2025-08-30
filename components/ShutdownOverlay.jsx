@@ -125,22 +125,21 @@ export default function ShutdownOverlay() {
               <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
             </svg>
           </div>
-          <div className="relative inline-block">
-            <h2 className="text-yellow-300 text-2xl sm:text-3xl font-semibold relative z-10">We’re currently performing some maintenance on this website.</h2>
-            {/* Holographic sheen overlay */}
-            <motion.span
-              aria-hidden
-              className="absolute inset-0 select-none pointer-events-none text-transparent bg-clip-text"
-              style={{
-                backgroundImage: 'linear-gradient(120deg, rgba(34,211,238,0.0) 20%, rgba(34,211,238,0.8) 35%, rgba(59,130,246,0.9) 50%, rgba(250,204,21,0.85) 65%, rgba(34,211,238,0.0) 80%)',
-                backgroundSize: '200% 100%'
-              }}
-              initial={{ backgroundPosition: '0% 50%', opacity: 0.5 }}
-              animate={{ backgroundPosition: ['0% 50%','100% 50%','0% 50%'], opacity: [0.4, 0.7, 0.4] }}
-              transition={{ repeat: Infinity, duration: 6, ease: 'linear' }}
-            >We’re currently performing some maintenance on this website.</motion.span>
-          </div>
-          <p className="text-gray-300 mt-2">Please check back soon, everything will be back online shortly.</p>
+          <motion.h2
+            className="mx-auto max-w-3xl text-center text-2xl sm:text-3xl font-semibold leading-snug sm:leading-tight tracking-wide text-transparent bg-clip-text drop-shadow-[0_0_14px_rgba(250,204,21,0.15)]"
+            style={{
+              backgroundImage: 'linear-gradient(120deg, rgba(250,204,21,0.95), rgba(34,211,238,0.95), rgba(59,130,246,0.95))',
+              backgroundSize: '200% 100%'
+            }}
+            initial={{ backgroundPosition: '0% 50%' }}
+            animate={{ backgroundPosition: ['0% 50%','100% 50%','0% 50%'] }}
+            transition={{ repeat: Infinity, duration: 8, ease: 'linear' }}
+          >
+            We’re currently performing some maintenance on this website.
+          </motion.h2>
+          <p className="mx-auto max-w-2xl text-center text-gray-300/90 mt-3 leading-relaxed">
+            Please check back soon, everything will be back online shortly.
+          </p>
           <motion.div
             className="mt-4 text-base sm:text-lg font-medium text-yellow-200 drop-shadow-[0_0_12px_rgba(250,204,21,0.35)]"
             initial={{ opacity: 0.7, y: 2 }}
