@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import { useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ShieldCheck, KeyRound, Database, Clock, Mail, Globe2 } from 'lucide-react';
@@ -29,6 +30,10 @@ function Section({ id, title, children, defaultOpen = false }) {
 }
 
 export default function PrivacyPolicy() {
+  const router = useRouter();
+  const [atEnd, setAtEnd] = useState(false);
+  const [countdown, setCountdown] = useState(null); // seconds remaining or null
+  const [autoRedirect, setAutoRedirect] = useState(true);
   const sections = useMemo(()=> ([
     { id: 'intro', title: 'Overview', content: (
       <p>
@@ -89,6 +94,42 @@ export default function PrivacyPolicy() {
 
   useEffect(()=>{ try { document.getElementById('page-title')?.focus(); } catch {} }, []);
 
+  // Detect when user reaches end of the document
+  useEffect(() => {
+    const checkEnd = () => {
+      try {
+        const threshold = 24; // px from bottom
+        const atBottom = (window.innerHeight + window.scrollY) >= (document.body.offsetHeight - threshold);
+        setAtEnd(atBottom);
+      } catch {}
+    };
+    checkEnd();
+    window.addEventListener('scroll', checkEnd, { passive: true });
+    window.addEventListener('resize', checkEnd, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', checkEnd);
+      window.removeEventListener('resize', checkEnd);
+    };
+  }, []);
+
+  // Start a short countdown once at end; allow cancel
+  useEffect(() => {
+    if (!atEnd || !autoRedirect) return;
+    if (countdown !== null) return; // already counting
+    setCountdown(3);
+  }, [atEnd, autoRedirect]);
+
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown <= 0) {
+      // Push to Terms page
+      router.push('/terms');
+      return;
+    }
+    const id = setTimeout(() => setCountdown((c) => (typeof c === 'number' ? c - 1 : null)), 1000);
+    return () => clearTimeout(id);
+  }, [countdown, router]);
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-black text-white">
       <Head>
@@ -123,6 +164,40 @@ export default function PrivacyPolicy() {
 
         <div className="mt-10 text-center text-xs text-gray-500">AryanStack • All rights reserved.</div>
       </div>
+
+      {/* Redirect banner when finished reading */}
+      <AnimatePresence>
+        {(atEnd || countdown !== null) && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="fixed bottom-4 right-4 z-20 rounded-lg border border-white/10 bg-black/70 backdrop-blur px-4 py-3 text-sm text-gray-200 shadow-lg"
+            role="dialog"
+            aria-live="polite"
+          >
+            <div className="mb-2">
+              {typeof countdown === 'number' ? (
+                <span>Reached the end. Redirecting to Terms in <span className="text-cyan-300 font-medium">{countdown}s</span>…</span>
+              ) : (
+                <span>Reached the end. You can proceed to Terms.</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => router.push('/terms')}
+                className="px-3 py-1.5 rounded-md bg-cyan-600/30 border border-cyan-400/40 text-cyan-200 hover:bg-cyan-600/40"
+              >Go to Terms</button>
+              {typeof countdown === 'number' && (
+                <button
+                  onClick={() => { setAutoRedirect(false); setCountdown(null); }}
+                  className="px-3 py-1.5 rounded-md bg-white/10 border border-white/20 hover:bg-white/15"
+                >Cancel</button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
