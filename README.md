@@ -74,9 +74,9 @@ If deploying to username.github.io/repo:
 
 - Owner cannot be banned or deleted and always has access.
 - reCAPTCHA v3 can be enabled for login actions; server-side verification included.
-- Please ensure usage complies with your website’s latest terms and privacy policy (data handling, logging, retention). Update links below:
-	- Terms of Service: https://your-website.example.com/terms
-	- Privacy Policy: https://your-website.example.com/privacy
+- Please ensure usage complies with your website’s latest terms and privacy policy (data handling, logging, retention):
+	- Terms of Service: https://aryanstack.netlify.app/terms
+	- Privacy Policy: https://aryanstack.netlify.app/privacy
 
 ## Docker & GitHub Packages (GHCR)
 
