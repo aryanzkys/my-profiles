@@ -174,6 +174,34 @@ function AdminInner() {
     }
   }, [user]);
 
+  // Presence heartbeat while on admin page
+  useEffect(() => {
+    let timer;
+    const beat = async () => {
+      if (!user) return;
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const urls = Array.from(new Set([
+        '/.netlify/functions/admin-presence-heartbeat',
+        `${basePath}/.netlify/functions/admin-presence-heartbeat`,
+        '/api/admin-presence-heartbeat',
+        `${basePath}/api/admin-presence-heartbeat`,
+      ]));
+      for (const url of urls) {
+        try {
+          const provider = (user?.providerData && user.providerData[0]?.providerId) || null;
+          await fetch(url, { method: 'POST', headers: { 'content-type':'application/json' }, body: JSON.stringify({ email: user.email, uid: user.uid, name: user.displayName, provider }) });
+          break;
+        } catch {}
+      }
+    };
+    const start = () => {
+      beat();
+      timer = setInterval(beat, 60 * 1000);
+    };
+    if (user) start();
+    return () => { if (timer) clearInterval(timer); };
+  }, [user]);
+
   const onMouseMove = useCallback((e) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;

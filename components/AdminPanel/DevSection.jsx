@@ -20,8 +20,19 @@ export default function DevSection() {
   const [form, setForm] = useState({ uid: '', email: '', displayName: '', canEditSections: true, canAccessDev: true, banned: false });
   const [formBusy, setFormBusy] = useState(false);
   const OWNER_EMAIL = 'prayogoaryan63@gmail.com';
+  // Owner-only action notifications
+  const [ownerNotice, setOwnerNotice] = useState({ show: false, kind: 'loading', text: '' });
+  const isOwner = () => {
+    try { return String(window.__adminActor?.email || '').toLowerCase() === OWNER_EMAIL; } catch { return false; }
+  };
+  const showOwnerLoading = (text) => { if (!isOwner()) return; setOwnerNotice({ show: true, kind: 'loading', text }); };
+  const showOwnerSuccess = (text) => { if (!isOwner()) return; setOwnerNotice({ show: true, kind: 'success', text }); setTimeout(()=>setOwnerNotice((o)=>({ ...o, show:false })), 1500); };
+  const showOwnerError = (text) => { if (!isOwner()) return; setOwnerNotice({ show: true, kind: 'error', text }); setTimeout(()=>setOwnerNotice((o)=>({ ...o, show:false })), 2500); };
   const [audit, setAudit] = useState([]);
   const [auditLoading, setAuditLoading] = useState(false);
+  const [auditQuery, setAuditQuery] = useState({ actor: '', target: '', action: '', from: '', to: '' });
+  const [auditPage, setAuditPage] = useState(1);
+  const [auditPageSize, setAuditPageSize] = useState(20);
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
   const [loginLogs, setLoginLogs] = useState([]);
   const [loginLogsLoading, setLoginLogsLoading] = useState(false);
@@ -382,7 +393,20 @@ export default function DevSection() {
             />
           </div>
         </div>
-        <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+        <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3 relative">
+          {/* Owner-only inline toast */}
+          <AnimatePresence>
+            {ownerNotice.show && (
+              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+                className={`absolute top-2 right-2 z-10 rounded-md px-3 py-2 text-xs border ${ownerNotice.kind==='loading'?'bg-white/10 border-white/20 text-gray-200': ownerNotice.kind==='success'?'bg-emerald-600/20 border-emerald-400/40 text-emerald-200':'bg-red-600/20 border-red-400/40 text-red-200'}`}
+              >
+                <div className="flex items-center gap-2">
+                  {ownerNotice.kind==='loading' && <span className="inline-block h-3 w-3 rounded-full border-2 border-white/40 border-t-transparent animate-spin" />}
+                  <span>{ownerNotice.text || (ownerNotice.kind==='loading'?'Processing…': ownerNotice.kind==='success'?'Success':'Error')}</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           {/* Add / Update form */}
           <div className="grid md:grid-cols-6 gap-3">
             <div className="md:col-span-2">
@@ -406,6 +430,18 @@ export default function DevSection() {
                   if (!form.uid && !form.email) { setAdminsError('Enter uid or email'); return; }
                   if (String(form.email).toLowerCase() === OWNER_EMAIL && form.banned) { setAdminsError('Owner cannot be banned'); return; }
                   setFormBusy(true); setAdminsError('');
+                  // Optimistic update: upsert locally first
+                  const snapshot = admins.slice();
+                  const keyEmail = String(form.email||'').toLowerCase();
+                  const optimistic = { id: undefined, uid: form.uid||'', email: form.email||'', displayName: form.displayName||'', canEditSections: !!form.canEditSections, canAccessDev: !!form.canAccessDev, banned: !!form.banned, _online: false, _lastSeen: null };
+                  setAdmins((list)=>{
+                    const idx = list.findIndex(x=> (form.uid? x.uid===form.uid : String(x.email||'').toLowerCase()===keyEmail));
+                    if (idx>=0) {
+                      const copy = list.slice(); copy[idx] = { ...copy[idx], ...optimistic }; return copy;
+                    }
+                    return [...list, optimistic];
+                  });
+                  showOwnerLoading('Saving admin…');
                   try {
                     const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
                     const urls = Array.from(new Set([
@@ -424,9 +460,14 @@ export default function DevSection() {
                       } catch (e) { lastErr = e?.message || 'Network'; }
                     }
                     if (!ok) throw new Error(lastErr || 'Save failed');
-                    await reloadAdminsWithPresence();
-                  } catch (e) { setAdminsError(e?.message || 'Save failed'); }
-                  finally { setFormBusy(false); }
+                    showOwnerSuccess('Saved');
+                    // Refresh presence in background to sync any server-calculated fields
+                    reloadAdminsWithPresence();
+                  } catch (e) {
+                    setAdminsError(e?.message || 'Save failed');
+                    setAdmins(snapshot);
+                    showOwnerError('Save failed');
+                  } finally { setFormBusy(false); }
                 }}
                 disabled={formBusy}
                 className="px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30"
@@ -457,7 +498,12 @@ export default function DevSection() {
                         if (String(a.email).toLowerCase() === OWNER_EMAIL && !e.target.checked) { alert('Owner must retain edit access'); return; }
                         if (!confirm(`Change "Can edit sections" for ${a.displayName||a.email||a.uid}?`)) return;
                         const next = { uid:a.uid, email:a.email, displayName:a.displayName, canEditSections:e.target.checked, canAccessDev:!!a.canAccessDev, banned:!!a.banned };
-                        setAdmins((list)=>list.map(x=> (x===a? { ...a, canEditSections:e.target.checked } : x)));
+                        const snapshot = admins.slice();
+                        setAdmins((list)=>list.map(x=> {
+                          const match = a.uid? x.uid===a.uid : String(x.email||'').toLowerCase()===String(a.email||'').toLowerCase();
+                          return match? { ...x, canEditSections:e.target.checked } : x;
+                        }));
+                        showOwnerLoading('Saving changes…');
                         try {
                           const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
                           const urls = Array.from(new Set([
@@ -467,14 +513,22 @@ export default function DevSection() {
                             `${basePath}/api/admins-upsert`,
                           ]));
                           const actor = window.__adminActor || {};
-                          for (const url of urls) { try { const r = await fetch(url, { method: 'POST', headers: { 'content-type':'application/json' }, body: JSON.stringify({ ...next, actorEmail: actor.email||null, actorUid: actor.uid||null, actorName: actor.name||null }) }); if (r.ok) break; } catch {} }
-                        } catch {}
+                          let ok=false; let lastErr='';
+                          for (const url of urls) { try { const r = await fetch(url, { method: 'POST', headers: { 'content-type':'application/json' }, body: JSON.stringify({ ...next, actorEmail: actor.email||null, actorUid: actor.uid||null, actorName: actor.name||null }) }); if (r.ok) { ok=true; break; } else lastErr=`HTTP ${r.status}`; } catch (err) { lastErr = err?.message || 'Network'; } }
+                          if (!ok) throw new Error(lastErr||'Save failed');
+                          showOwnerSuccess('Saved');
+                        } catch (err) { setAdmins(snapshot); showOwnerError('Save failed'); }
                       }} /> Can edit sections</label>
                       <label className="inline-flex items-center gap-2"><input type="checkbox" checked={!!a.canAccessDev} onChange={async(e)=>{
                         if (String(a.email).toLowerCase() === OWNER_EMAIL && !e.target.checked) { alert('Owner must retain Dev access'); return; }
                         if (!confirm(`Change "Can access Dev" for ${a.displayName||a.email||a.uid}?`)) return;
                         const next = { uid:a.uid, email:a.email, displayName:a.displayName, canEditSections:!!a.canEditSections, canAccessDev:e.target.checked, banned:!!a.banned };
-                        setAdmins((list)=>list.map(x=> (x===a? { ...a, canAccessDev:e.target.checked } : x)));
+                        const snapshot = admins.slice();
+                        setAdmins((list)=>list.map(x=> {
+                          const match = a.uid? x.uid===a.uid : String(x.email||'').toLowerCase()===String(a.email||'').toLowerCase();
+                          return match? { ...x, canAccessDev:e.target.checked } : x;
+                        }));
+                        showOwnerLoading('Saving changes…');
                         try { const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
                           const urls = Array.from(new Set([
                             '/.netlify/functions/admins-upsert',
@@ -483,14 +537,22 @@ export default function DevSection() {
                             `${basePath}/api/admins-upsert`,
                           ]));
                           const actor = window.__adminActor || {};
-                          for (const url of urls) { try { const r = await fetch(url, { method: 'POST', headers: { 'content-type':'application/json' }, body: JSON.stringify({ ...next, actorEmail: actor.email||null, actorUid: actor.uid||null, actorName: actor.name||null }) }); if (r.ok) break; } catch {} }
-                        } catch {}
+                          let ok=false; let lastErr='';
+                          for (const url of urls) { try { const r = await fetch(url, { method: 'POST', headers: { 'content-type':'application/json' }, body: JSON.stringify({ ...next, actorEmail: actor.email||null, actorUid: actor.uid||null, actorName: actor.name||null }) }); if (r.ok) { ok=true; break; } else lastErr=`HTTP ${r.status}`; } catch (err) { lastErr = err?.message || 'Network'; } }
+                          if (!ok) throw new Error(lastErr||'Save failed');
+                          showOwnerSuccess('Saved');
+                        } catch (err) { setAdmins(snapshot); showOwnerError('Save failed'); }
                       }} /> Can access Dev</label>
                       <label className="inline-flex items-center gap-2"><input type="checkbox" checked={!!a.banned} onChange={async(e)=>{
                         if (String(a.email).toLowerCase() === OWNER_EMAIL) { alert('Owner cannot be banned'); return; }
                         if (!confirm(`${e.target.checked?'Ban':'Unban'} ${a.displayName||a.email||a.uid}?`)) return;
                         const next = { uid:a.uid, email:a.email, displayName:a.displayName, canEditSections:!!a.canEditSections, canAccessDev:!!a.canAccessDev, banned:e.target.checked };
-                        setAdmins((list)=>list.map(x=> (x===a? { ...a, banned:e.target.checked } : x)));
+                        const snapshot = admins.slice();
+                        setAdmins((list)=>list.map(x=> {
+                          const match = a.uid? x.uid===a.uid : String(x.email||'').toLowerCase()===String(a.email||'').toLowerCase();
+                          return match? { ...x, banned:e.target.checked } : x;
+                        }));
+                        showOwnerLoading(`${e.target.checked?'Banning…':'Unbanning…'}`);
                         try { const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
                           const urls = Array.from(new Set([
                             '/.netlify/functions/admins-upsert',
@@ -499,8 +561,11 @@ export default function DevSection() {
                             `${basePath}/api/admins-upsert`,
                           ]));
                           const actor = window.__adminActor || {};
-                          for (const url of urls) { try { const r = await fetch(url, { method: 'POST', headers: { 'content-type':'application/json' }, body: JSON.stringify({ ...next, actorEmail: actor.email||null, actorUid: actor.uid||null, actorName: actor.name||null }) }); if (r.ok) break; } catch {} }
-                        } catch {}
+                          let ok=false; let lastErr='';
+                          for (const url of urls) { try { const r = await fetch(url, { method: 'POST', headers: { 'content-type':'application/json' }, body: JSON.stringify({ ...next, actorEmail: actor.email||null, actorUid: actor.uid||null, actorName: actor.name||null }) }); if (r.ok) { ok=true; break; } else lastErr=`HTTP ${r.status}`; } catch (err) { lastErr = err?.message || 'Network'; } }
+                          if (!ok) throw new Error(lastErr||'Save failed');
+                          showOwnerSuccess('Saved');
+                        } catch (err) { setAdmins(snapshot); showOwnerError('Save failed'); }
                       }} /> Banned</label>
                     </div>
                   </div>
@@ -509,6 +574,13 @@ export default function DevSection() {
                     <button onClick={async()=>{
                       if (String(a.email).toLowerCase() === OWNER_EMAIL) { alert('Owner cannot be deleted'); return; }
                       if (!confirm('Remove this admin authority?')) return;
+                      const snapshot = admins.slice();
+                      // Optimistically remove immediately
+                      setAdmins((list)=>list.filter(x=> {
+                        const match = a.uid? x.uid===a.uid : String(x.email||'').toLowerCase()===String(a.email||'').toLowerCase();
+                        return !match;
+                      }));
+                      showOwnerLoading('Deleting admin…');
                       try {
                         const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
                         const qs = a.uid ? `uid=${encodeURIComponent(a.uid)}` : `email=${encodeURIComponent(a.email||'')}`;
@@ -527,10 +599,14 @@ export default function DevSection() {
                           } catch (e) { lastErr = e?.message || 'Network'; }
                         }
                         if (!ok) throw new Error(lastErr || 'Delete failed');
-                        // Optimistically remove, then refresh to sync
-                        setAdmins((list)=>list.filter(x=> x!==a && ((a.uid && x.uid!==a.uid) || (!a.uid && String(x.email).toLowerCase() !== String(a.email||'').toLowerCase())) ));
-                        await reloadAdminsWithPresence();
-                      } catch (e) { setAdminsError(e?.message || 'Delete failed'); }
+                        showOwnerSuccess('Deleted');
+                        // Refresh presence in background
+                        reloadAdminsWithPresence();
+                      } catch (e) {
+                        setAdmins(snapshot);
+                        setAdminsError(e?.message || 'Delete failed');
+                        showOwnerError('Delete failed');
+                      }
                     }} className="px-3 py-2 rounded-md bg-red-600/20 border border-red-500/40 text-red-200 hover:bg-red-600/30 text-xs">Delete</button>
                   </div>
                 </div>
@@ -547,16 +623,59 @@ export default function DevSection() {
                 <div className="text-sm text-cyan-200 font-medium">Audit Logs (Owner)</div>
                 <button onClick={loadAudit} className="text-xs px-2 py-1 rounded-md border border-white/10 hover:bg-white/5">Reload</button>
               </div>
-              {auditLoading && <div className="text-xs text-gray-400 mt-1">Loading logs…</div>}
-              <div className="mt-2 grid gap-2 max-h-64 overflow-auto pr-1">
-                {audit.map((r, i)=> (
-                  <div key={i} className="rounded-md border border-white/10 bg-black/30 p-2 text-xs text-gray-300">
-                    <div className="text-[11px] text-gray-500">{r.ts ? new Date(r.ts).toLocaleString() : '-'}</div>
-                    <div><span className="text-cyan-200">{r.action}</span> target: {r.target_email || r.target_uid || '-'} actor: {r.actor_email || r.actor_uid || '-'}</div>
-                  </div>
-                ))}
-                {audit.length===0 && !auditLoading && <div className="text-xs text-gray-500">No logs.</div>}
+              <div className="mt-2 grid gap-2 md:grid-cols-5">
+                <input value={auditQuery.actor} onChange={(e)=>{ setAuditPage(1); setAuditQuery(q=>({...q,actor:e.target.value})); }} placeholder="Filter actor (email/uid)" className="bg-black/40 border border-white/10 rounded-md px-2 py-1 text-xs" />
+                <input value={auditQuery.target} onChange={(e)=>{ setAuditPage(1); setAuditQuery(q=>({...q,target:e.target.value})); }} placeholder="Filter target (email/uid)" className="bg-black/40 border border-white/10 rounded-md px-2 py-1 text-xs" />
+                <input value={auditQuery.action} onChange={(e)=>{ setAuditPage(1); setAuditQuery(q=>({...q,action:e.target.value})); }} placeholder="Action (upsert/delete)" className="bg-black/40 border border-white/10 rounded-md px-2 py-1 text-xs" />
+                <input type="date" value={auditQuery.from} onChange={(e)=>{ setAuditPage(1); setAuditQuery(q=>({...q,from:e.target.value})); }} className="bg-black/40 border border-white/10 rounded-md px-2 py-1 text-xs" />
+                <input type="date" value={auditQuery.to} onChange={(e)=>{ setAuditPage(1); setAuditQuery(q=>({...q,to:e.target.value})); }} className="bg-black/40 border border-white/10 rounded-md px-2 py-1 text-xs" />
               </div>
+              {auditLoading && <div className="text-xs text-gray-400 mt-1">Loading logs…</div>}
+              {(() => {
+                const filtered = audit.filter((r)=>{
+                  const actor = (r.actor_email || r.actor_uid || '').toString().toLowerCase();
+                  const target = (r.target_email || r.target_uid || '').toString().toLowerCase();
+                  const action = (r.action || '').toString().toLowerCase();
+                  const aOk = !auditQuery.actor || actor.includes(auditQuery.actor.toLowerCase());
+                  const tOk = !auditQuery.target || target.includes(auditQuery.target.toLowerCase());
+                  const actOk = !auditQuery.action || action.includes(auditQuery.action.toLowerCase());
+                  let dOk = true;
+                  if (auditQuery.from) { try { dOk = dOk && new Date(r.ts) >= new Date(auditQuery.from); } catch {} }
+                  if (auditQuery.to) { try { const toD = new Date(auditQuery.to); toD.setHours(23,59,59,999); dOk = dOk && new Date(r.ts) <= toD; } catch {} }
+                  return aOk && tOk && actOk && dOk;
+                });
+                const total = filtered.length;
+                const pages = Math.max(1, Math.ceil(total / auditPageSize));
+                const page = Math.min(Math.max(1, auditPage), pages);
+                const start = (page - 1) * auditPageSize;
+                const slice = filtered.slice(start, start + auditPageSize);
+                return (
+                  <>
+                    <div className="mt-2 grid gap-2 max-h-64 overflow-auto pr-1">
+                      {slice.map((r, i)=> (
+                        <div key={i} className="rounded-md border border-white/10 bg-black/30 p-2 text-xs text-gray-300">
+                          <div className="text-[11px] text-gray-500">{r.ts ? new Date(r.ts).toLocaleString() : '-'}</div>
+                          <div><span className="text-cyan-200">{r.action}</span> target: {r.target_email || r.target_uid || '-'} actor: {r.actor_email || r.actor_uid || '-'}</div>
+                        </div>
+                      ))}
+                      {filtered.length===0 && !auditLoading && <div className="text-xs text-gray-500">No logs.</div>}
+                    </div>
+                    <div className="mt-2 flex items-center justify-between text-[11px] text-gray-400">
+                      <div>Page {page} of {pages} • {total} items</div>
+                      <div className="flex items-center gap-2">
+                        <button disabled={page<=1} onClick={()=>setAuditPage(p=>Math.max(1,p-1))} className="px-2 py-1 rounded border border-white/10 disabled:opacity-50">Prev</button>
+                        <button disabled={page>=pages} onClick={()=>setAuditPage(p=>Math.min(pages,p+1))} className="px-2 py-1 rounded border border-white/10 disabled:opacity-50">Next</button>
+                        <select value={auditPageSize} onChange={(e)=>{ setAuditPage(1); setAuditPageSize(Number(e.target.value)||20); }} className="bg-black/40 border border-white/10 rounded-md px-2 py-1">
+                          <option value={10}>10</option>
+                          <option value={20}>20</option>
+                          <option value={50}>50</option>
+                          <option value={100}>100</option>
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
               <div className="mt-4">
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-cyan-200 font-medium">Admin Login Logs (Owner)</div>
