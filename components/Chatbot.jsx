@@ -40,6 +40,8 @@ function TypingDots() {
 }
 
 export default function Chatbot() {
+  const STORAGE_KEY = 'aryan-chatbot-history-v1';
+  const MAX_MESSAGES = 200;
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState(() => [
     { role: 'ai', text: "Hello! I’m Aryan’s AI assistant 🤖. Want to get to know him better?" }
@@ -102,6 +104,30 @@ export default function Chatbot() {
       return () => window.removeEventListener('keydown', onKey);
     }
   }, [open]);
+
+  // Load persisted chat on mount
+  useEffect(() => {
+    try {
+      const raw = typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null;
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const sanitized = parsed
+          .filter(m => m && (m.role === 'user' || m.role === 'ai') && typeof m.text === 'string')
+          .slice(-MAX_MESSAGES);
+        if (sanitized.length) setMessages(sanitized);
+      }
+    } catch { /* ignore parse errors */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist chat when messages change
+  useEffect(() => {
+    try {
+      const toSave = messages.slice(-MAX_MESSAGES);
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    } catch { /* quota or privacy mode; ignore */ }
+  }, [messages]);
 
   return (
   <div className="fixed bottom-4 right-4 z-40">
