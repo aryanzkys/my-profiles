@@ -197,6 +197,7 @@ export default function MessagesAdmin() {
           {summary && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="mt-4 rounded-lg border border-cyan-400/30 bg-cyan-500/10 p-3 text-sm text-cyan-100 shadow-[0_0_14px_rgba(34,211,238,0.18)]">
               <div className="text-xs text-cyan-200 mb-1">Gemini Summary</div>
+              <div className="overflow-x-auto">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 linkTarget="_blank"
@@ -206,6 +207,9 @@ export default function MessagesAdmin() {
                   ),
                   strong: ({node, ...props}) => (
                     <strong {...props} className="font-semibold text-white" />
+                  ),
+                  blockquote: ({node, ...props}) => (
+                    <blockquote {...props} className="border-l-2 border-cyan-400/40 bg-black/30 p-2 pl-3 rounded-r-md italic text-gray-200" />
                   ),
                   h1: ({node, ...props}) => (
                     <h1 {...props} className="text-base font-semibold text-white mt-1 mb-1" />
@@ -224,11 +228,27 @@ export default function MessagesAdmin() {
                   ),
                   code: ({inline, className, children, ...props}) => (
                     <code {...props} className={`rounded px-1 py-0.5 bg-black/40 border border-white/10 ${className||''}`}>{children}</code>
+                  ),
+                  table: ({node, ...props}) => (
+                    <table {...props} className="min-w-[480px] w-full text-left border-collapse text-gray-100" />
+                  ),
+                  thead: ({node, ...props}) => (
+                    <thead {...props} className="bg-white/5" />
+                  ),
+                  th: ({node, ...props}) => (
+                    <th {...props} className="px-3 py-2 text-xs font-semibold border-b border-white/10" />
+                  ),
+                  td: ({node, ...props}) => (
+                    <td {...props} className="px-3 py-2 text-xs border-b border-white/10" />
+                  ),
+                  tr: ({node, ...props}) => (
+                    <tr {...props} className="odd:bg-white/[0.02] hover:bg-white/[0.04] transition-colors" />
                   )
                 }}
               >
                 {summary}
               </ReactMarkdown>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -244,7 +264,7 @@ export default function MessagesAdmin() {
                     {m.role==='user' ? (
                       <div className="rounded-2xl px-3 py-2 text-sm border bg-cyan-500/10 border-cyan-400/30 text-cyan-100">{m.text}</div>
                     ) : (
-                      <div className="rounded-2xl px-3 py-2 text-sm border bg-white/5 border-white/10 text-gray-100">
+                      <div className="rounded-2xl px-3 py-2 text-sm border bg-white/5 border-white/10 text-gray-100 overflow-x-auto">
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           linkTarget="_blank"
@@ -254,6 +274,9 @@ export default function MessagesAdmin() {
                             ),
                             strong: ({node, ...props}) => (
                               <strong {...props} className="font-semibold text-white" />
+                            ),
+                            blockquote: ({node, ...props}) => (
+                              <blockquote {...props} className="border-l-2 border-cyan-400/40 bg-black/30 p-2 pl-3 rounded-r-md italic text-gray-200" />
                             ),
                             h1: ({node, ...props}) => (
                               <h1 {...props} className="text-base font-semibold text-white mt-1 mb-1" />
@@ -272,6 +295,21 @@ export default function MessagesAdmin() {
                             ),
                             code: ({inline, className, children, ...props}) => (
                               <code {...props} className={`rounded px-1 py-0.5 bg-black/40 border border-white/10 ${className||''}`}>{children}</code>
+                            ),
+                            table: ({node, ...props}) => (
+                              <table {...props} className="min-w-[480px] w-full text-left border-collapse text-gray-100" />
+                            ),
+                            thead: ({node, ...props}) => (
+                              <thead {...props} className="bg-white/5" />
+                            ),
+                            th: ({node, ...props}) => (
+                              <th {...props} className="px-3 py-2 text-xs font-semibold border-b border-white/10" />
+                            ),
+                            td: ({node, ...props}) => (
+                              <td {...props} className="px-3 py-2 text-xs border-b border-white/10" />
+                            ),
+                            tr: ({node, ...props}) => (
+                              <tr {...props} className="odd:bg-white/[0.02] hover:bg-white/[0.04] transition-colors" />
                             )
                           }}
                         >

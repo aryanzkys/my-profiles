@@ -27,7 +27,7 @@ exports.handler = async () => {
     if (!key) return { statusCode: 500, body: 'Missing GEMINI_API_KEY' };
     const rows = await loadFeedbacks();
     const texts = rows.map((r, i) => `- ${r.userMessage || r.message || ''}`).filter(s => s.trim().length > 0);
-  const prompt = `You are Aryan's AI Assistant. Summarize the following user feedback about Aryan's site in a concise, structured, and friendly way. Include: top themes, positives, constructive points, and 3-5 actionable improvements. Use accessible formatting: clear headings (##), bold for key phrases, short bullet points, and emojis sparingly for clarity. Keep it under 180 words.\n\nFeedback:\n${texts.join('\n')}`;
+  const prompt = `You are Aryan's AI Assistant. Summarize the following user feedback about Aryan's site in a concise, structured, and friendly way. Include: top themes, positives, constructive points, and 3-5 actionable improvements. Use accessible formatting: clear headings (##), bold for key phrases, short bullet points, and emojis sparingly for clarity. When it helps, use a small Markdown table or a short blockquote for an example. Keep it under 180 words.\n\nFeedback:\n${texts.join('\n')}`;
     const contents = [{ role: 'user', parts: [{ text: prompt }] }];
     const url = `${GEMINI_ENDPOINT}?key=${encodeURIComponent(key)}`;
     const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ contents }) });
