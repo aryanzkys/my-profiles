@@ -340,8 +340,12 @@ function buildProfilePrompt() {
   }
   // Organizations
   if (Array.isArray(organizations) && organizations.length) {
-    const org = organizations.map(o => `- ${o.org}${o.role ? ` — ${o.role}` : ''} (${o.period})`).join('\n');
-    parts.push('\nPROFILE — Organizations:\n' + org);
+    const orgSorted = organizations
+      .map((o, i) => ({ o, i, active: /present/i.test(o.period || '') }))
+      .sort((a, b) => (Number(b.active) - Number(a.active)) || (a.i - b.i))
+      .map(({ o }) => `- ${o.org}${o.role ? ` — ${o.role}` : ''} (${o.period})`)
+      .join('\n');
+    parts.push('\nPROFILE — Organizations:\n' + orgSorted);
   }
   // Achievements
   if (achievements && typeof achievements === 'object') {

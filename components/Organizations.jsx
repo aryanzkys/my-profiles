@@ -18,15 +18,25 @@ export default function Organizations() {
 
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return organizations.filter((item) => {
-      const isCurrent = /present/i.test(item.period);
-      if (filter === 'active' && !isCurrent) return false;
-      if (filter === 'past' && isCurrent) return false;
+    // Decorate with stable index and active flag
+    const decorated = (organizations || []).map((item, idx) => ({
+      ...item,
+      _idx: idx,
+      _active: /present/i.test(item.period || ''),
+    }));
+    // Filter by tab and search
+    const filtered = decorated.filter((item) => {
+      if (filter === 'active' && !item._active) return false;
+      if (filter === 'past' && item._active) return false;
       if (!q) return true;
       const hay = `${item.org} ${item.role} ${item.period}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [filter, query]);
+    // Sort: Active first, keep original order within groups
+    filtered.sort((a, b) => (Number(b._active) - Number(a._active)) || (a._idx - b._idx));
+    // Strip decorations
+    return filtered.map(({ _idx, _active, ...rest }) => rest);
+  }, [organizations, filter, query]);
 
   const FilterButton = ({ id, label }) => (
     <button
@@ -81,7 +91,7 @@ export default function Organizations() {
   <div className="pointer-events-auto bg-black/35 border border-white/10 rounded-2xl p-3 md:p-4 backdrop-blur-md max-h-[65vh] overflow-y-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {list.map((item, idx) => {
-            const isCurrent = /present/i.test(item.period);
+            const isCurrent = /present/i.test(item.period || '');
             return (
               <motion.article
                 key={`${item.org}-${item.period}`}
