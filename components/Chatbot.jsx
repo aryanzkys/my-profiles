@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import achievements from '../data/achievements.json';
 import education from '../data/education.json';
 import organizations from '../data/organizations.json';
+import about from '../data/about.json';
+import contact from '../data/contact.json';
 
 const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
@@ -192,6 +194,19 @@ function buildProfilePrompt() {
   const parts = [];
   parts.push('You are Aryan’s AI assistant. Use the PROFILE below to answer questions about Aryan accurately and concisely. If a question is unrelated to Aryan, politely answer but prioritize known facts. Prefer the user’s language. Do not fabricate achievements.');
 
+  // About Me
+  if (about && typeof about === 'object') {
+    const lines = [];
+    if (about.name) lines.push(`Name: ${about.name}`);
+    if (about.role) lines.push(`Role: ${about.role}`);
+    if (about.headline) lines.push(`Focus: ${about.headline}`);
+    if (Array.isArray(about.summary) && about.summary.length) {
+      lines.push('Summary:');
+      lines.push(...about.summary.map(s => `- ${s}`));
+    }
+    if (lines.length) parts.push('\nPROFILE — About:\n' + lines.join('\n'));
+  }
+
   // Education
   if (Array.isArray(education) && education.length) {
     const edu = education.map(e => `- ${e.title}${e.subtitle ? ` — ${e.subtitle}` : ''} (${e.period})`).join('\n');
@@ -211,6 +226,13 @@ function buildProfilePrompt() {
       return `- ${y}:\n${items}`;
     }).join('\n');
     parts.push('\nPROFILE — Achievements:\n' + lines);
+  }
+
+  // Contact
+  if (contact && typeof contact === 'object') {
+    const keys = ['email', 'linkedin', 'instagram', 'instagram_handle', 'github'];
+    const lines = keys.filter(k => contact[k]).map(k => `- ${k.replace('_', ' ')}: ${contact[k]}`);
+    if (lines.length) parts.push('\nPROFILE — Contact:\n' + lines.join('\n'));
   }
 
   parts.push('\nGuidelines: Keep answers short and helpful. If asked “Who is Aryan?” provide a brief intro using the profile.');
