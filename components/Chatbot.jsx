@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import achievements from '../data/achievements.json';
+import education from '../data/education.json';
+import organizations from '../data/organizations.json';
 
 const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
@@ -47,11 +50,22 @@ export default function Chatbot() {
     setLoading(true);
     try {
       const url = `${GEMINI_ENDPOINT}?key=${encodeURIComponent(apiKey || '')}`;
+      // Build profile context from local data
+      const profile = buildProfilePrompt();
+      // Map chat history to API contents
+      const historyContents = messages.map((m) => ({
+        role: m.role === 'ai' ? 'model' : 'user',
+        parts: [{ text: m.text }]
+      }));
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          contents: [ { role: 'user', parts: [ { text: userMsg.text } ] } ]
+          contents: [
+            { role: 'user', parts: [ { text: profile } ] },
+            ...historyContents,
+            { role: 'user', parts: [ { text: userMsg.text } ] }
+          ]
         })
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -171,4 +185,34 @@ export default function Chatbot() {
       </AnimatePresence>
     </div>
   );
+}
+
+function buildProfilePrompt() {
+  // Summarize Aryan's profile with achievements, education, and organizations
+  const parts = [];
+  parts.push('You are Aryan’s AI assistant. Use the PROFILE below to answer questions about Aryan accurately and concisely. If a question is unrelated to Aryan, politely answer but prioritize known facts. Prefer the user’s language. Do not fabricate achievements.');
+
+  // Education
+  if (Array.isArray(education) && education.length) {
+    const edu = education.map(e => `- ${e.title}${e.subtitle ? ` — ${e.subtitle}` : ''} (${e.period})`).join('\n');
+    parts.push('\nPROFILE — Education:\n' + edu);
+  }
+  // Organizations
+  if (Array.isArray(organizations) && organizations.length) {
+    const org = organizations.map(o => `- ${o.org}${o.role ? ` — ${o.role}` : ''} (${o.period})`).join('\n');
+    parts.push('\nPROFILE — Organizations:\n' + org);
+  }
+  // Achievements
+  if (achievements && typeof achievements === 'object') {
+    const years = Object.keys(achievements).sort();
+    const lines = years.map(y => {
+      const list = achievements[y] || [];
+      const items = list.map((a, i) => `  • ${a.text}`).join('\n');
+      return `- ${y}:\n${items}`;
+    }).join('\n');
+    parts.push('\nPROFILE — Achievements:\n' + lines);
+  }
+
+  parts.push('\nGuidelines: Keep answers short and helpful. If asked “Who is Aryan?” provide a brief intro using the profile.');
+  return parts.join('\n');
 }
