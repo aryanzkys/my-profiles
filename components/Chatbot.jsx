@@ -114,6 +114,21 @@ export default function Chatbot() {
       let reply = (data?.reply || '').trim();
       if (!reply) reply = 'Sorry, I could not generate a response right now.';
       setMessages((m) => [...m, { role: 'ai', text: reply }]);
+      // Fire-and-forget: record feedback if the user's message is at least 6 chars
+      try {
+        if (userMsg.text && userMsg.text.trim().length > 5) {
+          const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+          const urls = Array.from(new Set([
+            '/.netlify/functions/feedback-create',
+            `${basePath}/.netlify/functions/feedback-create`,
+            '/api/feedback-create',
+            `${basePath}/api/feedback-create`,
+          ]));
+          for (const u of urls) {
+            try { const rr = await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ userMessage: userMsg.text }) }); if (rr.ok) break; } catch {}
+          }
+        }
+      } catch {}
     } catch (e) {
       setMessages((m) => [...m, { role: 'ai', text: 'Hmm, there was a problem reaching the AI. Please try again in a moment.' }]);
     } finally {
@@ -375,6 +390,10 @@ export default function Chatbot() {
                     <TypingDots />
                     {slow && <SlowProcessing />}
                   </div>
+                )}
+                {/* Optional quick feedback nudge (minimal) */}
+                {!loading && messages.length>1 && (
+                  <div className="pt-1 text-[11px] text-gray-400">Have thoughts about the answer? Just type your feedback here — it helps Aryan improve.</div>
                 )}
                 {/* API key is handled server-side via function env; no client key warning */}
               </div>
