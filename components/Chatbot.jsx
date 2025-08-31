@@ -67,7 +67,7 @@ export default function Chatbot() {
   const MAX_MESSAGES = 200;
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState(() => [
-    { role: 'ai', text: "Hello! I’m Aryan’s AI assistant 🤖. Want to get to know him better?" }
+    { role: 'ai', text: "Hi! I’m Aryan’s AI Assistant 🤖 — trained by Aryan to help you get to know him better. Ask me anything!" }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -82,7 +82,7 @@ export default function Chatbot() {
   const chatWidth = useMemo(() => ({ base: 320, lg: 420 }), []);
 
   const getInitialMessages = () => ([
-    { role: 'ai', text: "Hello! I’m Aryan’s AI assistant 🤖. Want to get to know him better?" }
+    { role: 'ai', text: "Hi! I’m Aryan’s AI Assistant 🤖 — trained by Aryan to help you get to know him better. Ask me anything!" }
   ]);
 
   const sendMessage = async (text) => {
@@ -411,7 +411,7 @@ export default function Chatbot() {
 function buildProfilePrompt() {
   // Summarize Aryan's profile with achievements, education, and organizations
   const parts = [];
-  parts.push('You are Aryan’s AI assistant. Use the PROFILE below to answer questions about Aryan accurately and concisely. If a question is unrelated to Aryan, politely answer but prioritize known facts. Prefer the user’s language. Do not fabricate achievements. You may use Markdown formatting (bold, lists, links, inline code) and emojis to improve clarity and friendliness. If the user requests CAPITAL letters, you may use ALL CAPS for emphasis.');
+  parts.push("You are Aryan’s AI Assistant — trained by Aryan himself to help people get to know him better. Use the PROFILE below to answer questions about Aryan accurately and concisely. If a question is unrelated to Aryan, you may still answer politely, but prioritize known facts about Aryan when relevant. Prefer the user’s language. Do not fabricate achievements. You may use Markdown formatting (bold, lists, links, inline code) and emojis to improve clarity and friendliness. If the user requests CAPITAL letters, you may use ALL CAPS for emphasis.");
 
   // About Me
   if (about && typeof about === 'object') {
