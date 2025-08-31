@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 
 function PoliceLine({ delay = 0, reverse = false }) {
@@ -54,6 +54,7 @@ function HoloHex({ className = '', delay = 0, size = 80, stroke = 'rgba(34,211,2
 export default function ShutdownOverlay() {
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
   const maxTilt = 6; // degrees
+  const [hover, setHover] = useState(false);
   const onMove = (e) => {
     const el = e.currentTarget;
     const rect = el.getBoundingClientRect();
@@ -109,6 +110,8 @@ export default function ShutdownOverlay() {
             animate={{ y: ['-120%', '140%'] }}
             transition={{ repeat: Infinity, duration: 3.5, ease: 'linear' }}
           />
+          {/* Sparkle particles */}
+          <Sparkles active={true} />
           <div className="mx-auto mb-6 h-24 w-24 sm:h-32 sm:w-32 rounded-2xl border border-yellow-400/40 bg-yellow-500/10 relative overflow-hidden">
             <div className="absolute inset-0 opacity-40" style={{ background: 'conic-gradient(from 0deg, transparent, rgba(250,204,21,0.4), rgba(248,113,113,0.35), transparent 30%)' }} />
             <motion.div className="absolute inset-0" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 10, ease: 'linear' }}>
@@ -125,8 +128,13 @@ export default function ShutdownOverlay() {
               <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
             </svg>
           </div>
-          <motion.h2
-            className="mx-auto max-w-3xl text-center text-2xl sm:text-3xl font-semibold leading-snug sm:leading-tight tracking-wide text-transparent bg-clip-text drop-shadow-[0_0_14px_rgba(250,204,21,0.15)]"
+          <motion.div
+            onHoverStart={() => setHover(true)}
+            onHoverEnd={() => setHover(false)}
+            className="relative inline-block"
+          >
+            <motion.h2
+            className="mx-auto max-w-3xl text-center text-2xl sm:text-3xl font-semibold leading-snug sm:leading-tight tracking-wide text-transparent bg-clip-text drop-shadow-[0_0_14px_rgba(250,204,21,0.15)] select-none"
             style={{
               backgroundImage: 'linear-gradient(120deg, rgba(250,204,21,0.95), rgba(34,211,238,0.95), rgba(59,130,246,0.95))',
               backgroundSize: '200% 100%'
@@ -134,9 +142,30 @@ export default function ShutdownOverlay() {
             initial={{ backgroundPosition: '0% 50%' }}
             animate={{ backgroundPosition: ['0% 50%','100% 50%','0% 50%'] }}
             transition={{ repeat: Infinity, duration: 8, ease: 'linear' }}
-          >
-            We’re currently performing some maintenance on this website.
-          </motion.h2>
+          >We’re currently performing some maintenance on this website.</motion.h2>
+
+            {/* Micro-glitch layers on hover (very subtle) */}
+            <motion.span
+              aria-hidden
+              className="absolute inset-0 text-2xl sm:text-3xl font-semibold bg-clip-text text-transparent select-none pointer-events-none"
+              style={{
+                backgroundImage: 'linear-gradient(120deg, rgba(250,204,21,0.9), rgba(34,211,238,0.9))'
+              }}
+              initial={{ opacity: 0 }}
+              animate={hover ? { opacity: [0, 0.25, 0.1, 0.2, 0], x: [0, 1, -1.5, 0.5, 0] } : { opacity: 0, x: 0 }}
+              transition={{ duration: 0.45, repeat: hover ? Infinity : 0, ease: 'easeInOut' }}
+            >We’re currently performing some maintenance on this website.</motion.span>
+            <motion.span
+              aria-hidden
+              className="absolute inset-0 text-2xl sm:text-3xl font-semibold bg-clip-text text-transparent select-none pointer-events-none"
+              style={{
+                backgroundImage: 'linear-gradient(120deg, rgba(59,130,246,0.9), rgba(250,204,21,0.9))'
+              }}
+              initial={{ opacity: 0 }}
+              animate={hover ? { opacity: [0, 0.18, 0.08, 0.15, 0], y: [0, -0.8, 0.6, -0.4, 0] } : { opacity: 0, y: 0 }}
+              transition={{ duration: 0.45, repeat: hover ? Infinity : 0, ease: 'easeInOut', delay: 0.08 }}
+            >We’re currently performing some maintenance on this website.</motion.span>
+          </motion.div>
           <p className="mx-auto max-w-2xl text-center text-gray-300/90 mt-3 leading-relaxed">
             Please check back soon, everything will be back online shortly.
           </p>
@@ -150,6 +179,32 @@ export default function ShutdownOverlay() {
           </motion.div>
         </div>
       </motion.div>
+    </div>
+  );
+}
+
+function Sparkles({ active }) {
+  const count = 20;
+  const items = useMemo(() => Array.from({ length: count }).map((_, i) => ({
+    id: i,
+    left: Math.random() * 100,
+    top: Math.random() * 100,
+    delay: Math.random() * 2,
+    size: 2 + Math.random() * 3,
+    hue: Math.random() > 0.5 ? 190 : 50,
+  })), []);
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0">
+      {items.map(s => (
+        <motion.span
+          key={s.id}
+          className="absolute rounded-full shadow-[0_0_8px_rgba(255,255,255,0.35)]"
+          style={{ left: `${s.left}%`, top: `${s.top}%`, width: s.size, height: s.size, backgroundColor: `hsl(${s.hue} 90% 60% / 0.9)` }}
+          initial={{ opacity: 0 }}
+          animate={active ? { opacity: [0, 0.9, 0], y: [-3, 0, 3], x: [0, 0.4, -0.4] } : { opacity: 0 }}
+          transition={{ repeat: Infinity, duration: 3 + Math.random() * 2, ease: 'easeInOut', delay: s.delay }}
+        />
+      ))}
     </div>
   );
 }
