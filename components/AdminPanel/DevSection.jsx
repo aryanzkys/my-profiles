@@ -410,7 +410,7 @@ export default function DevSection() {
             )}
           </div>
           {/* Audit (Owner only – just show if Owner entry exists) */}
-          {admins.some(x=>String(x.email).toLowerCase()===OWNER_EMAIL) && (
+          {(admins.some(x=>String(x.email).toLowerCase()===OWNER_EMAIL) || (typeof window!=='undefined' && String(window.__adminActor?.email).toLowerCase()===OWNER_EMAIL)) && (
             <div className="mt-4">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-cyan-200 font-medium">Audit Logs (Owner)</div>

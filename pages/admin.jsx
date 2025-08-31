@@ -44,6 +44,7 @@ function AdminInner() {
   const [authority, setAuthority] = useState(null); // { canEditSections, canAccessDev, banned }
   const [authzLoading, setAuthzLoading] = useState(true);
   const [authzError, setAuthzError] = useState('');
+  const OWNER_EMAIL = 'prayogoaryan63@gmail.com';
 
   const years = useMemo(() => Object.keys(data).sort((a, b) => Number(b) - Number(a)), [data]);
 
@@ -124,8 +125,13 @@ function AdminInner() {
         if (!data) throw new Error(lastErr || 'Failed');
         const email = (user.email || '').toLowerCase();
         const uid = user.uid;
-        const row = (Array.isArray(data) ? data : []).find((a) => (uid && a.uid === uid) || (email && a.email && String(a.email).toLowerCase() === email)) || null;
-  setAuthority(row || { canEditSections: false, canAccessDev: false, banned: false });
+        // Owner gets full access automatically
+        if (email === OWNER_EMAIL) {
+          setAuthority({ canEditSections: true, canAccessDev: true, banned: false });
+        } else {
+          const row = (Array.isArray(data) ? data : []).find((a) => (uid && a.uid === uid) || (email && a.email && String(a.email).toLowerCase() === email)) || null;
+          setAuthority(row || { canEditSections: false, canAccessDev: false, banned: false });
+        }
       } catch (e) { setAuthzError(e?.message || 'Failed to load permissions'); }
       finally { setAuthzLoading(false); }
     })();
@@ -891,6 +897,7 @@ function AdminInner() {
 function AdminGate() {
   const { user, loading, initError } = useAuth();
   const router = useRouter();
+  const OWNER_EMAIL = 'prayogoaryan63@gmail.com';
   useEffect(() => {
     if (!loading && !user && !initError) router.replace('/login');
   }, [loading, user, initError, router]);
@@ -910,8 +917,8 @@ function AdminGate() {
         for (const url of urls) { try { const r = await fetch(url); if (r.ok) { data = await r.json(); break; } } catch {} }
         const email = (user.email || '').toLowerCase();
         const uid = user.uid;
-        const row = (Array.isArray(data)?data:[]).find((a)=> (uid && a.uid===uid) || (email && a.email && String(a.email).toLowerCase()===email));
-        if (row && row.banned) {
+  const row = (Array.isArray(data)?data:[]).find((a)=> (uid && a.uid===uid) || (email && a.email && String(a.email).toLowerCase()===email));
+  if (email !== OWNER_EMAIL && row && row.banned) {
           router.replace('/login?banned=1');
         }
       } catch {}
