@@ -19,6 +19,9 @@ export default function DevSection() {
   const [adminsError, setAdminsError] = useState('');
   const [form, setForm] = useState({ uid: '', email: '', displayName: '', canEditSections: true, canAccessDev: true, banned: false });
   const [formBusy, setFormBusy] = useState(false);
+  const OWNER_EMAIL = 'prayogoaryan63@gmail.com';
+  const [audit, setAudit] = useState([]);
+  const [auditLoading, setAuditLoading] = useState(false);
 
   const fetchFlags = async () => {
     setLoading(true); setError('');
@@ -94,6 +97,22 @@ export default function DevSection() {
       finally { setAdminsLoading(false); }
     })();
   }, []);
+
+  const loadAudit = async () => {
+    setAuditLoading(true);
+    try {
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const urls = Array.from(new Set([
+        '/.netlify/functions/admins-audit-list',
+        `${basePath}/.netlify/functions/admins-audit-list`,
+        '/api/admins-audit-list',
+        `${basePath}/api/admins-audit-list`,
+      ]));
+      for (const url of urls) {
+        try { const r = await fetch(url); if (r.ok) { const j = await r.json(); setAudit(Array.isArray(j)?j:[]); break; } } catch {}
+      }
+    } finally { setAuditLoading(false); }
+  };
 
   // Keep slider knob in sync with state when not dragging
   useEffect(() => {
@@ -263,6 +282,7 @@ export default function DevSection() {
               <button
                 onClick={async()=>{
                   if (!form.uid && !form.email) { setAdminsError('Enter uid or email'); return; }
+                  if (String(form.email).toLowerCase() === OWNER_EMAIL && form.banned) { setAdminsError('Owner cannot be banned'); return; }
                   setFormBusy(true); setAdminsError('');
                   try {
                     const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -274,7 +294,12 @@ export default function DevSection() {
                     ]));
                     let ok = false; let lastErr = '';
                     for (const url of urls) {
-                      try { const r = await fetch(url, { method: 'POST', headers: { 'content-type':'application/json' }, body: JSON.stringify(form) }); if (r.ok) { ok = true; break; } else lastErr = `HTTP ${r.status}`; } catch (e) { lastErr = e?.message || 'Network'; }
+                      try {
+                        const actor = window.__adminActor || {};
+                        const payload = { ...form, actorEmail: actor.email || null, actorUid: actor.uid || null, actorName: actor.name || null };
+                        const r = await fetch(url, { method: 'POST', headers: { 'content-type':'application/json' }, body: JSON.stringify(payload) });
+                        if (r.ok) { ok = true; break; } else lastErr = `HTTP ${r.status}`;
+                      } catch (e) { lastErr = e?.message || 'Network'; }
                     }
                     if (!ok) throw new Error(lastErr || 'Save failed');
                     // refresh list
@@ -306,6 +331,8 @@ export default function DevSection() {
                     <div className="text-xs text-gray-400">{a.email || '-'} {a.uid ? `• ${a.uid}`:''}</div>
                     <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-300 items-center">
                       <label className="inline-flex items-center gap-2"><input type="checkbox" checked={!!a.canEditSections} onChange={async(e)=>{
+                        if (String(a.email).toLowerCase() === OWNER_EMAIL && !e.target.checked) { alert('Owner must retain edit access'); return; }
+                        if (!confirm(`Change "Can edit sections" for ${a.displayName||a.email||a.uid}?`)) return;
                         const next = { uid:a.uid, email:a.email, displayName:a.displayName, canEditSections:e.target.checked, canAccessDev:!!a.canAccessDev, banned:!!a.banned };
                         setAdmins((list)=>list.map(x=> (x===a? { ...a, canEditSections:e.target.checked } : x)));
                         try {
@@ -316,10 +343,13 @@ export default function DevSection() {
                             '/api/admins-upsert',
                             `${basePath}/api/admins-upsert`,
                           ]));
-                          for (const url of urls) { try { const r = await fetch(url, { method: 'POST', headers: { 'content-type':'application/json' }, body: JSON.stringify(next) }); if (r.ok) break; } catch {} }
+                          const actor = window.__adminActor || {};
+                          for (const url of urls) { try { const r = await fetch(url, { method: 'POST', headers: { 'content-type':'application/json' }, body: JSON.stringify({ ...next, actorEmail: actor.email||null, actorUid: actor.uid||null, actorName: actor.name||null }) }); if (r.ok) break; } catch {} }
                         } catch {}
                       }} /> Can edit sections</label>
                       <label className="inline-flex items-center gap-2"><input type="checkbox" checked={!!a.canAccessDev} onChange={async(e)=>{
+                        if (String(a.email).toLowerCase() === OWNER_EMAIL && !e.target.checked) { alert('Owner must retain Dev access'); return; }
+                        if (!confirm(`Change "Can access Dev" for ${a.displayName||a.email||a.uid}?`)) return;
                         const next = { uid:a.uid, email:a.email, displayName:a.displayName, canEditSections:!!a.canEditSections, canAccessDev:e.target.checked, banned:!!a.banned };
                         setAdmins((list)=>list.map(x=> (x===a? { ...a, canAccessDev:e.target.checked } : x)));
                         try { const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -329,10 +359,13 @@ export default function DevSection() {
                             '/api/admins-upsert',
                             `${basePath}/api/admins-upsert`,
                           ]));
-                          for (const url of urls) { try { const r = await fetch(url, { method: 'POST', headers: { 'content-type':'application/json' }, body: JSON.stringify(next) }); if (r.ok) break; } catch {} }
+                          const actor = window.__adminActor || {};
+                          for (const url of urls) { try { const r = await fetch(url, { method: 'POST', headers: { 'content-type':'application/json' }, body: JSON.stringify({ ...next, actorEmail: actor.email||null, actorUid: actor.uid||null, actorName: actor.name||null }) }); if (r.ok) break; } catch {} }
                         } catch {}
                       }} /> Can access Dev</label>
                       <label className="inline-flex items-center gap-2"><input type="checkbox" checked={!!a.banned} onChange={async(e)=>{
+                        if (String(a.email).toLowerCase() === OWNER_EMAIL) { alert('Owner cannot be banned'); return; }
+                        if (!confirm(`${e.target.checked?'Ban':'Unban'} ${a.displayName||a.email||a.uid}?`)) return;
                         const next = { uid:a.uid, email:a.email, displayName:a.displayName, canEditSections:!!a.canEditSections, canAccessDev:!!a.canAccessDev, banned:e.target.checked };
                         setAdmins((list)=>list.map(x=> (x===a? { ...a, banned:e.target.checked } : x)));
                         try { const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -342,7 +375,8 @@ export default function DevSection() {
                             '/api/admins-upsert',
                             `${basePath}/api/admins-upsert`,
                           ]));
-                          for (const url of urls) { try { const r = await fetch(url, { method: 'POST', headers: { 'content-type':'application/json' }, body: JSON.stringify(next) }); if (r.ok) break; } catch {} }
+                          const actor = window.__adminActor || {};
+                          for (const url of urls) { try { const r = await fetch(url, { method: 'POST', headers: { 'content-type':'application/json' }, body: JSON.stringify({ ...next, actorEmail: actor.email||null, actorUid: actor.uid||null, actorName: actor.name||null }) }); if (r.ok) break; } catch {} }
                         } catch {}
                       }} /> Banned</label>
                     </div>
@@ -350,6 +384,7 @@ export default function DevSection() {
                   <div className="flex items-center justify-end gap-2">
                     <button onClick={()=>setForm({ uid:a.uid||'', email:a.email||'', displayName:a.displayName||'', canEditSections:!!a.canEditSections, canAccessDev:!!a.canAccessDev, banned:!!a.banned })} className="px-3 py-2 rounded-md bg-white/10 border border-white/20 hover:bg-white/15 text-xs">Edit</button>
                     <button onClick={async()=>{
+                      if (String(a.email).toLowerCase() === OWNER_EMAIL) { alert('Owner cannot be deleted'); return; }
                       if (!confirm('Remove this admin authority?')) return;
                       try {
                         const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -374,6 +409,25 @@ export default function DevSection() {
               <div className="text-sm text-gray-400">No admins configured yet.</div>
             )}
           </div>
+          {/* Audit (Owner only – just show if Owner entry exists) */}
+          {admins.some(x=>String(x.email).toLowerCase()===OWNER_EMAIL) && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-cyan-200 font-medium">Audit Logs (Owner)</div>
+                <button onClick={loadAudit} className="text-xs px-2 py-1 rounded-md border border-white/10 hover:bg-white/5">Reload</button>
+              </div>
+              {auditLoading && <div className="text-xs text-gray-400 mt-1">Loading logs…</div>}
+              <div className="mt-2 grid gap-2 max-h-64 overflow-auto pr-1">
+                {audit.map((r, i)=> (
+                  <div key={i} className="rounded-md border border-white/10 bg-black/30 p-2 text-xs text-gray-300">
+                    <div className="text-[11px] text-gray-500">{r.ts ? new Date(r.ts).toLocaleString() : '-'}</div>
+                    <div><span className="text-cyan-200">{r.action}</span> target: {r.target_email || r.target_uid || '-'} actor: {r.actor_email || r.actor_uid || '-'}</div>
+                  </div>
+                ))}
+                {audit.length===0 && !auditLoading && <div className="text-xs text-gray-500">No logs.</div>}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </section>

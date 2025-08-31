@@ -125,7 +125,7 @@ function AdminInner() {
         const email = (user.email || '').toLowerCase();
         const uid = user.uid;
         const row = (Array.isArray(data) ? data : []).find((a) => (uid && a.uid === uid) || (email && a.email && String(a.email).toLowerCase() === email)) || null;
-        setAuthority(row || { canEditSections: true, canAccessDev: true, banned: false });
+  setAuthority(row || { canEditSections: false, canAccessDev: false, banned: false });
       } catch (e) { setAuthzError(e?.message || 'Failed to load permissions'); }
       finally { setAuthzLoading(false); }
     })();
@@ -160,6 +160,13 @@ function AdminInner() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [user, tab, data, edu, orgs, displayName, pwCurrent, pwNew, pwConfirm]);
+
+  // Expose actor for DevSection auditing
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.__adminActor = { email: user?.email || null, uid: user?.uid || null, name: user?.displayName || null };
+    }
+  }, [user]);
 
   const onMouseMove = useCallback((e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -529,10 +536,11 @@ function AdminInner() {
           </div>
           {/* Tabs visible depend on authority */}
           <div className="mb-4 flex gap-2">
-            {(['achievements','education','organizations','messages','dev','admin-profile']
+      {(['achievements','education','organizations','messages','dev','admin-profile']
               .filter((t)=>{
                 if (t==='dev') return !!authority?.canAccessDev;
-                if (t==='messages' || t==='admin-profile') return true; // always visible
+        if (t==='messages') return !!authority?.canEditSections;
+        if (t==='admin-profile') return true; // profile always visible
                 // content editing tabs
                 return !!authority?.canEditSections;
               }))
@@ -688,7 +696,7 @@ function AdminInner() {
             </section>
           )}
 
-          {tab === 'messages' && (
+          {tab === 'messages' && authority?.canEditSections && (
             <section className="bg-white/5 border border-white/10 rounded-xl p-4">
               <MessagesAdmin />
             </section>
