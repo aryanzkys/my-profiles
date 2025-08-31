@@ -41,14 +41,14 @@ function TypingDots() {
 
 function SlowProcessing() {
   return (
-    <div className="mt-1 max-w-[80%] rounded-xl px-3 py-2 text-xs border bg-cyan-500/5 border-cyan-400/30 text-cyan-100 shadow-[0_0_14px_rgba(34,211,238,0.12)]" role="status" aria-live="polite">
+  <div className="mt-1 max-w-[80%] rounded-xl px-3 py-2 text-xs border bg-cyan-500/5 border-cyan-400/30 text-cyan-100 shadow-[0_0_14px_rgba(34,211,238,0.12)]" role="status" aria-live="polite">
       <div className="flex items-center gap-2">
         <motion.span
           className="h-2 w-2 rounded-full bg-cyan-300"
           animate={{ scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }}
           transition={{ repeat: Infinity, duration: 1.2 }}
         />
-        <span>Memproses jawaban… butuh sedikit waktu ⏳</span>
+    <span>Processing your answer… this may take a moment ⏳</span>
       </div>
       <div className="mt-2 h-1 rounded-full bg-white/10 overflow-hidden">
         <motion.span
