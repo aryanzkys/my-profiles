@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function MessagesAdmin() {
   const [rows, setRows] = useState([]);
@@ -195,7 +197,38 @@ export default function MessagesAdmin() {
           {summary && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="mt-4 rounded-lg border border-cyan-400/30 bg-cyan-500/10 p-3 text-sm text-cyan-100 shadow-[0_0_14px_rgba(34,211,238,0.18)]">
               <div className="text-xs text-cyan-200 mb-1">Gemini Summary</div>
-              <div className="whitespace-pre-wrap">{summary}</div>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                linkTarget="_blank"
+                components={{
+                  a: ({node, ...props}) => (
+                    <a {...props} className="underline decoration-cyan-400/50 hover:decoration-cyan-300" />
+                  ),
+                  strong: ({node, ...props}) => (
+                    <strong {...props} className="font-semibold text-white" />
+                  ),
+                  h1: ({node, ...props}) => (
+                    <h1 {...props} className="text-base font-semibold text-white mt-1 mb-1" />
+                  ),
+                  h2: ({node, ...props}) => (
+                    <h2 {...props} className="text-[15px] font-semibold text-white mt-1 mb-1" />
+                  ),
+                  h3: ({node, ...props}) => (
+                    <h3 {...props} className="text-sm font-semibold text-white mt-1 mb-1" />
+                  ),
+                  ul: ({node, ...props}) => (
+                    <ul {...props} className="list-disc pl-5 my-1 space-y-1" />
+                  ),
+                  ol: ({node, ...props}) => (
+                    <ol {...props} className="list-decimal pl-5 my-1 space-y-1" />
+                  ),
+                  code: ({inline, className, children, ...props}) => (
+                    <code {...props} className={`rounded px-1 py-0.5 bg-black/40 border border-white/10 ${className||''}`}>{children}</code>
+                  )
+                }}
+              >
+                {summary}
+              </ReactMarkdown>
             </motion.div>
           )}
         </AnimatePresence>
@@ -208,7 +241,44 @@ export default function MessagesAdmin() {
               <div ref={viewport} className="max-h-52 overflow-auto p-3 space-y-2">
                 {chatHistory.map((m,i)=> (
                   <div key={i} className={`max-w-[90%] ${m.role==='user'?'ml-auto':''}`}>
-                    <div className={`rounded-2xl px-3 py-2 text-sm border ${m.role==='user'?'bg-cyan-500/10 border-cyan-400/30 text-cyan-100':'bg-white/5 border-white/10 text-gray-100'}`}>{m.text}</div>
+                    {m.role==='user' ? (
+                      <div className="rounded-2xl px-3 py-2 text-sm border bg-cyan-500/10 border-cyan-400/30 text-cyan-100">{m.text}</div>
+                    ) : (
+                      <div className="rounded-2xl px-3 py-2 text-sm border bg-white/5 border-white/10 text-gray-100">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          linkTarget="_blank"
+                          components={{
+                            a: ({node, ...props}) => (
+                              <a {...props} className="underline decoration-cyan-400/50 hover:decoration-cyan-300" />
+                            ),
+                            strong: ({node, ...props}) => (
+                              <strong {...props} className="font-semibold text-white" />
+                            ),
+                            h1: ({node, ...props}) => (
+                              <h1 {...props} className="text-base font-semibold text-white mt-1 mb-1" />
+                            ),
+                            h2: ({node, ...props}) => (
+                              <h2 {...props} className="text-[15px] font-semibold text-white mt-1 mb-1" />
+                            ),
+                            h3: ({node, ...props}) => (
+                              <h3 {...props} className="text-sm font-semibold text-white mt-1 mb-1" />
+                            ),
+                            ul: ({node, ...props}) => (
+                              <ul {...props} className="list-disc pl-5 my-1 space-y-1" />
+                            ),
+                            ol: ({node, ...props}) => (
+                              <ol {...props} className="list-decimal pl-5 my-1 space-y-1" />
+                            ),
+                            code: ({inline, className, children, ...props}) => (
+                              <code {...props} className={`rounded px-1 py-0.5 bg-black/40 border border-white/10 ${className||''}`}>{children}</code>
+                            )
+                          }}
+                        >
+                          {m.text}
+                        </ReactMarkdown>
+                      </div>
+                    )}
                   </div>
                 ))}
                 {chatLoading && (

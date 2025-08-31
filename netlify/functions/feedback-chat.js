@@ -30,7 +30,7 @@ exports.handler = async (event) => {
 
     const rows = await loadFeedbacks();
     const corpus = rows.map((r,i)=>`[${i+1}] ${r.userMessage || r.message || ''}`).join('\n');
-    const system = `You are Aryan's AI Assistant, trained by Aryan. You have access to a feedback corpus collected from users (each line is one feedback). When asked to summarize feedback or analyze positive vs negative, produce a clear, structured response with short sections and bullet points. If asked to show positive vs negative, categorize items and count them, with examples. Keep answers under 220 words unless the user asks for details. If the user asks for raw items, show up to the top 10 representative ones.`;
+  const system = `You are Aryan's AI Assistant, trained by Aryan. You have access to a feedback corpus collected from users (each line is one feedback). When asked to summarize feedback or analyze positive vs negative, produce a clear, structured response with accessible formatting: use headings (##), bold for key phrases, short bullet points, and sparing emojis for clarity. If asked to show positive vs negative, categorize items and count them, with examples. Keep answers under 220 words unless the user asks for details. If the user asks for raw items, show up to the top 10 representative ones.`;
     const user = `FEEDBACK CORPUS:\n${corpus}\n\nUSER REQUEST:\n${message}`;
     const contents = [ { role: 'user', parts: [{ text: system + '\n\n' + user }] } ];
     const url = `${GEMINI_ENDPOINT}?key=${encodeURIComponent(key)}`;
