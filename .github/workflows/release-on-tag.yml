@@ -1,0 +1,48 @@
+name: Create/Update GitHub Release on tag
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*.*.*-*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Derive release metadata
+        id: vars
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [[ "$TAG" == *-* ]]; then
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "title=Version ${TAG#v}" >> $GITHUB_OUTPUT
+
+      - name: Create or update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.tag }}
+          name: ${{ steps.vars.outputs.title }}
+          body: |
+            This release was generated automatically from tag `${{ steps.vars.outputs.tag }}`.
+
+            Docker image:
+            - ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.tag }}
+
+            Auto-generated release notes are included below.
+          prerelease: ${{ steps.vars.outputs.prerelease }}
+          generate_release_notes: true
+          draft: false
+          make_latest: false
+          allow_updates: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
