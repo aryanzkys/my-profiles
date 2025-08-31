@@ -40,6 +40,10 @@ function AdminInner() {
   const [pwVisible, setPwVisible] = useState({ current: false, next: false, confirm: false });
   const [selected, setSelected] = useState(null);
   const mouseRef = useRef({ x: 0, y: 0 });
+  // Admin authority
+  const [authority, setAuthority] = useState(null); // { canEditSections, canAccessDev, banned }
+  const [authzLoading, setAuthzLoading] = useState(true);
+  const [authzError, setAuthzError] = useState('');
 
   const years = useMemo(() => Object.keys(data).sort((a, b) => Number(b) - Number(a)), [data]);
 
@@ -99,6 +103,33 @@ function AdminInner() {
       }
     })();
   }, []);
+
+  // Load authority for current user
+  useEffect(() => {
+    (async () => {
+      if (!user) return;
+      setAuthzLoading(true); setAuthzError('');
+      try {
+        const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+        const urls = Array.from(new Set([
+          '/.netlify/functions/admins-list',
+          `${basePath}/.netlify/functions/admins-list`,
+          '/api/admins-list',
+          `${basePath}/api/admins-list`,
+        ]));
+        let data = null; let lastErr = '';
+        for (const url of urls) {
+          try { const r = await fetch(url); if (r.ok) { data = await r.json(); break; } else lastErr = `HTTP ${r.status}`; } catch (e) { lastErr = e?.message || 'Network'; }
+        }
+        if (!data) throw new Error(lastErr || 'Failed');
+        const email = (user.email || '').toLowerCase();
+        const uid = user.uid;
+        const row = (Array.isArray(data) ? data : []).find((a) => (uid && a.uid === uid) || (email && a.email && String(a.email).toLowerCase() === email)) || null;
+        setAuthority(row || { canEditSections: true, canAccessDev: true, banned: false });
+      } catch (e) { setAuthzError(e?.message || 'Failed to load permissions'); }
+      finally { setAuthzLoading(false); }
+    })();
+  }, [user]);
 
   // Initialize profile fields from user
   useEffect(() => {
@@ -434,7 +465,7 @@ function AdminInner() {
   };
 
   return (
-    <div className="min-h-screen relative text-gray-100" onMouseMove={onMouseMove}>
+  <div className="min-h-screen relative text-gray-100" onMouseMove={onMouseMove}>
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute inset-0" style={{
           background: `radial-gradient(1200px 600px at calc(var(--mx,0.5)*100%) calc(var(--my,0.3)*100%), rgba(34,211,238,0.15), transparent 60%), radial-gradient(800px 400px at 50% 0%, rgba(59,130,246,0.12), transparent 70%)`
@@ -496,8 +527,16 @@ function AdminInner() {
               <button onClick={() => setShowSignout(true)} className="px-3 py-2 rounded-md bg-red-600/20 border border-red-500/40 text-red-200 hover:bg-red-600/30" title="Sign out">Sign out</button>
             </div>
           </div>
+          {/* Tabs visible depend on authority */}
           <div className="mb-4 flex gap-2">
-            {['achievements','education','organizations','messages','dev','admin-profile'].map((t) => (
+            {(['achievements','education','organizations','messages','dev','admin-profile']
+              .filter((t)=>{
+                if (t==='dev') return !!authority?.canAccessDev;
+                if (t==='messages' || t==='admin-profile') return true; // always visible
+                // content editing tabs
+                return !!authority?.canEditSections;
+              }))
+              .map((t) => (
               <button key={t} onClick={() => setTab(t)} className={`px-3 py-2 rounded-md border relative overflow-hidden ${tab===t? 'bg-cyan-500/20 border-cyan-400/40 text-cyan-200':'bg-white/5 border-white/10 hover:bg-white/10'}`}>
                 <span className="relative z-10">{t==='admin-profile' ? 'Admin Profile' : t.charAt(0).toUpperCase()+t.slice(1)}</span>
                 <span className="absolute inset-0 opacity-0 group-hover:opacity-100" />
@@ -505,7 +544,12 @@ function AdminInner() {
             ))}
           </div>
 
-          {tab === 'achievements' && (
+          {/* Banned overlay or restrictions */}
+          {!authzLoading && authority?.banned && (
+            <div className="mb-4 rounded-lg border border-red-400/40 bg-red-600/10 p-3 text-sm text-red-200">Your admin access has been revoked. Contact the owner.</div>
+          )}
+
+          {tab === 'achievements' && authority?.canEditSections && (
             <>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-cyan-300">Achievements</h2>
@@ -578,7 +622,7 @@ function AdminInner() {
             )}
           </AnimatePresence>
 
-          {tab === 'education' && (
+          {tab === 'education' && authority?.canEditSections && (
             <section className="bg-white/5 border border-white/10 rounded-xl p-4">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-white">Education</h2>
@@ -611,7 +655,7 @@ function AdminInner() {
             </section>
           )}
 
-          {tab === 'organizations' && (
+          {tab === 'organizations' && authority?.canEditSections && (
             <section className="bg-white/5 border border-white/10 rounded-xl p-4">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-white">Organizations</h2>
@@ -650,7 +694,7 @@ function AdminInner() {
             </section>
           )}
 
-          {tab === 'dev' && (
+          {tab === 'dev' && authority?.canAccessDev && (
             <section className="bg-white/5 border border-white/10 rounded-xl p-4">
               <DevSection />
             </section>
@@ -842,6 +886,29 @@ function AdminGate() {
   useEffect(() => {
     if (!loading && !user && !initError) router.replace('/login');
   }, [loading, user, initError, router]);
+  // Optional: if banned, kick out
+  useEffect(() => {
+    (async () => {
+      if (!user) return;
+      try {
+        const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+        const urls = Array.from(new Set([
+          '/.netlify/functions/admins-list',
+          `${basePath}/.netlify/functions/admins-list`,
+          '/api/admins-list',
+          `${basePath}/api/admins-list`,
+        ]));
+        let data = null;
+        for (const url of urls) { try { const r = await fetch(url); if (r.ok) { data = await r.json(); break; } } catch {} }
+        const email = (user.email || '').toLowerCase();
+        const uid = user.uid;
+        const row = (Array.isArray(data)?data:[]).find((a)=> (uid && a.uid===uid) || (email && a.email && String(a.email).toLowerCase()===email));
+        if (row && row.banned) {
+          router.replace('/login?banned=1');
+        }
+      } catch {}
+    })();
+  }, [user, router]);
   if (initError) {
     return (
       <div className="min-h-[40vh] grid place-items-center text-center p-6">

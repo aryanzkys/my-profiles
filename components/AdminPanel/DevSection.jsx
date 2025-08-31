@@ -13,6 +13,12 @@ export default function DevSection() {
   const trackRef = useRef(null);
   const [pending, setPending] = useState(null); // null | boolean, optimistic visual
   const busy = pending !== null || saving; // busy while saving or pending transition
+  // Admin authorities
+  const [admins, setAdmins] = useState([]);
+  const [adminsLoading, setAdminsLoading] = useState(false);
+  const [adminsError, setAdminsError] = useState('');
+  const [form, setForm] = useState({ uid: '', email: '', displayName: '', canEditSections: true, canAccessDev: true, banned: false });
+  const [formBusy, setFormBusy] = useState(false);
 
   const fetchFlags = async () => {
     setLoading(true); setError('');
@@ -67,6 +73,27 @@ export default function DevSection() {
   };
 
   useEffect(() => { fetchFlags(); }, []);
+  useEffect(() => { // load admins
+    (async () => {
+      setAdminsLoading(true); setAdminsError('');
+      try {
+        const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+        const urls = Array.from(new Set([
+          '/.netlify/functions/admins-list',
+          `${basePath}/.netlify/functions/admins-list`,
+          '/api/admins-list',
+          `${basePath}/api/admins-list`,
+        ]));
+        let data = null; let lastErr = '';
+        for (const url of urls) {
+          try { const r = await fetch(url); if (r.ok) { data = await r.json(); break; } else lastErr = `HTTP ${r.status}`; } catch (e) { lastErr = e?.message || 'Network'; }
+        }
+        if (!data) throw new Error(lastErr || 'Failed to load');
+        setAdmins(Array.isArray(data) ? data : []);
+      } catch (e) { setAdminsError(e?.message || 'Failed to load'); }
+      finally { setAdminsLoading(false); }
+    })();
+  }, []);
 
   // Keep slider knob in sync with state when not dragging
   useEffect(() => {
@@ -210,6 +237,145 @@ export default function DevSection() {
           </AnimatePresence>
         </div>
       )}
+      {/* Admin Authorities */}
+      <div className="pt-2">
+        <div className="text-lg font-semibold text-cyan-200 mb-2">Admin Authorities</div>
+        <div className="text-xs text-gray-400 mb-2">Manage who can edit sections, access Dev, or is banned.</div>
+        <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+          {/* Add / Update form */}
+          <div className="grid md:grid-cols-6 gap-3">
+            <div className="md:col-span-2">
+              <label className="block text-xs text-gray-300 mb-1">UID (optional)</label>
+              <input className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2" value={form.uid} onChange={(e)=>setForm(v=>({...v, uid:e.target.value}))} placeholder="Firebase UID" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs text-gray-300 mb-1">Email</label>
+              <input className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2" value={form.email} onChange={(e)=>setForm(v=>({...v, email:e.target.value}))} placeholder="user@example.com" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs text-gray-300 mb-1">Display Name</label>
+              <input className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2" value={form.displayName} onChange={(e)=>setForm(v=>({...v, displayName:e.target.value}))} placeholder="Optional" />
+            </div>
+            <div className="md:col-span-6 grid grid-cols-2 md:grid-cols-5 gap-3 items-end">
+              <label className="inline-flex items-center gap-2 text-xs text-gray-300"><input type="checkbox" checked={form.canEditSections} onChange={(e)=>setForm(v=>({...v, canEditSections:e.target.checked}))} /> Can edit sections</label>
+              <label className="inline-flex items-center gap-2 text-xs text-gray-300"><input type="checkbox" checked={form.canAccessDev} onChange={(e)=>setForm(v=>({...v, canAccessDev:e.target.checked}))} /> Can access Dev</label>
+              <label className="inline-flex items-center gap-2 text-xs text-gray-300"><input type="checkbox" checked={form.banned} onChange={(e)=>setForm(v=>({...v, banned:e.target.checked}))} /> Banned</label>
+              <button
+                onClick={async()=>{
+                  if (!form.uid && !form.email) { setAdminsError('Enter uid or email'); return; }
+                  setFormBusy(true); setAdminsError('');
+                  try {
+                    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+                    const urls = Array.from(new Set([
+                      '/.netlify/functions/admins-upsert',
+                      `${basePath}/.netlify/functions/admins-upsert`,
+                      '/api/admins-upsert',
+                      `${basePath}/api/admins-upsert`,
+                    ]));
+                    let ok = false; let lastErr = '';
+                    for (const url of urls) {
+                      try { const r = await fetch(url, { method: 'POST', headers: { 'content-type':'application/json' }, body: JSON.stringify(form) }); if (r.ok) { ok = true; break; } else lastErr = `HTTP ${r.status}`; } catch (e) { lastErr = e?.message || 'Network'; }
+                    }
+                    if (!ok) throw new Error(lastErr || 'Save failed');
+                    // refresh list
+                    const listUrls = Array.from(new Set([
+                      '/.netlify/functions/admins-list',
+                      `${basePath}/.netlify/functions/admins-list`,
+                      '/api/admins-list',
+                      `${basePath}/api/admins-list`,
+                    ]));
+                    for (const url of listUrls) { try { const r = await fetch(url); if (r.ok) { const j = await r.json(); setAdmins(Array.isArray(j)?j:[]); break; } } catch {} }
+                  } catch (e) { setAdminsError(e?.message || 'Save failed'); }
+                  finally { setFormBusy(false); }
+                }}
+                disabled={formBusy}
+                className="px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30"
+              >{formBusy?'Saving…':'Add/Update'}</button>
+              <button onClick={()=>setForm({ uid:'', email:'', displayName:'', canEditSections:true, canAccessDev:true, banned:false })} className="px-3 py-2 rounded-md bg-white/10 border border-white/20 hover:bg-white/15">Clear</button>
+            </div>
+          </div>
+          {adminsLoading && <div className="text-sm text-gray-400">Loading admins…</div>}
+          {adminsError && <div className="text-sm text-red-300">{adminsError}</div>}
+          <div className="grid gap-2">
+            {admins.map((a)=>{
+              const key = a.id || a.uid || a.email;
+              return (
+                <div key={key} className={`rounded-lg border ${a.banned?'border-red-400/40 bg-red-600/10':'border-white/10 bg-black/40'} p-3 grid md:grid-cols-[minmax(0,1fr)_auto] gap-2`}>
+                  <div>
+                    <div className="text-sm text-cyan-200 font-medium">{a.displayName || a.email || a.uid || 'Admin'}</div>
+                    <div className="text-xs text-gray-400">{a.email || '-'} {a.uid ? `• ${a.uid}`:''}</div>
+                    <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-300 items-center">
+                      <label className="inline-flex items-center gap-2"><input type="checkbox" checked={!!a.canEditSections} onChange={async(e)=>{
+                        const next = { uid:a.uid, email:a.email, displayName:a.displayName, canEditSections:e.target.checked, canAccessDev:!!a.canAccessDev, banned:!!a.banned };
+                        setAdmins((list)=>list.map(x=> (x===a? { ...a, canEditSections:e.target.checked } : x)));
+                        try {
+                          const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+                          const urls = Array.from(new Set([
+                            '/.netlify/functions/admins-upsert',
+                            `${basePath}/.netlify/functions/admins-upsert`,
+                            '/api/admins-upsert',
+                            `${basePath}/api/admins-upsert`,
+                          ]));
+                          for (const url of urls) { try { const r = await fetch(url, { method: 'POST', headers: { 'content-type':'application/json' }, body: JSON.stringify(next) }); if (r.ok) break; } catch {} }
+                        } catch {}
+                      }} /> Can edit sections</label>
+                      <label className="inline-flex items-center gap-2"><input type="checkbox" checked={!!a.canAccessDev} onChange={async(e)=>{
+                        const next = { uid:a.uid, email:a.email, displayName:a.displayName, canEditSections:!!a.canEditSections, canAccessDev:e.target.checked, banned:!!a.banned };
+                        setAdmins((list)=>list.map(x=> (x===a? { ...a, canAccessDev:e.target.checked } : x)));
+                        try { const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+                          const urls = Array.from(new Set([
+                            '/.netlify/functions/admins-upsert',
+                            `${basePath}/.netlify/functions/admins-upsert`,
+                            '/api/admins-upsert',
+                            `${basePath}/api/admins-upsert`,
+                          ]));
+                          for (const url of urls) { try { const r = await fetch(url, { method: 'POST', headers: { 'content-type':'application/json' }, body: JSON.stringify(next) }); if (r.ok) break; } catch {} }
+                        } catch {}
+                      }} /> Can access Dev</label>
+                      <label className="inline-flex items-center gap-2"><input type="checkbox" checked={!!a.banned} onChange={async(e)=>{
+                        const next = { uid:a.uid, email:a.email, displayName:a.displayName, canEditSections:!!a.canEditSections, canAccessDev:!!a.canAccessDev, banned:e.target.checked };
+                        setAdmins((list)=>list.map(x=> (x===a? { ...a, banned:e.target.checked } : x)));
+                        try { const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+                          const urls = Array.from(new Set([
+                            '/.netlify/functions/admins-upsert',
+                            `${basePath}/.netlify/functions/admins-upsert`,
+                            '/api/admins-upsert',
+                            `${basePath}/api/admins-upsert`,
+                          ]));
+                          for (const url of urls) { try { const r = await fetch(url, { method: 'POST', headers: { 'content-type':'application/json' }, body: JSON.stringify(next) }); if (r.ok) break; } catch {} }
+                        } catch {}
+                      }} /> Banned</label>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-2">
+                    <button onClick={()=>setForm({ uid:a.uid||'', email:a.email||'', displayName:a.displayName||'', canEditSections:!!a.canEditSections, canAccessDev:!!a.canAccessDev, banned:!!a.banned })} className="px-3 py-2 rounded-md bg-white/10 border border-white/20 hover:bg-white/15 text-xs">Edit</button>
+                    <button onClick={async()=>{
+                      if (!confirm('Remove this admin authority?')) return;
+                      try {
+                        const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+                        const qs = a.uid ? `uid=${encodeURIComponent(a.uid)}` : `email=${encodeURIComponent(a.email||'')}`;
+                        const urls = Array.from(new Set([
+                          `/.netlify/functions/admins-delete?${qs}`,
+                          `${basePath}/.netlify/functions/admins-delete?${qs}`,
+                          `/api/admins-delete?${qs}`,
+                          `${basePath}/api/admins-delete?${qs}`,
+                        ]));
+                        let ok = false; let lastErr = '';
+                        for (const url of urls) { try { const r = await fetch(url, { method: 'DELETE' }); if (r.ok) { ok = true; break; } else lastErr = `HTTP ${r.status}`; } catch (e) { lastErr = e?.message || 'Network'; } }
+                        if (!ok) throw new Error(lastErr || 'Delete failed');
+                        setAdmins((list)=>list.filter(x=>x!==a));
+                      } catch (e) { setAdminsError(e?.message || 'Delete failed'); }
+                    }} className="px-3 py-2 rounded-md bg-red-600/20 border border-red-500/40 text-red-200 hover:bg-red-600/30 text-xs">Delete</button>
+                  </div>
+                </div>
+              );
+            })}
+            {!adminsLoading && !adminsError && admins.length===0 && (
+              <div className="text-sm text-gray-400">No admins configured yet.</div>
+            )}
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
