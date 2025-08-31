@@ -30,7 +30,8 @@ jobs:
           images: ghcr.io/${{ github.repository }}
           tags: |
             type=ref,event=tag
-            type=raw,value=latest,enable=${{ startsWith(github.ref_name, 'v') }}
+            # Only tag 'latest' for stable tags (no hyphen)
+            type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
