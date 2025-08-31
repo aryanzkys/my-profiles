@@ -39,6 +39,29 @@ function TypingDots() {
   );
 }
 
+function SlowProcessing() {
+  return (
+    <div className="mt-1 max-w-[80%] rounded-xl px-3 py-2 text-xs border bg-cyan-500/5 border-cyan-400/30 text-cyan-100 shadow-[0_0_14px_rgba(34,211,238,0.12)]" role="status" aria-live="polite">
+      <div className="flex items-center gap-2">
+        <motion.span
+          className="h-2 w-2 rounded-full bg-cyan-300"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }}
+          transition={{ repeat: Infinity, duration: 1.2 }}
+        />
+        <span>Memproses jawaban… butuh sedikit waktu ⏳</span>
+      </div>
+      <div className="mt-2 h-1 rounded-full bg-white/10 overflow-hidden">
+        <motion.span
+          className="block h-full bg-gradient-to-r from-cyan-400/40 via-sky-400/70 to-cyan-400/40"
+          initial={{ x: '-100%' }}
+          animate={{ x: ['-100%', '100%'] }}
+          transition={{ repeat: Infinity, duration: 1.6, ease: 'linear' }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function Chatbot() {
   const STORAGE_KEY = 'aryan-chatbot-history-v1';
   const MAX_MESSAGES = 200;
@@ -48,10 +71,15 @@ export default function Chatbot() {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [slow, setSlow] = useState(false);
   const viewport = useRef(null);
   const inputRef = useRef(null);
 
   const chatWidth = useMemo(() => ({ base: 320, lg: 420 }), []);
+
+  const getInitialMessages = () => ([
+    { role: 'ai', text: "Hello! I’m Aryan’s AI assistant 🤖. Want to get to know him better?" }
+  ]);
 
   const sendMessage = async (text) => {
     if (!text?.trim()) return;
@@ -59,6 +87,8 @@ export default function Chatbot() {
     setMessages((m) => [...m, userMsg]);
     setInput('');
     setLoading(true);
+  setSlow(false);
+  const slowTimer = setTimeout(() => setSlow(true), 5000);
     try {
       // Build profile context from local data
       const profile = buildProfilePrompt();
@@ -83,7 +113,9 @@ export default function Chatbot() {
     } catch (e) {
       setMessages((m) => [...m, { role: 'ai', text: 'Hmm, there was a problem reaching the AI. Please try again in a moment.' }]);
     } finally {
-      setLoading(false);
+  clearTimeout(slowTimer);
+  setLoading(false);
+  setSlow(false);
     }
   };
 
@@ -177,6 +209,20 @@ export default function Chatbot() {
                   <div className="text-cyan-200 font-medium">Aryan’s AI Assistant</div>
                   <div className="text-xs text-gray-400">Hello! I’m Aryan’s AI assistant 🤖. Want to get to know him better?</div>
                 </div>
+                {/* Tiny clear button, tucked near the close button */}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => {
+                    try { window.localStorage.removeItem(STORAGE_KEY); } catch {}
+                    setMessages(getInitialMessages());
+                  }}
+                  aria-label="Clear chat"
+                  title="Clear chat"
+                  className="h-8 w-8 mr-1 grid place-items-center rounded-full text-cyan-200/80 hover:text-cyan-200 border border-cyan-400/20 hover:border-cyan-400/40 bg-cyan-500/10 hover:bg-cyan-500/15 shadow-[0_0_10px_rgba(34,211,238,0.15)]"
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true"><path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm1 7h2v8h-2v-8Zm-4 0h2v8H6v-8Zm10 0h-2v8h2v-8Z"/></svg>
+                </motion.button>
                 <button
                   onClick={() => setOpen(false)}
                   aria-label="Close"
@@ -232,7 +278,10 @@ export default function Chatbot() {
                   </div>
                 ))}
                 {loading && (
-                  <div className="flex justify-start"><TypingDots /></div>
+                  <div className="flex flex-col items-start gap-2">
+                    <TypingDots />
+                    {slow && <SlowProcessing />}
+                  </div>
                 )}
                 {/* API key is handled server-side via function env; no client key warning */}
               </div>
