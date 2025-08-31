@@ -290,7 +290,17 @@ export default function Chatbot() {
                 <RobotAvatar />
                 <div className="flex-1">
                   <div className="text-cyan-200 font-medium">Aryan’s AI Assistant</div>
-                  <div className="text-xs text-gray-400">Hello! I’m Aryan’s AI assistant 🤖. Want to get to know him better?</div>
+                  <div className="text-xs text-gray-400 flex items-center gap-2">
+                    <span>Powered by Google</span>
+                    <span aria-hidden className="inline-flex h-4 w-4">
+                      <svg viewBox="0 0 16 16" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 2 A6 6 0 0 1 14 8" stroke="#4285F4" strokeWidth="2" strokeLinecap="round"/>
+                        <path d="M14 8 A6 6 0 0 1 8 14" stroke="#34A853" strokeWidth="2" strokeLinecap="round"/>
+                        <path d="M8 14 A6 6 0 0 1 2 8" stroke="#FBBC05" strokeWidth="2" strokeLinecap="round"/>
+                        <path d="M2 8 A6 6 0 0 1 8 2" stroke="#EA4335" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                    </span>
+                  </div>
                 </div>
                 {/* Tiny clear button, tucked near the close button */}
                 <motion.button
