@@ -59,13 +59,17 @@ exports.handler = async (event) => {
   if (!uid && !email) return { statusCode: 400, body: 'uid or email required' };
   if (email === OWNER_EMAIL) return { statusCode: 400, body: 'Owner cannot be deleted' };
   try {
+  const actor = (() => { try { return event.body ? JSON.parse(event.body) : {}; } catch { return {}; } })();
+  const actor_email = String(actor.actorEmail || '').toLowerCase() || null;
+  const actor_uid = actor.actorUid || null;
+  const actor_name = actor.actorName || null;
     if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
       // Prefer delete by primary id (we stored id as uid or email)
       const id = uid || email;
       const url = `${SUPABASE_URL}/rest/v1/admin_authorities?id=eq.${encodeURIComponent(id)}`;
       const res = await fetch(url, { method: 'DELETE', headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } });
       if (res.ok || res.status === 204) {
-        try { await auditWrite({ action: 'delete', target_email: email || null, target_uid: uid || null }); } catch {}
+        try { await auditWrite({ action: 'delete', actor_email, actor_uid, actor_name, target_email: email || null, target_uid: uid || null }); } catch {}
         return { statusCode: 200, body: 'OK' };
       }
       const t = await res.text();
@@ -75,7 +79,7 @@ exports.handler = async (event) => {
           const next = arr.filter((x) => !((uid && x.uid === uid) || (!uid && x.email && String(x.email).toLowerCase() === email)));
           const ok = await storageWrite(next);
           if (ok) {
-            try { await auditWrite({ action: 'delete', target_email: email || null, target_uid: uid || null }); } catch {}
+            try { await auditWrite({ action: 'delete', actor_email, actor_uid, actor_name, target_email: email || null, target_uid: uid || null }); } catch {}
             return { statusCode: 200, body: 'OK' };
           }
         }
@@ -86,7 +90,7 @@ exports.handler = async (event) => {
     const arr = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) || [];
     const next = arr.filter((x) => !((uid && x.uid === uid) || (!uid && x.email && String(x.email).toLowerCase() === email)));
   fs.writeFileSync(DATA_FILE, JSON.stringify(next, null, 2), 'utf8');
-  try { await auditWrite({ action: 'delete', target_email: email || null, target_uid: uid || null }); } catch {}
+  try { await auditWrite({ action: 'delete', actor_email, actor_uid, actor_name, target_email: email || null, target_uid: uid || null }); } catch {}
   return { statusCode: 200, body: 'OK' };
   } catch {
     return { statusCode: 500, body: 'Error' };

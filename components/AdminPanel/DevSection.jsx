@@ -493,7 +493,13 @@ export default function DevSection() {
                           `${basePath}/api/admins-delete?${qs}`,
                         ]));
                         let ok = false; let lastErr = '';
-                        for (const url of urls) { try { const r = await fetch(url, { method: 'DELETE' }); if (r.ok) { ok = true; break; } else lastErr = `HTTP ${r.status}`; } catch (e) { lastErr = e?.message || 'Network'; } }
+                        const actor = window.__adminActor || {};
+                        for (const url of urls) {
+                          try {
+                            const r = await fetch(url, { method: 'DELETE', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ actorEmail: actor.email||null, actorUid: actor.uid||null, actorName: actor.name||null }) });
+                            if (r.ok) { ok = true; break; } else lastErr = `HTTP ${r.status}: ${await r.text()}`;
+                          } catch (e) { lastErr = e?.message || 'Network'; }
+                        }
                         if (!ok) throw new Error(lastErr || 'Delete failed');
                         await reloadAdminsWithPresence();
                       } catch (e) { setAdminsError(e?.message || 'Delete failed'); }
