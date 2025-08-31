@@ -7,7 +7,12 @@ import organizations from '../data/organizations.json';
 import about from '../data/about.json';
 import contact from '../data/contact.json';
 
-const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const SERVER_PROXY_PATHS = [
+  '/.netlify/functions/gemini-chat',
+  (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/.netlify/functions/gemini-chat',
+  '/api/gemini-chat',
+  (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/api/gemini-chat',
+];
 
 function RobotAvatar() {
   return (
@@ -41,7 +46,6 @@ export default function Chatbot() {
   const [loading, setLoading] = useState(false);
   const viewport = useRef(null);
 
-  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
   const chatWidth = useMemo(() => ({ base: 320, lg: 420 }), []);
 
   const sendMessage = async (text) => {
@@ -51,30 +55,24 @@ export default function Chatbot() {
     setInput('');
     setLoading(true);
     try {
-      const url = `${GEMINI_ENDPOINT}?key=${encodeURIComponent(apiKey || '')}`;
       // Build profile context from local data
       const profile = buildProfilePrompt();
-      // Map chat history to API contents
-      const historyContents = messages.map((m) => ({
-        role: m.role === 'ai' ? 'model' : 'user',
-        parts: [{ text: m.text }]
-      }));
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            { role: 'user', parts: [ { text: profile } ] },
-            ...historyContents,
-            { role: 'user', parts: [ { text: userMsg.text } ] }
-          ]
-        })
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      // Call server proxy (Netlify in prod, Next API in dev)
+      let res = null; let lastErr = '';
+      for (const p of SERVER_PROXY_PATHS) {
+        try {
+          const r = await fetch(p, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ profile, history: messages, message: userMsg.text })
+          });
+          if (r.ok) { res = r; break; }
+          lastErr = `HTTP ${r.status}`;
+        } catch (e) { lastErr = e?.message || 'Network error'; }
+      }
+      if (!res) throw new Error(lastErr || 'Failed to reach proxy');
       const data = await res.json();
-      // Extract text from candidates
-      const candidate = data?.candidates?.[0];
-      let reply = candidate?.content?.parts?.map(p => p.text).filter(Boolean).join('\n').trim();
+      let reply = (data?.reply || '').trim();
       if (!reply) reply = 'Sorry, I could not generate a response right now.';
       setMessages((m) => [...m, { role: 'ai', text: reply }]);
     } catch (e) {
@@ -155,11 +153,7 @@ export default function Chatbot() {
                 {loading && (
                   <div className="flex justify-start"><TypingDots /></div>
                 )}
-                {!apiKey && (
-                  <div className="text-[11px] text-yellow-200/90 bg-yellow-500/10 border border-yellow-400/30 rounded-lg p-2">
-                    Missing NEXT_PUBLIC_GEMINI_API_KEY. Please set it in your environment to enable responses.
-                  </div>
-                )}
+                {/* API key is handled server-side via function env; no client key warning */}
               </div>
 
               {/* Input */}
