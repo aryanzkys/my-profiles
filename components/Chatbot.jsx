@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
 import achievements from '../data/achievements.json';
 import education from '../data/education.json';
@@ -16,7 +18,7 @@ const SERVER_PROXY_PATHS = [
 
 function RobotAvatar() {
   return (
-    <div className="relative h-12 w-12 rounded-2xl overflow-hidden border border-cyan-300/30 bg-gradient-to-b from-cyan-500/10 to-blue-500/10 shadow-[0_0_24px_rgba(34,211,238,0.25)]">
+  <div className="relative h-12 w-12 rounded-2xl overflow-hidden border border-cyan-300/30 bg-gradient-to-b from-cyan-500/10 to-blue-500/10 shadow-[0_0_24px_rgba(34,211,238,0.25)]" aria-hidden="true">
       <div className="absolute inset-0 opacity-30" style={{ background: 'radial-gradient(100% 100% at 50% 0%, rgba(34,211,238,0.5), transparent 60%)' }} />
       <svg viewBox="0 0 24 24" className="absolute inset-0 m-auto h-7 w-7 text-cyan-300" fill="currentColor">
         <path d="M7 10h10v6H7z"/><path d="M12 3a1 1 0 0 1 1 1v2h1a5 5 0 0 1 5 5v5a3 3 0 0 1-3 3h-8a3 3 0 0 1-3-3v-5a5 5 0 0 1 5-5h1V4a1 1 0 0 1 1-1Z" opacity=".35"/>
@@ -45,6 +47,7 @@ export default function Chatbot() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const viewport = useRef(null);
+  const inputRef = useRef(null);
 
   const chatWidth = useMemo(() => ({ base: 320, lg: 420 }), []);
 
@@ -88,8 +91,20 @@ export default function Chatbot() {
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, loading]);
 
+  useEffect(() => {
+    if (open) {
+      // Focus input when opening for better accessibility
+      inputRef.current?.focus?.();
+      const onKey = (e) => {
+        if (e.key === 'Escape') setOpen(false);
+      };
+      window.addEventListener('keydown', onKey);
+      return () => window.removeEventListener('keydown', onKey);
+    }
+  }, [open]);
+
   return (
-    <div className="fixed bottom-4 right-4 z-40">
+  <div className="fixed bottom-4 right-4 z-40">
       {/* Floating button */}
       <AnimatePresence>
         {!open && (
@@ -100,6 +115,7 @@ export default function Chatbot() {
             exit={{ scale: 0.9, opacity: 0 }}
             onClick={() => setOpen(true)}
             aria-label="Open AI chatbot"
+            title="Open AI chatbot"
             className="relative h-14 w-14 rounded-full border border-cyan-300/40 bg-black/60 backdrop-blur-md shadow-[0_0_24px_rgba(34,211,238,0.25)] hover:shadow-[0_0_34px_rgba(34,211,238,0.35)] transition-shadow"
           >
             <span className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-500/10 via-sky-500/10 to-blue-500/10" />
@@ -123,6 +139,9 @@ export default function Chatbot() {
             dragConstraints={{ left: -24, right: 24, top: -24, bottom: 24 }}
             dragElastic={0.2}
             className="relative w-[min(92vw,340px)] sm:w-[min(88vw,380px)] rounded-2xl p-[1px] bg-gradient-to-r from-cyan-400/30 via-blue-500/25 to-cyan-400/30 shadow-[0_0_40px_rgba(34,211,238,0.25)] backdrop-blur-xl"
+            role="dialog"
+            aria-label="AI chat window"
+            aria-modal="false"
           >
             <div className="rounded-2xl border border-white/10 bg-black/85 overflow-hidden">
               {/* Header */}
@@ -142,11 +161,47 @@ export default function Chatbot() {
               </div>
 
               {/* Chat history */}
-              <div ref={viewport} className="max-h-[45vh] sm:max-h-[50vh] overflow-y-auto p-3 space-y-3">
+              <div
+                ref={viewport}
+                className="max-h-[45vh] sm:max-h-[50vh] overflow-y-auto p-3 space-y-3"
+                role="log"
+                aria-live="polite"
+                aria-relevant="additions text"
+              >
                 {messages.map((m, i) => (
                   <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm leading-relaxed border ${m.role === 'user' ? 'bg-cyan-500/10 border-cyan-400/30 text-cyan-100 shadow-[0_0_14px_rgba(34,211,238,0.12)]' : 'bg-white/5 border-white/10 text-gray-100'}`}>
-                      {m.text}
+                    <div
+                      className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm leading-relaxed border ${m.role === 'user' ? 'bg-cyan-500/10 border-cyan-400/30 text-cyan-100 shadow-[0_0_14px_rgba(34,211,238,0.12)]' : 'bg-white/5 border-white/10 text-gray-100'}`}
+                      role="article"
+                      aria-label={m.role === 'user' ? 'Your message' : 'Assistant message'}
+                    >
+                      {m.role === 'user' ? (
+                        <span>{m.text}</span>
+                      ) : (
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          linkTarget="_blank"
+                          components={{
+                            a: ({node, ...props}) => (
+                              <a {...props} className="underline decoration-cyan-400/50 hover:decoration-cyan-300" />
+                            ),
+                            strong: ({node, ...props}) => (
+                              <strong {...props} className="font-semibold text-white" />
+                            ),
+                            ul: ({node, ...props}) => (
+                              <ul {...props} className="list-disc pl-5 my-1 space-y-1" />
+                            ),
+                            ol: ({node, ...props}) => (
+                              <ol {...props} className="list-decimal pl-5 my-1 space-y-1" />
+                            ),
+                            code: ({inline, className, children, ...props}) => (
+                              <code {...props} className={`rounded px-1 py-0.5 bg-black/40 border border-white/10 ${className||''}`}>{children}</code>
+                            )
+                          }}
+                        >
+                          {m.text}
+                        </ReactMarkdown>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -165,6 +220,8 @@ export default function Chatbot() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Type your question here..."
+                  aria-label="Type your message"
+                  ref={inputRef}
                   className="flex-1 rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
                 />
                 <button
@@ -186,7 +243,7 @@ export default function Chatbot() {
 function buildProfilePrompt() {
   // Summarize Aryan's profile with achievements, education, and organizations
   const parts = [];
-  parts.push('You are Aryan’s AI assistant. Use the PROFILE below to answer questions about Aryan accurately and concisely. If a question is unrelated to Aryan, politely answer but prioritize known facts. Prefer the user’s language. Do not fabricate achievements.');
+  parts.push('You are Aryan’s AI assistant. Use the PROFILE below to answer questions about Aryan accurately and concisely. If a question is unrelated to Aryan, politely answer but prioritize known facts. Prefer the user’s language. Do not fabricate achievements. You may use Markdown formatting (bold, lists, links, inline code) and emojis to improve clarity and friendliness. If the user requests CAPITAL letters, you may use ALL CAPS for emphasis.');
 
   // About Me
   if (about && typeof about === 'object') {
@@ -229,6 +286,6 @@ function buildProfilePrompt() {
     if (lines.length) parts.push('\nPROFILE — Contact:\n' + lines.join('\n'));
   }
 
-  parts.push('\nGuidelines: Keep answers short and helpful. If asked “Who is Aryan?” provide a brief intro using the profile.');
+  parts.push('\nGuidelines: Keep answers short and helpful. If asked “Who is Aryan?” provide a brief intro using the profile. Use accessible formatting (e.g., headings, bold, lists) when it helps readability.');
   return parts.join('\n');
 }
