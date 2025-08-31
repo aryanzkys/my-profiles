@@ -72,6 +72,10 @@ export default function Chatbot() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [slow, setSlow] = useState(false);
+  // Hint bubble and question-mark animation state
+  const HINT_KEY = 'aryan-chatbot-hint-v1';
+  const [showHint, setShowHint] = useState(false);
+  const [hintDismissed, setHintDismissed] = useState(false);
   const viewport = useRef(null);
   const inputRef = useRef(null);
 
@@ -153,6 +157,25 @@ export default function Chatbot() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // One-time onboarding hint for the chatbot FAB
+  useEffect(() => {
+    try {
+      const flagged = typeof window !== 'undefined' ? window.localStorage.getItem(HINT_KEY) : '1';
+      const already = !!flagged;
+      setHintDismissed(already);
+      if (!already) {
+        const t = setTimeout(() => setShowHint(true), 2500);
+        return () => clearTimeout(t);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  const dismissHint = () => {
+    try { window.localStorage.setItem(HINT_KEY, '1'); } catch {}
+    setHintDismissed(true);
+    setShowHint(false);
+  };
+
   // Persist chat when messages change
   useEffect(() => {
     try {
@@ -171,16 +194,76 @@ export default function Chatbot() {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            onClick={() => setOpen(true)}
+            onClick={() => { setOpen(true); if (!hintDismissed) dismissHint(); }}
             aria-label="Open AI chatbot"
             title="Open AI chatbot"
             className="relative h-14 w-14 rounded-full border border-cyan-300/40 bg-black/60 backdrop-blur-md shadow-[0_0_24px_rgba(34,211,238,0.25)] hover:shadow-[0_0_34px_rgba(34,211,238,0.35)] transition-shadow"
+            onMouseEnter={() => { if (!hintDismissed) setShowHint(true); }}
+            onFocus={() => { if (!hintDismissed) setShowHint(true); }}
+            onMouseLeave={() => { if (!hintDismissed) setShowHint(false); }}
+            onBlur={() => { if (!hintDismissed) setShowHint(false); }}
           >
             <span className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-500/10 via-sky-500/10 to-blue-500/10" />
             <span className="relative grid place-items-center text-cyan-300">
               <svg viewBox="0 0 24 24" className="h-7 w-7" fill="currentColor"><path d="M12 3C7.03 3 3 6.58 3 11c0 2.08 1.02 3.97 2.68 5.4-.1.58-.38 1.58-1.38 2.6 0 0 1.62.12 3.1-.9.62.17 1.27.3 1.94.35A9 9 0 1 0 12 3Z"/></svg>
+              {/* Animated question mark overlay */}
+              <motion.span
+                className="pointer-events-none absolute -top-1 -right-1 h-6 w-6 rounded-full grid place-items-center text-cyan-200/90 bg-black/70 border border-cyan-300/40 shadow-[0_0_16px_rgba(34,211,238,0.35)]"
+                style={{
+                  backgroundImage: 'radial-gradient(80% 80% at 50% 0%, rgba(34,211,238,0.18), transparent)',
+                }}
+                initial={{ opacity: 0, scale: 0.9, rotate: -8 }}
+                animate={{
+                  opacity: 1,
+                  scale: [1, 1.05, 1],
+                  y: [0, -2, 0],
+                  rotate: [-6, 6, -6],
+                }}
+                transition={{ repeat: Infinity, duration: 2.2, ease: 'easeInOut' }}
+                aria-hidden="true"
+              >
+                <span className="text-sm font-semibold">?</span>
+              </motion.span>
             </span>
           </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* Hint tooltip */}
+      <AnimatePresence>
+        {!open && showHint && (
+          <motion.div
+            key="fab-hint"
+            initial={{ opacity: 0, x: 12, scale: 0.98 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 8, scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+            className="absolute bottom-16 right-0 w-[min(84vw,280px)] select-none"
+            role="tooltip"
+            aria-live="polite"
+          >
+            <div className="relative rounded-2xl p-[1px] bg-gradient-to-r from-cyan-400/30 via-blue-500/25 to-cyan-400/30 shadow-[0_0_30px_rgba(34,211,238,0.25)]">
+              <div className="rounded-2xl border border-white/10 bg-black/80 backdrop-blur-md px-3 py-2 text-[13px] text-gray-100">
+                <div className="flex items-start gap-2">
+                  <div className="mt-0.5 h-4 w-4 rounded-full grid place-items-center text-cyan-300 bg-cyan-500/10 border border-cyan-400/30">
+                    <span className="text-[12px] font-semibold">?</span>
+                  </div>
+                  <div className="flex-1 leading-snug">Wanna know Aryan better? Chat with Aryan’s AI Assistant! 🤖✨</div>
+                  {!hintDismissed && (
+                    <button
+                      onClick={dismissHint}
+                      aria-label="Dismiss hint"
+                      className="ml-1 h-6 w-6 grid place-items-center rounded-md text-gray-300 hover:text-white hover:bg-white/10"
+                    >
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.3 6.3-6.3z"/></svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+              {/* little arrow */}
+              <div className="absolute -bottom-2 right-4 h-3 w-3 rotate-45 bg-black/80 border-b border-r border-white/10" aria-hidden="true" />
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
