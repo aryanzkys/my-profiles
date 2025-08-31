@@ -23,6 +23,8 @@ export default function DevSection() {
   const [audit, setAudit] = useState([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+  const [loginLogs, setLoginLogs] = useState([]);
+  const [loginLogsLoading, setLoginLogsLoading] = useState(false);
   // presence refresh interval (ms) configurable via env/UI; 0 disables auto-refresh
   const defaultPresenceMs = (() => {
     const envVal = Number(process.env.NEXT_PUBLIC_PRESENCE_REFRESH_MS || 60000);
@@ -189,6 +191,27 @@ export default function DevSection() {
         try { const r = await fetch(url); if (r.ok) { const j = await r.json(); setAudit(Array.isArray(j)?j:[]); break; } } catch {}
       }
     } finally { setAuditLoading(false); }
+  };
+
+  const loadLoginLogs = async () => {
+    setLoginLogsLoading(true);
+    try {
+      const urls = Array.from(new Set([
+        '/.netlify/functions/admin-login-log-list', // optional if implemented separately
+        `${basePath}/.netlify/functions/admin-login-log-list`,
+        '/api/admin-login-log-list',
+        `${basePath}/api/admin-login-log-list`,
+      ]));
+      let data = null;
+      for (const url of urls) {
+        try { const r = await fetch(url); if (r.ok) { data = await r.json(); break; } } catch {}
+      }
+      if (!data) { // fallback: direct read of storage/FS isn’t available client-side; server endpoints are expected
+        setLoginLogs([]);
+      } else {
+        setLoginLogs(Array.isArray(data) ? data.slice().reverse() : []);
+      }
+    } finally { setLoginLogsLoading(false); }
   };
 
   // Keep slider knob in sync with state when not dragging
@@ -528,6 +551,22 @@ export default function DevSection() {
                   </div>
                 ))}
                 {audit.length===0 && !auditLoading && <div className="text-xs text-gray-500">No logs.</div>}
+              </div>
+              <div className="mt-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-cyan-200 font-medium">Admin Login Logs (Owner)</div>
+                  <button onClick={loadLoginLogs} className="text-xs px-2 py-1 rounded-md border border-white/10 hover:bg-white/5">Reload</button>
+                </div>
+                {loginLogsLoading && <div className="text-xs text-gray-400 mt-1">Loading login logs…</div>}
+                <div className="mt-2 grid gap-2 max-h-64 overflow-auto pr-1">
+                  {loginLogs.map((r, i)=> (
+                    <div key={i} className="rounded-md border border-white/10 bg-black/30 p-2 text-xs text-gray-300">
+                      <div className="text-[11px] text-gray-500">{r.ts ? new Date(r.ts).toLocaleString() : '-'}</div>
+                      <div>{r.email || r.uid || '-'} {r.name ? `• ${r.name}`:''} {r.provider ? `• ${r.provider}`:''}</div>
+                    </div>
+                  ))}
+                  {loginLogs.length===0 && !loginLogsLoading && <div className="text-xs text-gray-500">No login logs or endpoint not available.</div>}
+                </div>
               </div>
             </div>
           )}

@@ -25,7 +25,7 @@ export function AuthProvider({ children }) {
 
   // Firebase init
   useEffect(() => {
-    const cfg = {
+  const cfg = {
       apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
       authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
       projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -46,9 +46,32 @@ export function AuthProvider({ children }) {
         }
       }
       const auth = getAuth();
-      const unsub = onAuthStateChanged(auth, (u) => {
+      const unsub = onAuthStateChanged(auth, async (u) => {
         setUser(u);
         setLoading(false);
+        // Log admin login events (when user becomes truthy)
+        try {
+          if (u) {
+            const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+            const urls = Array.from(new Set([
+              '/.netlify/functions/admin-login-log',
+              `${basePath}/.netlify/functions/admin-login-log`,
+              '/api/admin-login-log',
+              `${basePath}/api/admin-login-log`,
+            ]));
+            const payload = {
+              uid: u.uid,
+              email: u.email,
+              name: u.displayName,
+              provider: (u.providerData && u.providerData[0]?.providerId) || 'unknown',
+              photoURL: u.photoURL || null,
+              userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+            };
+            for (const url of urls) {
+              try { const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) }); if (r.ok) break; } catch {}
+            }
+          }
+        } catch {}
       });
       return () => unsub();
     } catch (e) {
