@@ -34,6 +34,7 @@ export default function PrivacyPolicy() {
   const [atEnd, setAtEnd] = useState(false);
   const [countdown, setCountdown] = useState(null); // seconds remaining or null
   const [autoRedirect, setAutoRedirect] = useState(true);
+  const [hasInteracted, setHasInteracted] = useState(false); // user scrolled a bit
   const sections = useMemo(()=> ([
     { id: 'intro', title: 'Overview', content: (
       <p>
@@ -94,23 +95,32 @@ export default function PrivacyPolicy() {
 
   useEffect(()=>{ try { document.getElementById('page-title')?.focus(); } catch {} }, []);
 
-  // Detect when user reaches end of the document
+  // Detect when user reaches end of the document (after interaction)
   useEffect(() => {
     const checkEnd = () => {
       try {
-        const threshold = 24; // px from bottom
-        const atBottom = (window.innerHeight + window.scrollY) >= (document.body.offsetHeight - threshold);
+        const threshold = 64; // px from bottom
+        const root = document.scrollingElement || document.documentElement;
+        const scrollTop = root.scrollTop || window.scrollY || 0;
+        const clientHeight = root.clientHeight || window.innerHeight || 0;
+        const scrollHeight = root.scrollHeight || document.body.scrollHeight || 0;
+
+        // mark interaction once user has scrolled a bit
+        if (scrollTop > 50 && !hasInteracted) setHasInteracted(true);
+
+        // Only consider "at end" after user interaction to avoid instant trigger
+        const atBottom = hasInteracted && (scrollTop + clientHeight >= scrollHeight - threshold);
         setAtEnd(atBottom);
       } catch {}
     };
-    checkEnd();
+    // do not call immediately to avoid false positives on short pages
     window.addEventListener('scroll', checkEnd, { passive: true });
     window.addEventListener('resize', checkEnd, { passive: true });
     return () => {
       window.removeEventListener('scroll', checkEnd);
       window.removeEventListener('resize', checkEnd);
     };
-  }, []);
+  }, [hasInteracted]);
 
   // Start a short countdown once at end; allow cancel
   useEffect(() => {
@@ -167,7 +177,7 @@ export default function PrivacyPolicy() {
 
       {/* Redirect banner when finished reading */}
       <AnimatePresence>
-        {(atEnd || countdown !== null) && (
+  {(atEnd || countdown !== null) && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
