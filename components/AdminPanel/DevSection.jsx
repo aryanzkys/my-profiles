@@ -25,6 +25,9 @@ export default function DevSection() {
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
   const [loginLogs, setLoginLogs] = useState([]);
   const [loginLogsLoading, setLoginLogsLoading] = useState(false);
+  const [logQuery, setLogQuery] = useState({ email: '', provider: '', from: '', to: '' });
+  const [logPage, setLogPage] = useState(1);
+  const [logPageSize, setLogPageSize] = useState(20);
   // presence refresh interval (ms) configurable via env/UI; 0 disables auto-refresh
   const defaultPresenceMs = (() => {
     const envVal = Number(process.env.NEXT_PUBLIC_PRESENCE_REFRESH_MS || 60000);
@@ -524,6 +527,8 @@ export default function DevSection() {
                           } catch (e) { lastErr = e?.message || 'Network'; }
                         }
                         if (!ok) throw new Error(lastErr || 'Delete failed');
+                        // Optimistically remove, then refresh to sync
+                        setAdmins((list)=>list.filter(x=> x!==a && ((a.uid && x.uid!==a.uid) || (!a.uid && String(x.email).toLowerCase() !== String(a.email||'').toLowerCase())) ));
                         await reloadAdminsWithPresence();
                       } catch (e) { setAdminsError(e?.message || 'Delete failed'); }
                     }} className="px-3 py-2 rounded-md bg-red-600/20 border border-red-500/40 text-red-200 hover:bg-red-600/30 text-xs">Delete</button>
@@ -557,16 +562,55 @@ export default function DevSection() {
                   <div className="text-sm text-cyan-200 font-medium">Admin Login Logs (Owner)</div>
                   <button onClick={loadLoginLogs} className="text-xs px-2 py-1 rounded-md border border-white/10 hover:bg-white/5">Reload</button>
                 </div>
+                <div className="mt-2 grid gap-2 md:grid-cols-4">
+                  <input value={logQuery.email} onChange={(e)=>{ setLogPage(1); setLogQuery(q=>({...q,email:e.target.value})); }} placeholder="Filter email" className="bg-black/40 border border-white/10 rounded-md px-2 py-1 text-xs" />
+                  <input value={logQuery.provider} onChange={(e)=>{ setLogPage(1); setLogQuery(q=>({...q,provider:e.target.value})); }} placeholder="Filter provider (e.g., google.com)" className="bg-black/40 border border-white/10 rounded-md px-2 py-1 text-xs" />
+                  <input type="date" value={logQuery.from} onChange={(e)=>{ setLogPage(1); setLogQuery(q=>({...q,from:e.target.value})); }} className="bg-black/40 border border-white/10 rounded-md px-2 py-1 text-xs" />
+                  <input type="date" value={logQuery.to} onChange={(e)=>{ setLogPage(1); setLogQuery(q=>({...q,to:e.target.value})); }} className="bg-black/40 border border-white/10 rounded-md px-2 py-1 text-xs" />
+                </div>
                 {loginLogsLoading && <div className="text-xs text-gray-400 mt-1">Loading login logs…</div>}
-                <div className="mt-2 grid gap-2 max-h-64 overflow-auto pr-1">
-                  {loginLogs.map((r, i)=> (
+                {(() => {
+                  const filtered = loginLogs.filter((r)=>{
+                    const emailOk = !logQuery.email || String(r.email||'').toLowerCase().includes(logQuery.email.toLowerCase());
+                    const provOk = !logQuery.provider || String(r.provider||'').toLowerCase().includes(logQuery.provider.toLowerCase());
+                    let dateOk = true;
+                    if (logQuery.from) { try { dateOk = dateOk && new Date(r.ts) >= new Date(logQuery.from); } catch {} }
+                    if (logQuery.to) { try { const toD = new Date(logQuery.to); toD.setHours(23,59,59,999); dateOk = dateOk && new Date(r.ts) <= toD; } catch {} }
+                    return emailOk && provOk && dateOk;
+                  });
+                  const total = filtered.length;
+                  const pages = Math.max(1, Math.ceil(total / logPageSize));
+                  const page = Math.min(Math.max(1, logPage), pages);
+                  const start = (page - 1) * logPageSize;
+                  const slice = filtered.slice(start, start + logPageSize);
+                  return (
+                    <>
+                      <div className="mt-2 grid gap-2 max-h-64 overflow-auto pr-1">
+                        {slice.map((r, i)=> (
                     <div key={i} className="rounded-md border border-white/10 bg-black/30 p-2 text-xs text-gray-300">
                       <div className="text-[11px] text-gray-500">{r.ts ? new Date(r.ts).toLocaleString() : '-'}</div>
                       <div>{r.email || r.uid || '-'} {r.name ? `• ${r.name}`:''} {r.provider ? `• ${r.provider}`:''}</div>
                     </div>
-                  ))}
-                  {loginLogs.length===0 && !loginLogsLoading && <div className="text-xs text-gray-500">No login logs or endpoint not available.</div>}
-                </div>
+                        ))}
+                        {filtered.length===0 && !loginLogsLoading && <div className="text-xs text-gray-500">No login logs match the filters.</div>}
+                      </div>
+                      <div className="mt-2 flex items-center justify-between text-[11px] text-gray-400">
+                        <div>Page {page} of {pages} • {total} items</div>
+                        <div className="flex items-center gap-2">
+                          <button disabled={page<=1} onClick={()=>setLogPage(p=>Math.max(1,p-1))} className="px-2 py-1 rounded border border-white/10 disabled:opacity-50">Prev</button>
+                          <button disabled={page>=pages} onClick={()=>setLogPage(p=>Math.min(pages,p+1))} className="px-2 py-1 rounded border border-white/10 disabled:opacity-50">Next</button>
+                          <select value={logPageSize} onChange={(e)=>{ setLogPage(1); setLogPageSize(Number(e.target.value)||20); }} className="bg-black/40 border border-white/10 rounded-md px-2 py-1">
+                            <option value={10}>10</option>
+                            <option value={20}>20</option>
+                            <option value={50}>50</option>
+                            <option value={100}>100</option>
+                          </select>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
+                
               </div>
             </div>
           )}

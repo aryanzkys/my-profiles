@@ -64,16 +64,25 @@ exports.handler = async (event) => {
   const actor_uid = actor.actorUid || null;
   const actor_name = actor.actorName || null;
     if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
-      // Prefer delete by primary id (we stored id as uid or email)
+      // Try delete by id, then by uid, then by email to ensure removal
       const id = uid || email;
-      const url = `${SUPABASE_URL}/rest/v1/admin_authorities?id=eq.${encodeURIComponent(id)}`;
-      const res = await fetch(url, { method: 'DELETE', headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } });
-      if (res.ok || res.status === 204) {
-        try { await auditWrite({ action: 'delete', actor_email, actor_uid, actor_name, target_email: email || null, target_uid: uid || null }); } catch {}
-        return { statusCode: 200, body: 'OK' };
+      const attempts = [];
+      if (id) attempts.push(`${SUPABASE_URL}/rest/v1/admin_authorities?id=eq.${encodeURIComponent(id)}`);
+      if (uid) attempts.push(`${SUPABASE_URL}/rest/v1/admin_authorities?uid=eq.${encodeURIComponent(uid)}`);
+      if (email) attempts.push(`${SUPABASE_URL}/rest/v1/admin_authorities?email=eq.${encodeURIComponent(email)}`);
+      let tableNotFound = false;
+      for (const u of attempts) {
+        try {
+          const r = await fetch(u, { method: 'DELETE', headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } });
+          if (r.ok || r.status === 204) {
+            try { await auditWrite({ action: 'delete', actor_email, actor_uid, actor_name, target_email: email || null, target_uid: uid || null }); } catch {}
+            return { statusCode: 200, body: 'OK' };
+          }
+          const txt = await r.text();
+          if (r.status === 404 && /Could not find the table/i.test(txt)) { tableNotFound = true; break; }
+        } catch {}
       }
-      const t = await res.text();
-      if (res.status === 404 && /Could not find the table/i.test(t)) {
+      if (tableNotFound) {
         const arr = await storageRead();
         if (arr) {
           const next = arr.filter((x) => !((uid && x.uid === uid) || (!uid && x.email && String(x.email).toLowerCase() === email)));
