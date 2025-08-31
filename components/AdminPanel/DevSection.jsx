@@ -22,6 +22,77 @@ export default function DevSection() {
   const OWNER_EMAIL = 'prayogoaryan63@gmail.com';
   const [audit, setAudit] = useState([]);
   const [auditLoading, setAuditLoading] = useState(false);
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+  // presence refresh interval (ms) configurable via env/UI; 0 disables auto-refresh
+  const defaultPresenceMs = (() => {
+    const envVal = Number(process.env.NEXT_PUBLIC_PRESENCE_REFRESH_MS || 60000);
+    return Number.isFinite(envVal) && envVal >= 0 ? envVal : 60000;
+  })();
+  const [presenceIntervalMs, setPresenceIntervalMs] = useState(() => {
+    try { const v = Number(localStorage.getItem('admin:presenceRefreshMs')); if (Number.isFinite(v)) return v; } catch {}
+    return defaultPresenceMs;
+  });
+  useEffect(() => { try { localStorage.setItem('admin:presenceRefreshMs', String(presenceIntervalMs)); } catch {} }, [presenceIntervalMs]);
+
+  // Helper: load admins and presence, then merge
+  const reloadAdminsWithPresence = async () => {
+    setAdminsLoading(true); setAdminsError('');
+    try {
+      const urls = Array.from(new Set([
+        '/.netlify/functions/admins-list',
+        `${basePath}/.netlify/functions/admins-list`,
+        '/api/admins-list',
+        `${basePath}/api/admins-list`,
+      ]));
+      let data = null; let lastErr = '';
+      for (const url of urls) {
+        try { const r = await fetch(url); if (r.ok) { data = await r.json(); break; } else lastErr = `HTTP ${r.status}`; } catch (e) { lastErr = e?.message || 'Network'; }
+      }
+      if (!data) throw new Error(lastErr || 'Failed to load');
+      // Fetch presence and merge
+      let presence = [];
+      const pUrls = Array.from(new Set([
+        '/.netlify/functions/admin-presence-list',
+        `${basePath}/.netlify/functions/admin-presence-list`,
+        '/api/admin-presence-list',
+        `${basePath}/api/admin-presence-list`,
+      ]));
+      for (const u of pUrls) { try { const r = await fetch(u); if (r.ok) { presence = await r.json(); break; } } catch {}
+      }
+      const arr = Array.isArray(data) ? data : [];
+      const merged = arr.map(a => {
+        const key = String(a.email || a.uid || a.id || '').toLowerCase();
+        const m = (Array.isArray(presence)?presence:[]).find(p => String(p.email || p.uid || p.id || '').toLowerCase() === key);
+        return { ...a, _online: !!m?.online, _lastSeen: m?.last_seen || null };
+      });
+      setAdmins(merged);
+    } catch (e) {
+      setAdminsError(e?.message || 'Failed to load');
+    } finally {
+      setAdminsLoading(false);
+    }
+  };
+
+  // Helper: refresh only presence markers without reloading the list
+  const refreshPresenceOnly = async () => {
+    try {
+      const pUrls = Array.from(new Set([
+        '/.netlify/functions/admin-presence-list',
+        `${basePath}/.netlify/functions/admin-presence-list`,
+        '/api/admin-presence-list',
+        `${basePath}/api/admin-presence-list`,
+      ]));
+      let presence = [];
+      for (const u of pUrls) { try { const r = await fetch(u); if (r.ok) { presence = await r.json(); break; } } catch {}
+      }
+      if (!Array.isArray(presence)) return;
+      setAdmins((prev) => prev.map(a => {
+        const key = String(a.email || a.uid || a.id || '').toLowerCase();
+        const m = presence.find(p => String(p.email || p.uid || p.id || '').toLowerCase() === key);
+        return { ...a, _online: !!m?.online, _lastSeen: m?.last_seen || null };
+      }));
+    } catch {}
+  };
 
   const fetchFlags = async () => {
     setLoading(true); setError('');
@@ -76,27 +147,33 @@ export default function DevSection() {
   };
 
   useEffect(() => { fetchFlags(); }, []);
-  useEffect(() => { // load admins
-    (async () => {
-      setAdminsLoading(true); setAdminsError('');
-      try {
-        const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-        const urls = Array.from(new Set([
-          '/.netlify/functions/admins-list',
-          `${basePath}/.netlify/functions/admins-list`,
-          '/api/admins-list',
-          `${basePath}/api/admins-list`,
-        ]));
-        let data = null; let lastErr = '';
-        for (const url of urls) {
-          try { const r = await fetch(url); if (r.ok) { data = await r.json(); break; } else lastErr = `HTTP ${r.status}`; } catch (e) { lastErr = e?.message || 'Network'; }
-        }
-        if (!data) throw new Error(lastErr || 'Failed to load');
-        setAdmins(Array.isArray(data) ? data : []);
-      } catch (e) { setAdminsError(e?.message || 'Failed to load'); }
-      finally { setAdminsLoading(false); }
-    })();
+  useEffect(() => { // initial load
+    reloadAdminsWithPresence();
   }, []);
+
+  useEffect(() => { // periodic presence refresh (configurable)
+    if (!Number.isFinite(presenceIntervalMs) || presenceIntervalMs <= 0) return; // disabled
+    const ms = Math.max(5000, Math.floor(presenceIntervalMs));
+    const id = setInterval(() => { refreshPresenceOnly(); }, ms);
+    return () => clearInterval(id);
+  }, [presenceIntervalMs]);
+
+  const formatLastSeen = (ts) => {
+    if (!ts) return 'Last seen: never';
+    try {
+      const d = new Date(ts);
+      const now = Date.now();
+      const diff = Math.max(0, now - d.getTime());
+      const sec = Math.floor(diff / 1000);
+      const min = Math.floor(sec / 60);
+      const hr = Math.floor(min / 60);
+      const day = Math.floor(hr / 24);
+      const rel = day > 0 ? `${day}d ago` : hr > 0 ? `${hr}h ago` : min > 0 ? `${min}m ago` : `${sec}s ago`;
+      return `Last seen: ${d.toLocaleString()} (${rel})`;
+    } catch {
+      return `Last seen: ${String(ts)}`;
+    }
+  };
 
   const loadAudit = async () => {
     setAuditLoading(true);
@@ -259,7 +336,26 @@ export default function DevSection() {
       {/* Admin Authorities */}
       <div className="pt-2">
         <div className="text-lg font-semibold text-cyan-200 mb-2">Admin Authorities</div>
-        <div className="text-xs text-gray-400 mb-2">Manage who can edit sections, access Dev, or is banned.</div>
+        <div className="text-xs text-gray-400 mb-2 flex items-center justify-between gap-2 flex-wrap">
+          <span>Manage who can edit sections, access Dev, or is banned.</span>
+          <div className="flex items-center gap-2">
+            <label className="text-[11px] text-gray-400">Presence refresh (sec)</label>
+            <input
+              type="number"
+              min={0}
+              step={5}
+              value={Math.floor((Number.isFinite(presenceIntervalMs)?presenceIntervalMs:0)/1000)}
+              onChange={(e)=>{
+                const v = Number(e.target.value);
+                if (!Number.isFinite(v) || v < 0) return;
+                const ms = Math.floor(v*1000);
+                setPresenceIntervalMs(ms);
+              }}
+              title="0 to disable auto-refresh"
+              className="w-20 bg-black/40 border border-white/10 rounded-md px-2 py-1 text-xs text-gray-200"
+            />
+          </div>
+        </div>
         <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
           {/* Add / Update form */}
           <div className="grid md:grid-cols-6 gap-3">
@@ -302,14 +398,7 @@ export default function DevSection() {
                       } catch (e) { lastErr = e?.message || 'Network'; }
                     }
                     if (!ok) throw new Error(lastErr || 'Save failed');
-                    // refresh list
-                    const listUrls = Array.from(new Set([
-                      '/.netlify/functions/admins-list',
-                      `${basePath}/.netlify/functions/admins-list`,
-                      '/api/admins-list',
-                      `${basePath}/api/admins-list`,
-                    ]));
-                    for (const url of listUrls) { try { const r = await fetch(url); if (r.ok) { const j = await r.json(); setAdmins(Array.isArray(j)?j:[]); break; } } catch {} }
+                    await reloadAdminsWithPresence();
                   } catch (e) { setAdminsError(e?.message || 'Save failed'); }
                   finally { setFormBusy(false); }
                 }}
@@ -328,7 +417,15 @@ export default function DevSection() {
                 <div key={key} className={`rounded-lg border ${a.banned?'border-red-400/40 bg-red-600/10':'border-white/10 bg-black/40'} p-3 grid md:grid-cols-[minmax(0,1fr)_auto] gap-2`}>
                   <div>
                     <div className="text-sm text-cyan-200 font-medium">{a.displayName || a.email || a.uid || 'Admin'}</div>
-                    <div className="text-xs text-gray-400">{a.email || '-'} {a.uid ? `• ${a.uid}`:''}</div>
+                    <div className="text-xs text-gray-400 flex items-center gap-2 flex-wrap">
+                      <span>{a.email || '-'}</span> {a.uid ? <span>• {a.uid}</span> : null}
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] ${a._online ? 'border-emerald-400/50 text-emerald-200 bg-emerald-500/10' : 'border-gray-400/30 text-gray-300 bg-white/5'}`}
+                        title={formatLastSeen(a._lastSeen)}
+                      >
+                        {a._online ? 'Online' : 'Offline'}
+                      </span>
+                    </div>
                     <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-300 items-center">
                       <label className="inline-flex items-center gap-2"><input type="checkbox" checked={!!a.canEditSections} onChange={async(e)=>{
                         if (String(a.email).toLowerCase() === OWNER_EMAIL && !e.target.checked) { alert('Owner must retain edit access'); return; }
@@ -398,7 +495,7 @@ export default function DevSection() {
                         let ok = false; let lastErr = '';
                         for (const url of urls) { try { const r = await fetch(url, { method: 'DELETE' }); if (r.ok) { ok = true; break; } else lastErr = `HTTP ${r.status}`; } catch (e) { lastErr = e?.message || 'Network'; } }
                         if (!ok) throw new Error(lastErr || 'Delete failed');
-                        setAdmins((list)=>list.filter(x=>x!==a));
+                        await reloadAdminsWithPresence();
                       } catch (e) { setAdminsError(e?.message || 'Delete failed'); }
                     }} className="px-3 py-2 rounded-md bg-red-600/20 border border-red-500/40 text-red-200 hover:bg-red-600/30 text-xs">Delete</button>
                   </div>
