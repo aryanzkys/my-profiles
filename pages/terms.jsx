@@ -111,9 +111,12 @@ export default function TermsOfService() {
         <meta name="description" content="Terms of Service for AryanStack." />
       </Head>
       <div className="mx-auto max-w-4xl px-4 py-10">
-        <div className="mb-6 flex items-center gap-3">
-          <FileText className="h-6 w-6 text-cyan-300" />
-          <h1 id="page-title" tabIndex={-1} className="text-2xl font-semibold text-cyan-300">Terms of Service</h1>
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <FileText className="h-6 w-6 text-cyan-300" />
+            <h1 id="page-title" tabIndex={-1} className="text-2xl font-semibold text-cyan-300">Terms of Service</h1>
+          </div>
+          <a href="/privacy" className="text-xs px-2 py-1 rounded-md border border-white/10 bg-white/5 hover:bg-white/10 text-gray-200">Back to Privacy</a>
         </div>
         <div className="text-xs text-gray-400 mb-6">Last updated: {updatedAt}</div>
 

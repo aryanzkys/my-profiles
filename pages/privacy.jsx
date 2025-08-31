@@ -154,14 +154,24 @@ export default function PrivacyPolicy() {
         </div>
         <div className="text-xs text-gray-400 mb-6">Last updated: {updatedAt}</div>
 
-        <div className="mb-6 rounded-lg border border-white/10 bg-black/30 p-3 text-sm text-gray-300">
-          <div className="font-medium text-cyan-200 mb-1">Summary</div>
-          <ul className="grid md:grid-cols-2 gap-2">
-            <li className="flex items-center gap-2"><KeyRound className="h-4 w-4 text-amber-300" /> Admin access is controlled and audited.</li>
-            <li className="flex items-center gap-2"><Database className="h-4 w-4 text-fuchsia-300" /> Login and presence logs improve security.</li>
-            <li className="flex items-center gap-2"><Clock className="h-4 w-4 text-cyan-300" /> Data retention is limited to operational needs.</li>
-            <li className="flex items-center gap-2"><Globe2 className="h-4 w-4 text-emerald-300" /> Third‑party providers help deliver the Service.</li>
-          </ul>
+        <div className="mb-6 grid gap-2 md:grid-cols-2">
+          <div className="rounded-lg border border-white/10 bg-black/30 p-3 text-sm text-gray-300">
+            <div className="font-medium text-cyan-200 mb-1">Quick Links</div>
+            <ul className="grid grid-cols-2 gap-2">
+              {sections.map(s=> (
+                <li key={s.id}><a href={`#${s.id}`} className="hover:text-cyan-300 underline underline-offset-2">{s.title}</a></li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-black/30 p-3 text-sm text-gray-300">
+            <div className="font-medium text-cyan-200 mb-1">Summary</div>
+            <ul className="grid md:grid-cols-2 gap-2">
+              <li className="flex items-center gap-2"><KeyRound className="h-4 w-4 text-amber-300" /> Admin access is controlled and audited.</li>
+              <li className="flex items-center gap-2"><Database className="h-4 w-4 text-fuchsia-300" /> Login and presence logs improve security.</li>
+              <li className="flex items-center gap-2"><Clock className="h-4 w-4 text-cyan-300" /> Data retention is limited to operational needs.</li>
+              <li className="flex items-center gap-2"><Globe2 className="h-4 w-4 text-emerald-300" /> Third‑party providers help deliver the Service.</li>
+            </ul>
+          </div>
         </div>
 
         <div className="space-y-3">
