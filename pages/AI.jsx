@@ -58,7 +58,19 @@ export default function AIPage() {
         <motion.div initial={{ y: -8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8, ease: 'easeOut' }} className="absolute -top-10 left-5 h-20 w-20 rounded-full bg-cyan-400/10 blur-2xl" />
         <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.9, delay: 0.05, ease: 'easeOut' }} className="absolute top-10 right-10 h-28 w-28 rounded-full bg-blue-500/10 blur-3xl" />
         <div className="container mx-auto px-4 py-8 md:py-12">
-          <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }} className="text-3xl md:text-4xl font-semibold">
+          <motion.h1
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+            className="text-3xl md:text-4xl font-semibold flex items-center gap-3"
+          >
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Coat_of_arms_of_the_United_Kingdom_%282022%2C_variant_2%29.svg/2241px-Coat_of_arms_of_the_United_Kingdom_%282022%2C_variant_2%29.svg.png"
+              alt="British coat of arms"
+              className="h-8 w-8 md:h-10 md:w-10 object-contain select-none pointer-events-none drop-shadow-[0_0_14px_rgba(34,211,238,0.22)]"
+              loading="eager"
+              decoding="async"
+            />
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-200 via-sky-200 to-blue-200 drop-shadow-[0_0_20px_rgba(34,211,238,0.15)]">Aryan’s AI Assistant</span>
           </motion.h1>
           <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mt-2 text-[13px] md:text-base text-gray-300 max-w-[720px]">
