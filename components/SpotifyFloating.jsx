@@ -260,7 +260,7 @@ export default function SpotifyFloating() {
       redirect_uri,
       code_challenge_method: 'S256',
       code_challenge: challenge,
-      scope: 'user-read-email',
+  scope: 'user-read-email user-read-private',
       state,
     });
     try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ verifier, redirect_uri, state })); } catch {}
@@ -283,20 +283,25 @@ export default function SpotifyFloating() {
       }
       let accessToken = (t?.access_token) || token.access_token;
 
-      const doFetch = async () => {
-        return fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=${resultType}&limit=10&market=from_token`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+      const doFetch = async (withMarket = true) => {
+        const url = withMarket
+          ? `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=${resultType}&limit=10&market=from_token`
+          : `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=${resultType}&limit=10`;
+        return fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
       };
 
-      let r = await doFetch();
+      let r = await doFetch(true);
       if (r.status === 401) {
         // Try one refresh + retry
         const rt = await refreshIfNeeded();
         if (rt?.access_token) {
           accessToken = rt.access_token;
-          r = await doFetch();
+          r = await doFetch(true);
         }
+      }
+      if (r.status === 403) {
+        // insufficient client scope for using market=from_token in some contexts; retry without market
+        r = await doFetch(false);
       }
       if (!r.ok) {
         let errText = `Spotify search failed: ${r.status}`;
@@ -327,6 +332,8 @@ export default function SpotifyFloating() {
       setMessage(msg);
       if ((/401/).test(msg)) {
         setMessage('Spotify session expired. Please reconnect.');
+      } else if ((/403/).test(msg)) {
+        setMessage('Spotify permissions need update. Disconnect then Connect Spotify again.');
       }
     } finally {
       setSearching(false);
@@ -392,7 +399,14 @@ export default function SpotifyFloating() {
         const t = await refreshIfNeeded();
         const accessToken = (t?.access_token) || token?.access_token;
         if (!accessToken) { setMessage('Connected to Spotify is required to preview. Embed set.'); return; }
-        const r = await fetch(`https://api.spotify.com/v1/tracks/${parts.id}?market=from_token`, { headers: { Authorization: `Bearer ${accessToken}` }});
+        const doTrack = async (withMarket = true) => {
+          const url = withMarket
+            ? `https://api.spotify.com/v1/tracks/${parts.id}?market=from_token`
+            : `https://api.spotify.com/v1/tracks/${parts.id}`;
+          return fetch(url, { headers: { Authorization: `Bearer ${accessToken}` }});
+        };
+        let r = await doTrack(true);
+        if (r.status === 403) { r = await doTrack(false); }
         if (!r.ok) throw new Error('Failed to fetch track for preview');
         const track = await r.json();
         if (track?.preview_url) {
