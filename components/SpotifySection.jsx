@@ -452,7 +452,16 @@ export default function SpotifySection() {
       <div className="rounded-2xl p-[1px] bg-gradient-to-r from-cyan-400/30 via-blue-500/25 to-cyan-400/30 shadow-[0_0_40px_rgba(34,211,238,0.35)]">
         <div className="rounded-2xl border border-white/10 bg-black/85 overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent">
-            <div className="text-cyan-200 font-medium">Vibes for /AI</div>
+            <div className="flex items-center gap-2 text-cyan-200 font-medium">
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2048px-Spotify_logo_without_text.svg.png"
+                alt="Spotify"
+                className="h-4 w-4 object-contain select-none pointer-events-none"
+                loading="eager"
+                decoding="async"
+              />
+              <span>Tune Your AI Vibes</span>
+            </div>
             {token && (
               <div className="hidden sm:flex items-center gap-2 text-xs text-green-300">
                 <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" aria-hidden />
