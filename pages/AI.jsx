@@ -1,7 +1,8 @@
 import dynamic from 'next/dynamic';
 import Head from 'next/head';
 import { motion } from 'framer-motion';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import ParticleField from '../components/ParticleField';
 
 const Chatbot = dynamic(() => import('../components/Chatbot'), { ssr: false });
 const SpotifySection = dynamic(() => import('../components/SpotifySection'), { ssr: false });
@@ -9,6 +10,14 @@ const SpotifySection = dynamic(() => import('../components/SpotifySection'), { s
 export default function AIPage() {
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
   const cardRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const handleTilt = (e) => {
     const el = cardRef.current;
@@ -16,14 +25,14 @@ export default function AIPage() {
     const rect = el.getBoundingClientRect();
     const px = (e.clientX - rect.left) / rect.width; // 0..1
     const py = (e.clientY - rect.top) / rect.height; // 0..1
-    const ry = (px - 0.5) * 10; // rotateY
-    const rx = -(py - 0.5) * 6; // rotateX
+    const ry = (px - 0.5) * (isMobile ? 4 : 10); // rotateY (reduced on mobile)
+    const rx = -(py - 0.5) * (isMobile ? 3 : 6); // rotateX (reduced on mobile)
     setTilt({ rx, ry });
   };
   const resetTilt = () => setTilt({ rx: 0, ry: 0 });
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-[#05070a] text-gray-100">
+  <div className="min-h-screen relative overflow-hidden bg-[#05070a] text-gray-100">
       <Head>
         <title>Aryan’s AI Assistant</title>
         <meta name="robots" content="index,follow" />
@@ -38,6 +47,8 @@ export default function AIPage() {
         <div className="absolute bottom-[-20%] left-[-10%] h-[70vh] w-[70vh] rounded-full blur-[120px]" style={{ background: 'radial-gradient(50% 50% at 50% 50%, rgba(59,130,246,0.18) 0%, rgba(0,0,0,0) 70%)' }} />
         {/* subtle grid overlay */}
         <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+    {/* ambient particles */}
+    <ParticleField />
       </div>
 
       <header className="relative overflow-hidden">
@@ -46,11 +57,11 @@ export default function AIPage() {
         {/* parallax orbs */}
         <motion.div initial={{ y: -8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8, ease: 'easeOut' }} className="absolute -top-10 left-5 h-20 w-20 rounded-full bg-cyan-400/10 blur-2xl" />
         <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.9, delay: 0.05, ease: 'easeOut' }} className="absolute top-10 right-10 h-28 w-28 rounded-full bg-blue-500/10 blur-3xl" />
-        <div className="container mx-auto px-4 py-12">
+        <div className="container mx-auto px-4 py-8 md:py-12">
           <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }} className="text-3xl md:text-4xl font-semibold">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-200 via-sky-200 to-blue-200 drop-shadow-[0_0_20px_rgba(34,211,238,0.15)]">Aryan’s AI Assistant</span>
           </motion.h1>
-          <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mt-2 text-sm md:text-base text-gray-300 max-w-[720px]">
+          <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mt-2 text-[13px] md:text-base text-gray-300 max-w-[720px]">
             Ask anything about Aryan — education, achievements, organizations, and more. Designed with a robotic, futuristic aesthetic for an elegant experience.
           </motion.p>
           {/* accent underline */}
@@ -58,29 +69,35 @@ export default function AIPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 pb-24">
+      <main className="container mx-auto px-3 md:px-4 pb-24">
         {/* Chat section with subtle 3D tilt interaction */}
-        <div className="relative mt-4">
+        <div className="relative mt-2 md:mt-4">
           <div className="grid place-items-center">
             <motion.div
               ref={cardRef}
               onMouseMove={handleTilt}
               onMouseLeave={resetTilt}
               style={{ transform: `perspective(1100px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)` }}
-              className="w-full max-w-[1080px] px-1 transition-transform duration-150 will-change-transform"
+              className="w-full max-w-[1080px] px-0.5 md:px-1 transition-transform duration-150 will-change-transform"
             >
               <Chatbot initialOpen={true} fullScreen={true} hideFab={true} />
             </motion.div>
           </div>
           {/* Decorative corner sparks */}
           <div className="pointer-events-none">
-            <div className="absolute -z-[1] -top-6 left-6 h-16 w-16 rounded-full blur-3xl bg-cyan-500/20" />
-            <div className="absolute -z-[1] -bottom-10 right-10 h-20 w-20 rounded-full blur-3xl bg-blue-500/20" />
+            <div className="absolute -z-[1] -top-6 left-2 md:left-6 h-12 md:h-16 w-12 md:w-16 rounded-full blur-3xl bg-cyan-500/20" />
+            <div className="absolute -z-[1] -bottom-10 right-4 md:right-10 h-16 md:h-20 w-16 md:w-20 rounded-full blur-3xl bg-blue-500/20" />
           </div>
         </div>
 
         {/* Inline Spotify section under chat */}
-        <SpotifySection />
+        <div className="mt-4 md:mt-6">
+          <div className="relative">
+            {/* local particles behind Spotify */}
+            <ParticleField className="opacity-[0.2]" />
+            <SpotifySection />
+          </div>
+        </div>
       </main>
     </div>
   );
