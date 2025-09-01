@@ -75,6 +75,7 @@ export default function SpotifyFloating() {
   const [nowPlayingId, setNowPlayingId] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [nowPlayingTrack, setNowPlayingTrack] = useState(null);
+  const [canDrag, setCanDrag] = useState(false);
 
   // Load token from storage
   useEffect(() => {
@@ -90,6 +91,11 @@ export default function SpotifyFloating() {
       if (rq) {
         try { setRecentQueries(JSON.parse(rq)); } catch {}
       }
+  // Enable drag on medium+ screens only
+  const setFromSize = () => setCanDrag(typeof window !== 'undefined' ? window.innerWidth >= 768 : false);
+  setFromSize();
+  window.addEventListener('resize', setFromSize);
+  return () => window.removeEventListener('resize', setFromSize);
     } catch {}
   }, []);
 
@@ -306,15 +312,13 @@ export default function SpotifyFloating() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 240, damping: 24 }}
-            drag
-            dragConstraints={{ left: -40, right: 40, top: -40, bottom: 40 }}
-            dragElastic={0.2}
-            className="absolute bottom-16 right-0 w-[min(92vw,420px)] rounded-2xl p-[1px] bg-gradient-to-r from-cyan-400/30 via-blue-500/25 to-cyan-400/30 shadow-[0_0_40px_rgba(34,211,238,0.35)] backdrop-blur-xl"
+            {...(canDrag ? { drag: true, dragConstraints: { left: -40, right: 40, top: -40, bottom: 40 }, dragElastic: 0.2 } : {})}
+            className="absolute bottom-16 right-0 w-[min(94vw,360px)] sm:w-[min(92vw,420px)] rounded-2xl p-[1px] bg-gradient-to-r from-cyan-400/30 via-blue-500/25 to-cyan-400/30 shadow-[0_0_40px_rgba(34,211,238,0.35)] backdrop-blur-xl"
             role="dialog"
             aria-label="Spotify player"
           >
-            <div className="rounded-2xl border border-white/10 bg-black/85 overflow-hidden">
-              <div className="flex items-center gap-3 p-3 border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent">
+            <div className="rounded-2xl border border-white/10 bg-black/85 overflow-hidden flex flex-col max-h-[70vh]">
+              <div className="flex items-center gap-3 px-3 py-2 border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent">
                 <div className="text-cyan-200 font-medium">Vibes for /AI</div>
                 {token && (
                   <div className="hidden sm:flex items-center gap-2 text-xs text-green-300">
@@ -325,20 +329,20 @@ export default function SpotifyFloating() {
                 )}
                 <div className="ml-auto flex items-center gap-2">
                   {token ? (
-                    <button onClick={logoutSpotify} className="text-xs px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Disconnect</button>
+                    <button onClick={logoutSpotify} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Disconnect</button>
                   ) : (
-                    <button disabled={connecting} onClick={startSpotifyLogin} className="text-xs px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200 hover:shadow-[0_0_14px_rgba(34,211,238,0.25)]">
+                    <button disabled={connecting} onClick={startSpotifyLogin} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200 hover:shadow-[0_0_14px_rgba(34,211,238,0.25)]">
                       {connecting ? 'Connecting…' : 'Connect Spotify'}
                     </button>
                   )}
-                  <button onClick={() => setOpen(false)} aria-label="Close" className="h-8 w-8 grid place-items-center rounded-full text-gray-300 hover:text-white hover:bg-white/10">
+                  <button onClick={() => setOpen(false)} aria-label="Close" className="h-7 w-7 grid place-items-center rounded-full text-gray-300 hover:text-white hover:bg-white/10">
                     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.3 6.3-6.3z"/></svg>
                   </button>
                 </div>
               </div>
 
-              <div className="p-3 space-y-3">
-                <div className="text-sm text-gray-300">Hey, what do you wanna listen to while chatting with Aryan’s AI? 🎶</div>
+              <div className="p-3 space-y-3 overflow-y-auto min-h-0">
+                <div className="text-[13px] text-gray-300">Hey, what do you wanna listen to while chatting with Aryan’s AI? 🎶</div>
 
                 {!token && (
                   <div className="text-xs text-gray-400">You’re not connected. Click “Connect Spotify” to search and play previews.</div>
@@ -347,8 +351,8 @@ export default function SpotifyFloating() {
                 {/* Search type toggle */}
                 <div className="flex items-center gap-2">
                   <div className="flex rounded-lg overflow-hidden border border-white/10">
-                    <button type="button" onClick={()=>setResultType('track')} className={`px-2 py-1 text-xs ${resultType==='track'?'bg-white/10 text-cyan-200':'text-gray-300 hover:bg-white/5'}`}>Tracks</button>
-                    <button type="button" onClick={()=>setResultType('playlist')} className={`px-2 py-1 text-xs ${resultType==='playlist'?'bg-white/10 text-cyan-200':'text-gray-300 hover:bg-white/5'}`}>Playlists</button>
+                    <button type="button" onClick={()=>setResultType('track')} className={`px-2 py-1 text-[11px] ${resultType==='track'?'bg-white/10 text-cyan-200':'text-gray-300 hover:bg-white/5'}`}>Tracks</button>
+                    <button type="button" onClick={()=>setResultType('playlist')} className={`px-2 py-1 text-[11px] ${resultType==='playlist'?'bg-white/10 text-cyan-200':'text-gray-300 hover:bg-white/5'}`}>Playlists</button>
                   </div>
                 </div>
 
@@ -358,10 +362,10 @@ export default function SpotifyFloating() {
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={(e)=>{ if(e.key==='Enter'){ e.preventDefault(); searchTracks(query); } }}
                     placeholder="Search songs, artists, or albums"
-                    className="flex-1 rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
+                    className="flex-1 rounded-xl bg-white/5 border border-white/10 px-2.5 py-1.5 text-[13px] text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
                     disabled={!token || searching}
                   />
-                  <button onClick={()=>searchTracks(query)} disabled={!token || searching} className="h-9 px-3 rounded-xl border bg-cyan-500/20 border-cyan-400/30 text-cyan-200">
+                  <button onClick={()=>searchTracks(query)} disabled={!token || searching} className="h-8 px-3 rounded-xl border bg-cyan-500/20 border-cyan-400/30 text-cyan-200 text-[13px]">
                     {searching ? 'Searching…' : 'Search'}
                   </button>
                 </div>
@@ -376,35 +380,35 @@ export default function SpotifyFloating() {
                 )}
 
                 {/* Results */}
-                <div className="max-h-60 overflow-y-auto divide-y divide-white/5 rounded-xl border border-white/10">
+                <div className="max-h-40 overflow-y-auto divide-y divide-white/5 rounded-xl border border-white/10">
                   {results.length === 0 ? (
                     <div className="p-3 text-xs text-gray-500">No results yet.</div>
                   ) : resultType === 'track' ? (
                     results.map((t) => (
-                      <div key={t.id} className="p-3 flex items-center gap-3">
-                        <img src={t.album?.images?.[2]?.url || t.album?.images?.[1]?.url || t.album?.images?.[0]?.url} alt="cover" className="h-10 w-10 rounded-md object-cover" />
+                      <div key={t.id} className="p-2.5 flex items-center gap-2.5">
+                        <img src={t.album?.images?.[2]?.url || t.album?.images?.[1]?.url || t.album?.images?.[0]?.url} alt="cover" className="h-9 w-9 rounded-md object-cover" />
                         <div className="min-w-0 flex-1">
-                          <div className="text-sm text-gray-100 truncate">{t.name}</div>
-                          <div className="text-xs text-gray-400 truncate">{(t.artists||[]).map(a=>a.name).join(', ')}</div>
+                          <div className="text-[13px] text-gray-100 truncate">{t.name}</div>
+                          <div className="text-[11px] text-gray-400 truncate">{(t.artists||[]).map(a=>a.name).join(', ')}</div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button onClick={()=>{ playPreviewFromTrack(t); }} className="text-xs px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
-                          <button onClick={pausePreview} className="text-xs px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Pause</button>
-                          <button onClick={stopPreview} className="text-xs px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Stop</button>
-                          <button onClick={()=>onEmbedSet(`https://open.spotify.com/embed/track/${t.id}`)} className="text-xs px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={()=>{ playPreviewFromTrack(t); }} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
+                          <button onClick={pausePreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Pause</button>
+                          <button onClick={stopPreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Stop</button>
+                          <button onClick={()=>onEmbedSet(`https://open.spotify.com/embed/track/${t.id}`)} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
                         </div>
                       </div>
                     ))
                   ) : (
                     results.map((p) => (
-                      <div key={p.id} className="p-3 flex items-center gap-3">
-                        <img src={p.images?.[2]?.url || p.images?.[1]?.url || p.images?.[0]?.url} alt="cover" className="h-10 w-10 rounded-md object-cover" />
+                      <div key={p.id} className="p-2.5 flex items-center gap-2.5">
+                        <img src={p.images?.[2]?.url || p.images?.[1]?.url || p.images?.[0]?.url} alt="cover" className="h-9 w-9 rounded-md object-cover" />
                         <div className="min-w-0 flex-1">
-                          <div className="text-sm text-gray-100 truncate">{p.name}</div>
-                          <div className="text-xs text-gray-400 truncate">{p.owner?.display_name || 'Playlist'}</div>
+                          <div className="text-[13px] text-gray-100 truncate">{p.name}</div>
+                          <div className="text-[11px] text-gray-400 truncate">{p.owner?.display_name || 'Playlist'}</div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button onClick={()=>onEmbedSet(`https://open.spotify.com/embed/playlist/${p.id}`)} className="text-xs px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={()=>onEmbedSet(`https://open.spotify.com/embed/playlist/${p.id}`)} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
                         </div>
                       </div>
                     ))
@@ -427,7 +431,7 @@ export default function SpotifyFloating() {
                     <iframe
                       src={embedUrl}
                       width="100%"
-                      height="152"
+                      height="120"
                       allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                       loading="lazy"
                       title="Spotify Embed"
@@ -438,23 +442,23 @@ export default function SpotifyFloating() {
 
                 {/* Now Playing bar */}
                 {nowPlayingTrack && (
-                  <div className="mt-2 rounded-xl border border-white/10 bg-white/5 p-2 flex items-center gap-3">
+                  <div className="mt-2 rounded-xl border border-white/10 bg-white/5 p-2 flex items-center gap-2.5">
                     {nowPlayingTrack.imageUrl ? (
-                      <img src={nowPlayingTrack.imageUrl} alt="cover" className="h-9 w-9 rounded-md object-cover" />
+                      <img src={nowPlayingTrack.imageUrl} alt="cover" className="h-8 w-8 rounded-md object-cover" />
                     ) : (
-                      <div className="h-9 w-9 rounded-md bg-white/10" />
+                      <div className="h-8 w-8 rounded-md bg-white/10" />
                     )}
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm text-gray-100 truncate">{nowPlayingTrack.name}</div>
-                      <div className="text-xs text-gray-400 truncate">{nowPlayingTrack.artists}</div>
+                      <div className="text-[13px] text-gray-100 truncate">{nowPlayingTrack.name}</div>
+                      <div className="text-[11px] text-gray-400 truncate">{nowPlayingTrack.artists}</div>
                     </div>
                     <div className="flex items-center gap-2">
                       {isPlaying ? (
-                        <button onClick={pausePreview} className="text-xs px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Pause</button>
+                        <button onClick={pausePreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Pause</button>
                       ) : (
-                        <button onClick={resumePreview} className="text-xs px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
+                        <button onClick={resumePreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
                       )}
-                      <button onClick={stopPreview} className="text-xs px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Stop</button>
+                      <button onClick={stopPreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Stop</button>
                     </div>
                   </div>
                 )}
