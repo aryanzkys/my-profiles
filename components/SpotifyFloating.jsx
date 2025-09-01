@@ -32,8 +32,8 @@ function randomString(len = 64) {
 
 function getRedirectUri() {
   if (typeof window === 'undefined') return '';
-  // Use current page (/AI) as redirect target
-  return `${window.location.origin}${process.env.NEXT_PUBLIC_BASE_PATH || ''}/AI`;
+  // Use the current path exactly (preserves /AI or /ai as visited)
+  return `${window.location.origin}${window.location.pathname}`;
 }
 
 function parseSpotifyUrlToEmbed(url) {

@@ -31,6 +31,5 @@ jobs:
           generate_release_notes: true
           draft: false
           make_latest: false
-          allow_updates: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
