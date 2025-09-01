@@ -558,7 +558,7 @@ export default function SpotifyFloating() {
 
       {/* Mini Now Playing pill (visible when modal closed) */}
       <AnimatePresence>
-        {!open && nowPlayingTrack && (
+        {nowPlayingTrack && (
           <motion.div
             key="np-pill"
             initial={{ opacity: 0, y: 8 }}
