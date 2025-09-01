@@ -126,24 +126,38 @@ export default function AIPage() {
           </div>
         </div>
       </main>
-      {/* Elegant RGB title styles */}
+      {/* Elegant shining RGB title styles */}
       <style jsx>{`
         .title-rgb {
           display: inline-block;
-          background-image: linear-gradient(90deg, rgba(34,211,238,0.95), rgba(96,165,250,0.95), rgba(167,139,250,0.95), rgba(34,211,238,0.95));
-          background-size: 200% 100%;
-          background-position: var(--mx, 50%) 50%;
+          /* Layer 1: base RGB gradient; Layer 2: subtle moving sheen */
+          background-image:
+            linear-gradient(90deg,
+              rgba(34,211,238,0.95) 0%,
+              rgba(96,165,250,0.95) 35%,
+              rgba(167,139,250,0.95) 65%,
+              rgba(34,211,238,0.95) 100%),
+            linear-gradient(115deg,
+              rgba(255,255,255,0) 0%,
+              rgba(255,255,255,0) 40%,
+              rgba(255,255,255,0.55) 50%,
+              rgba(255,255,255,0) 60%,
+              rgba(255,255,255,0) 100%);
+          background-size: 200% 100%, 200% 100%;
+          background-position: var(--mx, 50%) 50%, -200% 50%;
           -webkit-background-clip: text;
           background-clip: text;
           color: transparent;
           transition: background-position 120ms ease-out, text-shadow 200ms ease;
-          animation: titleShimmer 14s ease-in-out infinite;
-          text-shadow: 0 0 14px rgba(34,211,238,0.12);
+          /* Periodic sheen sweep across the text */
+          animation: titleSheen 9s ease-in-out infinite 1.2s;
+          text-shadow: 0 0 12px rgba(34,211,238,0.12);
         }
-        @keyframes titleShimmer {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
+        @keyframes titleSheen {
+          0%   { background-position: var(--mx, 50%) 50%, -200% 50%; }
+          45%  { background-position: var(--mx, 50%) 50%, 120% 50%; }
+          50%  { background-position: var(--mx, 50%) 50%, 140% 50%; }
+          100% { background-position: var(--mx, 50%) 50%, -200% 50%; }
         }
         /* Subtle emphasis on hover/focus within header */
         header:hover .title-rgb, header:focus-within .title-rgb {
