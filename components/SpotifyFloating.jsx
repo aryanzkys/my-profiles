@@ -387,6 +387,79 @@ export default function SpotifyFloating() {
     try { const a = audioRef.current; if (a && a.paused) { await a.play(); } } catch {}
   };
 
+  // Helpers for autoplaying from embeds
+  const getAccessToken = async () => {
+    const t = await refreshIfNeeded();
+    return (t?.access_token) || token?.access_token || null;
+  };
+
+  const fetchWithFallback = async (urlWithMarket, urlNoMarket) => {
+    const accessToken = await getAccessToken();
+    if (!accessToken) throw new Error('Please connect Spotify first.');
+    let r = await fetch(urlWithMarket, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (r.status === 403) {
+      r = await fetch(urlNoMarket, { headers: { Authorization: `Bearer ${accessToken}` } });
+    }
+    if (!r.ok) throw new Error(`Spotify request failed: ${r.status}`);
+    return r.json();
+  };
+
+  const playFirstPreviewFromPlaylist = async (playlistId) => {
+    try {
+      const data = await fetchWithFallback(
+        `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50&market=from_token`,
+        `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`
+      );
+      const items = Array.isArray(data?.items) ? data.items : [];
+      const tracks = items.map(it => it?.track).filter(Boolean);
+      const withPreview = tracks.filter(t => t && t.preview_url);
+      if (withPreview.length > 0) {
+        setTrackPool(withPreview);
+        await playPreviewFromTrack(withPreview[0]);
+        return true;
+      }
+      setMessage('Playlist embedded. No track with 30s preview found.');
+      return false;
+    } catch (e) {
+      setMessage('Failed to start playback from playlist embed.');
+      return false;
+    }
+  };
+
+  const playFirstPreviewFromAlbum = async (albumId) => {
+    try {
+      const data = await fetchWithFallback(
+        `https://api.spotify.com/v1/albums/${albumId}/tracks?limit=50&market=from_token`,
+        `https://api.spotify.com/v1/albums/${albumId}/tracks?limit=50`
+      );
+      const items = Array.isArray(data?.items) ? data.items : [];
+      // Items may be simplified tracks; prefer preview_url if present, otherwise resolve first few full track objects
+      let candidates = items.filter(t => t?.preview_url);
+      if (candidates.length === 0) {
+        const ids = items.slice(0, 5).map(t => t?.id).filter(Boolean);
+        for (const id of ids) {
+          try {
+            const t = await fetchWithFallback(
+              `https://api.spotify.com/v1/tracks/${id}?market=from_token`,
+              `https://api.spotify.com/v1/tracks/${id}`
+            );
+            if (t?.preview_url) { candidates = [t]; break; }
+          } catch {}
+        }
+      }
+      if (candidates.length > 0) {
+        setTrackPool(candidates);
+        await playPreviewFromTrack(candidates[0]);
+        return true;
+      }
+      setMessage('Album embedded. No track with 30s preview found.');
+      return false;
+    } catch (e) {
+      setMessage('Failed to start playback from album embed.');
+      return false;
+    }
+  };
+
   const onEmbedFromUrl = async (val) => {
     const e = parseSpotifyUrlToEmbed(val);
     if (!e) { setMessage('Invalid Spotify URL'); return; }
@@ -396,19 +469,10 @@ export default function SpotifyFloating() {
     const parts = parseSpotifyUrlParts(val);
     if (parts?.type === 'track' && parts.id) {
       try {
-        const t = await refreshIfNeeded();
-        const accessToken = (t?.access_token) || token?.access_token;
-        if (!accessToken) { setMessage('Connected to Spotify is required to preview. Embed set.'); return; }
-        const doTrack = async (withMarket = true) => {
-          const url = withMarket
-            ? `https://api.spotify.com/v1/tracks/${parts.id}?market=from_token`
-            : `https://api.spotify.com/v1/tracks/${parts.id}`;
-          return fetch(url, { headers: { Authorization: `Bearer ${accessToken}` }});
-        };
-        let r = await doTrack(true);
-        if (r.status === 403) { r = await doTrack(false); }
-        if (!r.ok) throw new Error('Failed to fetch track for preview');
-        const track = await r.json();
+        const track = await fetchWithFallback(
+          `https://api.spotify.com/v1/tracks/${parts.id}?market=from_token`,
+          `https://api.spotify.com/v1/tracks/${parts.id}`
+        );
         if (track?.preview_url) {
           playPreviewFromTrack(track);
         } else {
@@ -417,10 +481,14 @@ export default function SpotifyFloating() {
       } catch (err) {
         console.warn('Embed preview fetch error', err);
       }
+    } else if (parts?.type === 'playlist' && parts.id) {
+      await playFirstPreviewFromPlaylist(parts.id);
+    } else if (parts?.type === 'album' && parts.id) {
+      await playFirstPreviewFromAlbum(parts.id);
     }
   };
 
-  const onEmbedSet = (url, meta) => {
+  const onEmbedSet = async (url, meta) => {
     setEmbedUrl(url);
     try { window.localStorage.setItem(LAST_EMBED_KEY, url); } catch {}
     // If user embeds a track and it has a preview, start playing so Now Playing persists on close
@@ -428,6 +496,10 @@ export default function SpotifyFloating() {
       playPreviewFromTrack(meta.track);
     } else if (meta?.track && !meta.track.preview_url) {
       setMessage('This track has no 30s preview. Embed set, but playback is unavailable.');
+    } else if (meta?.playlistId) {
+      await playFirstPreviewFromPlaylist(meta.playlistId);
+    } else if (meta?.albumId) {
+      await playFirstPreviewFromAlbum(meta.albumId);
     }
   };
 
@@ -636,7 +708,7 @@ export default function SpotifyFloating() {
                           <div className="text-[11px] text-gray-400 truncate">{p.owner?.display_name || 'Playlist'}</div>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <button onClick={()=>{ if (p?.id) onEmbedSet(`https://open.spotify.com/embed/playlist/${p.id}`); }} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
+                          <button onClick={()=>{ if (p?.id) onEmbedSet(`https://open.spotify.com/embed/playlist/${p.id}`, { playlistId: p.id }); }} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
                         </div>
                       </div>
                     ))
