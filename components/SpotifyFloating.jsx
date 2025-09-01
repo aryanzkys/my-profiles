@@ -54,6 +54,20 @@ function parseSpotifyUrlToEmbed(url) {
   }
 }
 
+function parseSpotifyUrlParts(url) {
+  try {
+    const u = new URL(url);
+    if (!/open\.spotify\.com$/.test(u.hostname)) return null;
+    const parts = u.pathname.split('/').filter(Boolean);
+    if (parts.length < 2) return null;
+    const type = parts[0];
+    const id = parts[1];
+    return { type, id };
+  } catch {
+    return null;
+  }
+}
+
 export default function SpotifyFloating() {
   const CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || '';
   const STORAGE_KEY = 'spotify_pkce_state_v1';
@@ -284,7 +298,12 @@ export default function SpotifyFloating() {
           r = await doFetch();
         }
       }
-      if (!r.ok) throw new Error(`Spotify search failed: ${r.status}`);
+      if (!r.ok) {
+        let errText = `Spotify search failed: ${r.status}`;
+        try { const ej = await r.json(); if (ej?.error?.message) errText += ` - ${ej.error.message}`; } catch {}
+        if (r.status === 429) setMessage('Rate limited by Spotify. Please try again in a moment.');
+        throw new Error(errText);
+      }
       const data = await r.json().catch(() => ({}));
       const items = resultType === 'playlist'
         ? (Array.isArray(data?.playlists?.items) ? data.playlists.items : [])
@@ -304,7 +323,11 @@ export default function SpotifyFloating() {
       } catch {}
     } catch (e) {
       console.error('Spotify search error', e);
-      setMessage('Search error. Try again or reconnect Spotify.');
+      const msg = (e && e.message) ? e.message : 'Search error. Try again or reconnect Spotify.';
+      setMessage(msg);
+      if ((/401/).test(msg)) {
+        setMessage('Spotify session expired. Please reconnect.');
+      }
     } finally {
       setSearching(false);
     }
@@ -357,9 +380,30 @@ export default function SpotifyFloating() {
     try { const a = audioRef.current; if (a && a.paused) { await a.play(); } } catch {}
   };
 
-  const onEmbedFromUrl = (val) => {
+  const onEmbedFromUrl = async (val) => {
     const e = parseSpotifyUrlToEmbed(val);
-    if (e) { setEmbedUrl(e); try { window.localStorage.setItem(LAST_EMBED_KEY, e); } catch {} } else setMessage('Invalid Spotify URL');
+    if (!e) { setMessage('Invalid Spotify URL'); return; }
+    setEmbedUrl(e);
+    try { window.localStorage.setItem(LAST_EMBED_KEY, e); } catch {}
+    // If it’s a track URL, try to auto-play preview so it persists to Now Playing even after closing modal.
+    const parts = parseSpotifyUrlParts(val);
+    if (parts?.type === 'track' && parts.id) {
+      try {
+        const t = await refreshIfNeeded();
+        const accessToken = (t?.access_token) || token?.access_token;
+        if (!accessToken) { setMessage('Connected to Spotify is required to preview. Embed set.'); return; }
+        const r = await fetch(`https://api.spotify.com/v1/tracks/${parts.id}?market=from_token`, { headers: { Authorization: `Bearer ${accessToken}` }});
+        if (!r.ok) throw new Error('Failed to fetch track for preview');
+        const track = await r.json();
+        if (track?.preview_url) {
+          playPreviewFromTrack(track);
+        } else {
+          setMessage('This track has no 30s preview. Embed set, playback unavailable.');
+        }
+      } catch (err) {
+        console.warn('Embed preview fetch error', err);
+      }
+    }
   };
 
   const onEmbedSet = (url, meta) => {
