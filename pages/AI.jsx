@@ -27,10 +27,10 @@ export default function AIPage() {
 
       <main className="container mx-auto px-4 pb-24">
         <div className="relative mt-4">
-          {/* Centered chat window for page layout */}
+          {/* Centered, wider full-screen styled chat */}
           <div className="grid place-items-center">
-            <div className="w-full max-w-[420px]">
-              <Chatbot initialOpen={true} />
+            <div className="w-full max-w-[1040px] px-1">
+              <Chatbot initialOpen={true} fullScreen={true} />
             </div>
           </div>
         </div>

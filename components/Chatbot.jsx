@@ -62,10 +62,10 @@ function SlowProcessing() {
   );
 }
 
-export default function Chatbot({ initialOpen = false }) {
+export default function Chatbot({ initialOpen = false, fullScreen = false }) {
   const STORAGE_KEY = 'aryan-chatbot-history-v1';
   const MAX_MESSAGES = 200;
-  const [open, setOpen] = useState(!!initialOpen);
+  const [open, setOpen] = useState(!!initialOpen || !!fullScreen);
   const [messages, setMessages] = useState(() => [
     { role: 'ai', text: "Hi! I’m Aryan’s AI Assistant 🤖 — trained by Aryan to help you get to know him better. Ask me anything!" }
   ]);
@@ -145,11 +145,11 @@ export default function Chatbot({ initialOpen = false }) {
   }, [messages, loading]);
 
   useEffect(() => {
-    if (open) {
+  if (open) {
       // Focus input when opening for better accessibility
       inputRef.current?.focus?.();
       const onKey = (e) => {
-        if (e.key === 'Escape') setOpen(false);
+    if (e.key === 'Escape' && !fullScreen) setOpen(false);
       };
       window.addEventListener('keydown', onKey);
       return () => window.removeEventListener('keydown', onKey);
@@ -200,9 +200,10 @@ export default function Chatbot({ initialOpen = false }) {
   }, [messages]);
 
   return (
-  <div className="fixed bottom-4 right-4 z-40">
+  <div className={fullScreen? 'relative z-10' : 'fixed bottom-4 right-4 z-40'}>
       {/* Floating button */}
-      <AnimatePresence>
+      {!fullScreen && (
+        <AnimatePresence>
         {!open && (
           <motion.button
             key="fab"
@@ -242,9 +243,10 @@ export default function Chatbot({ initialOpen = false }) {
             </span>
           </motion.button>
         )}
-      </AnimatePresence>
+      </AnimatePresence>)}
 
       {/* Hint tooltip */}
+      {!fullScreen && (
       <AnimatePresence>
         {!open && showHint && (
           <motion.div
@@ -280,32 +282,39 @@ export default function Chatbot({ initialOpen = false }) {
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>)}
 
       {/* Chat window */}
       <AnimatePresence>
         {open && (
           <motion.div
             key="chat"
-            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+            initial={{ opacity: 0, y: fullScreen ? 0 : 20, scale: fullScreen ? 1 : 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.98 }}
+            exit={{ opacity: 0, y: fullScreen ? 0 : 16, scale: fullScreen ? 1 : 0.98 }}
             transition={{ type: 'spring', stiffness: 220, damping: 24 }}
-            drag
-            dragConstraints={{ left: -24, right: 24, top: -24, bottom: 24 }}
-            dragElastic={0.2}
-            className="relative w-[min(92vw,340px)] sm:w-[min(88vw,380px)] rounded-2xl p-[1px] bg-gradient-to-r from-cyan-400/30 via-blue-500/25 to-cyan-400/30 shadow-[0_0_40px_rgba(34,211,238,0.25)] backdrop-blur-xl"
+            {...(fullScreen ? {} : { drag: true, dragConstraints: { left: -24, right: 24, top: -24, bottom: 24 }, dragElastic: 0.2 })}
+            className={fullScreen
+              ? "relative mx-auto w-full max-w-[1000px] rounded-3xl p-[1px] bg-gradient-to-r from-cyan-400/30 via-blue-500/25 to-cyan-400/30 shadow-[0_0_60px_rgba(34,211,238,0.35)] backdrop-blur-xl"
+              : "relative w?[min(92vw,340px)] sm:w-[min(88vw,380px)] rounded-2xl p-[1px] bg-gradient-to-r from-cyan-400/30 via-blue-500/25 to-cyan-400/30 shadow-[0_0_40px_rgba(34,211,238,0.25)] backdrop-blur-xl"}
             role="dialog"
             aria-label="AI chat window"
             aria-modal="false"
           >
-            <div className="rounded-2xl border border-white/10 bg-black/85 overflow-hidden">
+            {/* Decorative grid/background for fullScreen */}
+            {fullScreen && (
+              <div className="pointer-events-none absolute inset-0 rounded-3xl overflow-hidden">
+                <div className="absolute inset-0 opacity-25" style={{ backgroundImage: "radial-gradient(60% 40% at 50% 0%, rgba(34,211,238,0.25), transparent 70%)" }} />
+                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: `linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)`, backgroundSize: '22px 22px' }} />
+              </div>
+            )}
+            <div className={fullScreen? "rounded-3xl border border-white/10 bg-black/85 overflow-hidden" : "rounded-2xl border border-white/10 bg-black/85 overflow-hidden"}>
               {/* Header */}
-              <div className="flex items-center gap-3 p-3 border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent">
+              <div className={fullScreen? "flex items-center gap-4 p-4 md:p-5 border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent" : "flex items-center gap-3 p-3 border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent"}>
                 <RobotAvatar />
                 <div className="flex-1">
-                  <div className="text-cyan-200 font-medium">Aryan’s AI Assistant</div>
-                  <div className="text-xs text-gray-400 flex items-center gap-2">
+                  <div className={fullScreen? "text-cyan-200 font-semibold text-lg" : "text-cyan-200 font-medium"}>Aryan’s AI Assistant</div>
+                  <div className={fullScreen? "text-xs md:text-sm text-gray-400 flex items-center gap-2" : "text-xs text-gray-400 flex items-center gap-2"}>
                     <span>Powered by Google</span>
                     <span aria-hidden className="inline-flex h-4 w-4">
                       <svg viewBox="0 0 16 16" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -327,23 +336,25 @@ export default function Chatbot({ initialOpen = false }) {
                   }}
                   aria-label="Clear chat"
                   title="Clear chat"
-                  className="h-8 w-8 mr-1 grid place-items-center rounded-full text-cyan-200/80 hover:text-cyan-200 border border-cyan-400/20 hover:border-cyan-400/40 bg-cyan-500/10 hover:bg-cyan-500/15 shadow-[0_0_10px_rgba(34,211,238,0.15)]"
+                  className={fullScreen? "h-9 w-9 mr-1 grid place-items-center rounded-full text-cyan-200/80 hover:text-cyan-200 border border-cyan-400/20 hover:border-cyan-400/40 bg-cyan-500/10 hover:bg-cyan-500/15 shadow-[0_0_10px_rgba(34,211,238,0.15)]" : "h-8 w-8 mr-1 grid place-items-center rounded-full text-cyan-200/80 hover:text-cyan-200 border border-cyan-400/20 hover:border-cyan-400/40 bg-cyan-500/10 hover:bg-cyan-500/15 shadow-[0_0_10px_rgba(34,211,238,0.15)]"}
                 >
                   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true"><path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm1 7h2v8h-2v-8Zm-4 0h2v8H6v-8Zm10 0h-2v8h2v-8Z"/></svg>
                 </motion.button>
-                <button
-                  onClick={() => setOpen(false)}
-                  aria-label="Close"
-                  className="h-8 w-8 grid place-items-center rounded-full text-gray-300 hover:text-white hover:bg-white/10 transition"
-                >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.3 6.3-6.3z"/></svg>
-                </button>
+                {!fullScreen && (
+                  <button
+                    onClick={() => setOpen(false)}
+                    aria-label="Close"
+                    className="h-8 w-8 grid place-items-center rounded-full text-gray-300 hover:text-white hover:bg-white/10 transition"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.3 6.3-6.3z"/></svg>
+                  </button>
+                )}
               </div>
 
               {/* Chat history */}
               <div
                 ref={viewport}
-                className="max-h-[45vh] sm:max-h-[50vh] overflow-y-auto p-3 space-y-3"
+                className={fullScreen? "min-h-[50vh] max-h-[70vh] overflow-y-auto p-4 md:p-5 space-y-3" : "max-h-[45vh] sm:max-h-[50vh] overflow-y-auto p-3 space-y-3"}
                 role="log"
                 aria-live="polite"
                 aria-relevant="additions text"
@@ -375,12 +386,25 @@ export default function Chatbot({ initialOpen = false }) {
                               <ol {...props} className="list-decimal pl-5 my-1 space-y-1" />
                             ),
                             code: ({inline, className, children, ...props}) => (
-                              <code {...props} className={`rounded px-1 py-0.5 bg-black/40 border border-white/10 ${className||''}`}>{children}</code>
-                            )
+                              <code {...props} className={`rounded bg-white/10 px-1.5 py-0.5 ${className||''}`}>{children}</code>
+                            ),
+                            blockquote: ({node, ...props}) => (
+                              <blockquote {...props} className="border-l-2 border-cyan-400/30 pl-3 my-2 italic text-gray-200" />
+                            ),
+                            table: ({node, ...props}) => (
+                              <div className="overflow-x-auto my-2"><table {...props} className="min-w-[320px] text-left border-collapse" /></div>
+                            ),
+                            th: ({node, ...props}) => (
+                              <th {...props} className="border-b border-white/10 px-2 py-1.5 font-semibold text-gray-100" />
+                            ),
+                            td: ({node, ...props}) => (
+                              <td {...props} className="border-b border-white/5 px-2 py-1.5 text-gray-200" />
+                            ),
+                            tr: ({node, ...props}) => (
+                              <tr {...props} className="odd:bg-white/[0.02]" />
+                            ),
                           }}
-                        >
-                          {m.text}
-                        </ReactMarkdown>
+                        >{m.text}</ReactMarkdown>
                       )}
                     </div>
                   </div>
@@ -400,24 +424,53 @@ export default function Chatbot({ initialOpen = false }) {
 
               {/* Input */}
               <form
-                className="flex items-center gap-2 p-3 border-t border-white/10 bg-black/60"
+                className={fullScreen? "p-3 md:p-4 border-t border-white/10 bg-black/60" : "flex items-center gap-2 p-3 border-t border-white/10 bg-black/60"}
                 onSubmit={(e) => { e.preventDefault(); if (!loading) sendMessage(input); }}
               >
-                <input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Type your question here..."
-                  aria-label="Type your message"
-                  ref={inputRef}
-                  className="flex-1 rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
-                />
-                <button
-                  type="submit"
-                  disabled={loading || !input.trim()}
-                  className={`h-9 px-3 rounded-xl border transition ${loading ? 'opacity-70 cursor-wait' : 'hover:shadow-[0_0_14px_rgba(34,211,238,0.25)]'} bg-cyan-500/20 border-cyan-400/30 text-cyan-200`}
-                >
-                  Send
-                </button>
+                {fullScreen ? (
+                  <div className="grid gap-2">
+                    <div className="flex items-end gap-2">
+                      <textarea
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e)=>{ if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); if (!loading) sendMessage(input); } }}
+                        placeholder="Type your question… (Enter to send, Shift+Enter for newline)"
+                        aria-label="Type your message"
+                        ref={inputRef}
+                        rows={2}
+                        className="flex-1 rounded-2xl bg-white/[0.06] border border-white/10 px-3 py-2 text-sm md:text-base text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
+                      />
+                      <button
+                        type="submit"
+                        disabled={loading || !input.trim()}
+                        className={`h-10 px-4 rounded-2xl border transition ${loading ? 'opacity-70 cursor-wait' : 'hover:shadow-[0_0_18px_rgba(34,211,238,0.35)]'} bg-cyan-500/20 border-cyan-400/30 text-cyan-200`}
+                        title="Send"
+                        aria-label="Send message"
+                      >
+                        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true"><path d="M2 21 23 12 2 3l5 7-5 7Zm7.82-6.62L6.5 12l3.32-2.38L12.5 12l-2.68 2.38Z"/></svg>
+                      </button>
+                    </div>
+                    <div className="text-[11px] text-gray-400">Press Enter to send • Shift+Enter for newline</div>
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      placeholder="Type your question here..."
+                      aria-label="Type your message"
+                      ref={inputRef}
+                      className="flex-1 rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
+                    />
+                    <button
+                      type="submit"
+                      disabled={loading || !input.trim()}
+                      className={`h-9 px-3 rounded-xl border transition ${loading ? 'opacity-70 cursor-wait' : 'hover:shadow-[0_0_14px_rgba(34,211,238,0.25)]'} bg-cyan-500/20 border-cyan-400/30 text-cyan-200`}
+                    >
+                      Send
+                    </button>
+                  </>
+                )}
               </form>
             </div>
           </motion.div>
