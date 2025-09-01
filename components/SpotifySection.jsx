@@ -79,15 +79,6 @@ export default function SpotifySection() {
   const [filterPreviewOnly, setFilterPreviewOnly] = useState(false);
   const [message, setMessage] = useState('');
 
-  const [nowPlayingTrack, setNowPlayingTrack] = useState(null);
-  const [nowPlayingContextUri, setNowPlayingContextUri] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackMode, setPlaybackMode] = useState('preview'); // 'preview' | 'web'
-  const [trackPool, setTrackPool] = useState([]);
-
-  const [deviceId, setDeviceId] = useState(null);
-  const [playerReady, setPlayerReady] = useState(false);
-  const [webPlaybackUnavailable, setWebPlaybackUnavailable] = useState(false);
 
   // load persisted state
   useEffect(() => {
@@ -225,11 +216,11 @@ export default function SpotifySection() {
         throw new Error(errText);
       }
       const data = await r.json().catch(() => ({}));
-      const items = resultType === 'playlist'
+  const items = resultType === 'playlist'
         ? (Array.isArray(data?.playlists?.items) ? data.playlists.items : [])
         : (Array.isArray(data?.tracks?.items) ? data.tracks.items : []);
       setResults(items);
-      if (resultType === 'track') setTrackPool((items || []).filter(t => t && t.preview_url));
+  // No trackPool persistence needed since Now Playing is removed
       try {
         if (q.length > 1 && Array.isArray(items) && items.length > 0) {
           const next = [q, ...(recentQueries.filter(x => x !== q))].slice(0, 5);
@@ -252,199 +243,24 @@ export default function SpotifySection() {
       if (!audioRef.current) audioRef.current = new Audio();
       const a = audioRef.current; if (!a.paused) a.pause();
       a.src = url;
-      setNowPlayingTrack({
-        id: track.id,
-        name: track.name,
-        artists: (track.artists||[]).map(a=>a.name).join(', '),
-        imageUrl: track.album?.images?.[2]?.url || track.album?.images?.[1]?.url || track.album?.images?.[0]?.url || '',
-        preview_url: url,
-        uri: track.uri || (track.id ? `spotify:track:${track.id}` : ''),
-      });
-      setNowPlayingContextUri(null);
-      setPlaybackMode('preview');
-      a.onplay = () => setIsPlaying(true);
-      a.onpause = () => setIsPlaying(false);
-      a.onended = () => {
-        setIsPlaying(false);
-        const pool = (trackPool || []).filter(t => t && t.preview_url && t.id !== track.id);
-        if (pool.length > 0) {
-          const next = pool[Math.floor(Math.random() * pool.length)];
-          setTimeout(() => { playPreviewFromTrack(next); }, 50);
-        }
-      };
+      // Simple preview playback without Now Playing state
+      a.onended = null;
       await a.play();
     } catch { setMessage('Could not play preview.'); }
   };
-  const setNowPlayingFromTrack = (track, imageOverride) => {
-    if (!track) return;
-    setNowPlayingTrack({
-      id: track.id || null,
-      name: track.name || 'Unknown',
-      artists: Array.isArray(track.artists) ? track.artists.map(a=>a.name).join(', ') : (track.artists || ''),
-      imageUrl: imageOverride || track.album?.images?.[2]?.url || track.album?.images?.[1]?.url || track.album?.images?.[0]?.url || '',
-      preview_url: track.preview_url || '',
-      uri: track.uri || (track.id ? `spotify:track:${track.id}` : ''),
-    });
-    setIsPlaying(false);
-  };
-
-  // Web Playback SDK helpers (Premium)
-  const ensureWebPlaybackSDK = async () => {
-    if (typeof window === 'undefined') return false;
-    if (window.Spotify) return true;
-    return new Promise((resolve) => {
-      const scriptId = 'spotify-web-playback-sdk';
-      if (document.getElementById(scriptId)) {
-        const check = () => window.Spotify ? resolve(true) : setTimeout(check, 50);
-        check(); return;
-      }
-      const s = document.createElement('script');
-      s.id = scriptId; s.src = SPOTIFY_SDK_URL;
-      s.onload = () => resolve(true);
-      s.onerror = () => resolve(false);
-      document.body.appendChild(s);
-    });
-  };
-  const initWebPlayerIfNeeded = async () => {
-    const ok = await ensureWebPlaybackSDK();
-    if (!ok) { setMessage('Spotify player failed to load.'); return false; }
-    if (playerRef.current && playerReady && deviceId) return true;
-    const accessToken = await getAccessToken(); if (!accessToken) { setMessage('Please connect Spotify first.'); return false; }
-    return new Promise((resolve) => {
-      const player = new window.Spotify.Player({ name: 'AI Vibes Player', getOAuthToken: cb => { cb(accessToken); }, volume: 0.8 });
-      playerRef.current = player;
-      player.addListener('ready', ({ device_id }) => { setDeviceId(device_id); setPlayerReady(true); setWebPlaybackUnavailable(false); resolve(true); });
-      player.addListener('not_ready', () => { setPlayerReady(false); });
-      player.addListener('initialization_error', ({ message }) => { setMessage(`Player init error: ${message}`); resolve(false); });
-      player.addListener('authentication_error', ({ message }) => { setMessage('Spotify auth error. Disconnect and reconnect.'); setWebPlaybackUnavailable(true); resolve(false); });
-      player.addListener('account_error', ({ message }) => { setMessage('Spotify Premium required for full playback.'); setWebPlaybackUnavailable(true); resolve(false); });
-      player.connect();
-    });
-  };
-  const transferToWebPlayer = async () => {
-    const accessToken = await getAccessToken(); if (!accessToken || !deviceId) return false;
-    try {
-      const r = await fetch('https://api.spotify.com/v1/me/player', { method: 'PUT', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ device_ids: [deviceId], play: false }) });
-      return r.status === 202 || r.status === 204;
-    } catch { return false; }
-  };
-  const startWebPlaybackForUris = async (uris) => {
-    if (!Array.isArray(uris) || uris.length === 0) return false;
-    const inited = await initWebPlayerIfNeeded(); if (!inited) return false;
-    await playerRef.current?.activateElement?.(); await transferToWebPlayer();
-    const accessToken = await getAccessToken();
-    try {
-      const r = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${encodeURIComponent(deviceId)}`, { method: 'PUT', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ uris }) });
-      if (r.status === 204) { setIsPlaying(true); setPlaybackMode('web'); setWebPlaybackUnavailable(false); return true; }
-    } catch {}
-    setMessage('Failed to start full playback.'); setWebPlaybackUnavailable(true); return false;
-  };
-  const startWebPlaybackForContext = async (context_uri) => {
-    if (!context_uri) return false;
-    const inited = await initWebPlayerIfNeeded(); if (!inited) return false;
-    await playerRef.current?.activateElement?.(); await transferToWebPlayer();
-    const accessToken = await getAccessToken();
-    try {
-      const r = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${encodeURIComponent(deviceId)}`, { method: 'PUT', headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ context_uri }) });
-      if (r.status === 204) { setIsPlaying(true); setPlaybackMode('web'); setWebPlaybackUnavailable(false); return true; }
-    } catch {}
-    setMessage('Failed to start full playback.'); setWebPlaybackUnavailable(true); return false;
-  };
-  const pauseWebPlayback = async () => { const accessToken = await getAccessToken(); try { const r = await fetch('https://api.spotify.com/v1/me/player/pause', { method: 'PUT', headers: { Authorization: `Bearer ${accessToken}` } }); if (r.status === 204) setIsPlaying(false); } catch {} };
-  const resumeWebPlayback = async () => { const accessToken = await getAccessToken(); try { const r = await fetch('https://api.spotify.com/v1/me/player/play', { method: 'PUT', headers: { Authorization: `Bearer ${accessToken}` } }); if (r.status === 204) setIsPlaying(true); } catch {} };
-  const stopWebPlayback = async () => { const accessToken = await getAccessToken(); try { await fetch('https://api.spotify.com/v1/me/player/seek?position_ms=0', { method: 'PUT', headers: { Authorization: `Bearer ${accessToken}` } }); const r = await fetch('https://api.spotify.com/v1/me/player/pause', { method: 'PUT', headers: { Authorization: `Bearer ${accessToken}` } }); if (r.status === 204) setIsPlaying(false); } catch {} };
-
   const pausePreview = () => { try { const a = audioRef.current; if (a && !a.paused) a.pause(); } catch {} };
   const resumePreview = async () => { try { const a = audioRef.current; if (a && a.paused) await a.play(); } catch {} };
-  const stopPreview = () => { try { const a = audioRef.current; if (a) { a.pause(); a.currentTime = 0; } setIsPlaying(false); } catch {} };
-
-  const playNowPlaying = async () => {
-    const nt = nowPlayingTrack; if (!nt) return;
-    if (nt.preview_url) {
-      try {
-        if (audioRef.current && audioRef.current.src === nt.preview_url) await resumePreview();
-        else await playPreviewFromTrack({ id: nt.id, name: nt.name, artists: (nt.artists||'').split(', ').map(n=>({name:n})), album: { images: [{url: nt.imageUrl},{url: nt.imageUrl},{url: nt.imageUrl}] }, preview_url: nt.preview_url, uri: nt.uri });
-      } catch {}
-      return;
-    }
-    if (nowPlayingContextUri) { await startWebPlaybackForContext(nowPlayingContextUri); return; }
-    if (nt.uri) { await startWebPlaybackForUris([nt.uri]); return; }
-    setMessage('Cannot play this item in-app without a preview or Premium.');
-  };
-
-  const playFirstPreviewFromPlaylist = async (playlistId) => {
-    try {
-      const data = await fetchWithFallback(`https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50&market=from_token`, `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`);
-      const items = Array.isArray(data?.items) ? data.items : [];
-      const tracks = items.map(it => it?.track).filter(Boolean);
-      const withPreview = tracks.filter(t => t && t.preview_url);
-      if (withPreview.length > 0) { setTrackPool(withPreview); await playPreviewFromTrack(withPreview[0]); return true; }
-      if (tracks.length > 0) {
-        setNowPlayingFromTrack(tracks[0]); setNowPlayingContextUri(`spotify:playlist:${playlistId}`);
-        const ok = await startWebPlaybackForContext(`spotify:playlist:${playlistId}`);
-        if (!ok) setMessage('Playlist embedded. No preview; showing first track. Full playback needs Spotify Premium.');
-        return ok;
-      }
-      setMessage('Playlist embedded. No tracks available.'); return false;
-    } catch { setMessage('Failed to start playback from playlist embed.'); return false; }
-  };
-  const playFirstPreviewFromAlbum = async (albumId) => {
-    try {
-      const data = await fetchWithFallback(`https://api.spotify.com/v1/albums/${albumId}/tracks?limit=50&market=from_token`, `https://api.spotify.com/v1/albums/${albumId}/tracks?limit=50`);
-      const items = Array.isArray(data?.items) ? data.items : [];
-      let candidates = items.filter(t => t?.preview_url);
-      if (candidates.length === 0) {
-        const ids = items.slice(0, 5).map(t => t?.id).filter(Boolean);
-        for (const id of ids) {
-          try {
-            const t = await fetchWithFallback(`https://api.spotify.com/v1/tracks/${id}?market=from_token`, `https://api.spotify.com/v1/tracks/${id}`);
-            if (t?.preview_url) { candidates = [t]; break; }
-          } catch {}
-        }
-      }
-      if (candidates.length > 0) { setTrackPool(candidates); await playPreviewFromTrack(candidates[0]); return true; }
-      let cover = '';
-      try {
-        const album = await fetchWithFallback(`https://api.spotify.com/v1/albums/${albumId}?market=from_token`, `https://api.spotify.com/v1/albums/${albumId}`);
-        cover = album?.images?.[2]?.url || album?.images?.[1]?.url || album?.images?.[0]?.url || '';
-      } catch {}
-      if (items.length > 0) {
-        const first = items[0]; setNowPlayingFromTrack(first, cover); setNowPlayingContextUri(`spotify:album:${albumId}`);
-        const ok = await startWebPlaybackForContext(`spotify:album:${albumId}`);
-        if (!ok) setMessage('Album embedded. No preview; showing first track. Full playback needs Spotify Premium.');
-        return ok;
-      }
-      setMessage('Album embedded. No tracks available.'); return false;
-    } catch { setMessage('Failed to start playback from album embed.'); return false; }
-  };
+  const stopPreview = () => { try { const a = audioRef.current; if (a) { a.pause(); a.currentTime = 0; } } catch {} };
 
   const onEmbedFromUrl = async (val) => {
     const e = parseSpotifyUrlToEmbed(val); if (!e) { setMessage('Invalid Spotify URL'); return; }
     setEmbedUrl(e); try { window.localStorage.setItem(LAST_EMBED_KEY, e); } catch {}
-    const parts = parseSpotifyUrlParts(val);
-    if (parts?.type === 'track' && parts.id) {
-      try {
-        const track = await fetchWithFallback(`https://api.spotify.com/v1/tracks/${parts.id}?market=from_token`, `https://api.spotify.com/v1/tracks/${parts.id}`);
-        if (track?.preview_url) playPreviewFromTrack(track);
-        else {
-          setNowPlayingFromTrack(track);
-          const ok = track?.uri ? await startWebPlaybackForUris([track.uri]) : false;
-          if (!ok) setMessage('This track has no 30s preview. Full playback needs Spotify Premium.');
-        }
-      } catch {}
-    } else if (parts?.type === 'playlist' && parts.id) { await playFirstPreviewFromPlaylist(parts.id); }
-    else if (parts?.type === 'album' && parts.id) { await playFirstPreviewFromAlbum(parts.id); }
+    // No autoplay or Now Playing; embed only
   };
 
   const onEmbedSet = async (url, meta) => {
     setEmbedUrl(url); try { window.localStorage.setItem(LAST_EMBED_KEY, url); } catch {}
-    if (meta?.track && meta.track.preview_url) { playPreviewFromTrack(meta.track); }
-    else if (meta?.track && !meta.track.preview_url) {
-      setNowPlayingFromTrack(meta.track);
-      const ok = meta.track?.uri ? await startWebPlaybackForUris([meta.track.uri]) : false;
-      if (!ok) setMessage('This track has no 30s preview. Full playback needs Spotify Premium.');
-    } else if (meta?.playlistId) { await playFirstPreviewFromPlaylist(meta.playlistId); }
-    else if (meta?.albumId) { await playFirstPreviewFromAlbum(meta.albumId); }
+    // No autoplay or Now Playing when setting embed
   };
 
   return (
@@ -573,33 +389,7 @@ export default function SpotifySection() {
               </div>
             )}
 
-            {/* Now Playing bar */}
-            {nowPlayingTrack && (
-              <div className="mt-2 rounded-xl border border-white/10 bg-white/5 p-2 flex items-center gap-2.5">
-                {nowPlayingTrack.imageUrl ? (
-                  <img src={nowPlayingTrack.imageUrl} alt="cover" className="h-8 w-8 rounded-md object-cover" />
-                ) : (
-                  <div className="h-8 w-8 rounded-md bg-white/10" />
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="text-[13px] text-gray-100 truncate">{nowPlayingTrack.name}</div>
-                  <div className="text-[11px] text-gray-400 truncate">{nowPlayingTrack.artists}</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {isPlaying ? (
-                    <button onClick={() => { playbackMode==='web' ? pauseWebPlayback() : pausePreview(); }} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Pause</button>
-                  ) : (
-                    <button onClick={playNowPlaying} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
-                  )}
-                  <button onClick={() => { playbackMode==='web' ? stopWebPlayback() : stopPreview(); }} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Stop</button>
-                </div>
-              </div>
-            )}
-
-            {/* Subtle Premium note */}
-            {!nowPlayingTrack?.preview_url && webPlaybackUnavailable && (
-              <div className="text-[10px] text-gray-400">Premium required for in-app playback</div>
-            )}
+            {/* Now Playing removed by request */}
 
             {message && <div className="text-xs text-amber-300/90">{message}</div>}
           </div>
