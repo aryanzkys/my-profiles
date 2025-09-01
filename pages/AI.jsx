@@ -1,40 +1,84 @@
 import dynamic from 'next/dynamic';
 import Head from 'next/head';
 import { motion } from 'framer-motion';
+import { useRef, useState } from 'react';
 
 const Chatbot = dynamic(() => import('../components/Chatbot'), { ssr: false });
 const SpotifySection = dynamic(() => import('../components/SpotifySection'), { ssr: false });
 
 export default function AIPage() {
+  const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
+  const cardRef = useRef(null);
+
+  const handleTilt = (e) => {
+    const el = cardRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width; // 0..1
+    const py = (e.clientY - rect.top) / rect.height; // 0..1
+    const ry = (px - 0.5) * 10; // rotateY
+    const rx = -(py - 0.5) * 6; // rotateX
+    setTilt({ rx, ry });
+  };
+  const resetTilt = () => setTilt({ rx: 0, ry: 0 });
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-black to-[#030b11] text-gray-100">
+    <div className="min-h-screen relative overflow-hidden bg-[#05070a] text-gray-100">
       <Head>
         <title>Aryan’s AI Assistant</title>
         <meta name="robots" content="index,follow" />
         <meta name="description" content="Chat with Aryan’s AI Assistant — trained by Aryan to help you get to know him better." />
       </Head>
 
+      {/* Global background accents: grid, glows, and orbs */}
+      <div className="pointer-events-none absolute inset-0">
+        {/* soft top glow */}
+        <div className="absolute -top-24 right-[-10%] h-[60vh] w-[60vh] rounded-full blur-[110px]" style={{ background: 'radial-gradient(50% 50% at 50% 50%, rgba(34,211,238,0.22) 0%, rgba(0,0,0,0) 70%)' }} />
+        {/* bottom-left glow */}
+        <div className="absolute bottom-[-20%] left-[-10%] h-[70vh] w-[70vh] rounded-full blur-[120px]" style={{ background: 'radial-gradient(50% 50% at 50% 50%, rgba(59,130,246,0.18) 0%, rgba(0,0,0,0) 70%)' }} />
+        {/* subtle grid overlay */}
+        <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+      </div>
+
       <header className="relative overflow-hidden">
+        {/* hero gradient cone */}
         <div className="absolute inset-0 opacity-30" style={{ background: 'radial-gradient(60% 40% at 70% 0%, rgba(34,211,238,0.25), transparent 70%)' }} />
-        <div className="container mx-auto px-4 py-10">
-          <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="text-2xl md:text-3xl font-semibold text-cyan-200">
-            Aryan’s AI Assistant
+        {/* parallax orbs */}
+        <motion.div initial={{ y: -8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8, ease: 'easeOut' }} className="absolute -top-10 left-5 h-20 w-20 rounded-full bg-cyan-400/10 blur-2xl" />
+        <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.9, delay: 0.05, ease: 'easeOut' }} className="absolute top-10 right-10 h-28 w-28 rounded-full bg-blue-500/10 blur-3xl" />
+        <div className="container mx-auto px-4 py-12">
+          <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }} className="text-3xl md:text-4xl font-semibold">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-200 via-sky-200 to-blue-200 drop-shadow-[0_0_20px_rgba(34,211,238,0.15)]">Aryan’s AI Assistant</span>
           </motion.h1>
-          <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.05 }} className="mt-2 text-sm md:text-base text-gray-300">
-            Ask anything about Aryan — education, achievements, organizations, and more.
+          <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mt-2 text-sm md:text-base text-gray-300 max-w-[720px]">
+            Ask anything about Aryan — education, achievements, organizations, and more. Designed with a robotic, futuristic aesthetic for an elegant experience.
           </motion.p>
+          {/* accent underline */}
+          <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.6, delay: 0.15, ease: 'easeOut' }} className="mt-4 h-[2px] w-32 origin-left bg-gradient-to-r from-cyan-400/80 via-sky-400/70 to-blue-400/60 shadow-[0_0_18px_rgba(34,211,238,0.35)]" />
         </div>
       </header>
 
       <main className="container mx-auto px-4 pb-24">
+        {/* Chat section with subtle 3D tilt interaction */}
         <div className="relative mt-4">
-          {/* Centered, wider full-screen styled chat */}
           <div className="grid place-items-center">
-            <div className="w-full max-w-[1040px] px-1">
+            <motion.div
+              ref={cardRef}
+              onMouseMove={handleTilt}
+              onMouseLeave={resetTilt}
+              style={{ transform: `perspective(1100px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)` }}
+              className="w-full max-w-[1080px] px-1 transition-transform duration-150 will-change-transform"
+            >
               <Chatbot initialOpen={true} fullScreen={true} hideFab={true} />
-            </div>
+            </motion.div>
+          </div>
+          {/* Decorative corner sparks */}
+          <div className="pointer-events-none">
+            <div className="absolute -z-[1] -top-6 left-6 h-16 w-16 rounded-full blur-3xl bg-cyan-500/20" />
+            <div className="absolute -z-[1] -bottom-10 right-10 h-20 w-20 rounded-full blur-3xl bg-blue-500/20" />
           </div>
         </div>
+
         {/* Inline Spotify section under chat */}
         <SpotifySection />
       </main>
