@@ -9,12 +9,14 @@ const Chatbot = dynamic(() => import('../components/Chatbot'), { ssr: false });
 export default function App({ Component, pageProps }) {
   const router = useRouter();
   const path = router?.pathname || '';
-  const isAdminArea = /^\/(?:admin|login)(?:$|\/)/i.test(path);
+  const isAdminArea = /^\/(?:admin|login)(?:$|\/)\/i.test(path);
+  // Suppress global floating Chatbot on the AI page; the AI page renders its own full-screen Chatbot
+  const isAIPage = /^\/ai(?:\/|$)/i.test(path);
   return (
     <PerformanceProvider>
       <DataProvider>
   <Component {...pageProps} />
-  {!isAdminArea && <Chatbot />}
+  {!isAdminArea && !isAIPage && <Chatbot />}
       </DataProvider>
     </PerformanceProvider>
   );
