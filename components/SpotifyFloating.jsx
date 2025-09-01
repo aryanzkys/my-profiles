@@ -55,16 +55,22 @@ export default function SpotifyFloating() {
   const CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || '';
   const STORAGE_KEY = 'spotify_pkce_state_v1';
   const TOKEN_KEY = 'spotify_token_v1';
+  const LAST_EMBED_KEY = 'spotify_last_embed_url_v1';
+  const RECENT_QUERIES_KEY = 'spotify_recent_queries_v1';
   const audioRef = useRef(null);
 
   const [open, setOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [token, setToken] = useState(null); // {access_token, refresh_token, expires_at}
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState([]); // tracks or playlists depending on resultType
+  const [resultType, setResultType] = useState('track'); // 'track' | 'playlist'
   const [searching, setSearching] = useState(false);
   const [embedUrl, setEmbedUrl] = useState('');
   const [message, setMessage] = useState('');
+  const [recentQueries, setRecentQueries] = useState([]);
+  const [nowPlayingId, setNowPlayingId] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // Load token from storage
   useEffect(() => {
@@ -73,6 +79,12 @@ export default function SpotifyFloating() {
       if (raw) {
         const t = JSON.parse(raw);
         setToken(t);
+      }
+      const lastEmbed = typeof window !== 'undefined' ? window.localStorage.getItem(LAST_EMBED_KEY) : null;
+      if (lastEmbed) setEmbedUrl(lastEmbed);
+      const rq = typeof window !== 'undefined' ? window.localStorage.getItem(RECENT_QUERIES_KEY) : null;
+      if (rq) {
+        try { setRecentQueries(JSON.parse(rq)); } catch {}
       }
     } catch {}
   }, []);
@@ -199,13 +211,21 @@ export default function SpotifyFloating() {
         return;
       }
       const accessToken = (t?.access_token) || token.access_token;
-      const r = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=10`, {
+      const r = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=${resultType}&limit=10`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (!r.ok) throw new Error(`Spotify search failed: ${r.status}`);
       const data = await r.json();
-      const items = data?.tracks?.items || [];
+      const items = resultType === 'playlist' ? (data?.playlists?.items || []) : (data?.tracks?.items || []);
       setResults(items);
+      // persist recent query
+      try {
+        if (q.length > 1 && items.length > 0) {
+          const next = [q, ...(recentQueries.filter(x => x !== q))].slice(0, 5);
+          setRecentQueries(next);
+          window.localStorage.setItem(RECENT_QUERIES_KEY, JSON.stringify(next));
+        }
+      } catch {}
     } catch (e) {
       setMessage('Search error. Try reconnecting Spotify.');
     } finally {
@@ -220,15 +240,30 @@ export default function SpotifyFloating() {
       const a = audioRef.current;
       if (!a.paused) { a.pause(); }
       a.src = url;
+      a.onplay = () => setIsPlaying(true);
+      a.onpause = () => setIsPlaying(false);
+      a.onended = () => { setIsPlaying(false); setNowPlayingId(null); };
       await a.play();
     } catch {
       setMessage('Could not play preview.');
     }
   };
 
+  const pausePreview = () => {
+    try { const a = audioRef.current; if (a && !a.paused) a.pause(); } catch {}
+  };
+  const stopPreview = () => {
+    try { const a = audioRef.current; if (a) { a.pause(); a.currentTime = 0; } setNowPlayingId(null); setIsPlaying(false); } catch {}
+  };
+
   const onEmbedFromUrl = (val) => {
     const e = parseSpotifyUrlToEmbed(val);
-    if (e) setEmbedUrl(e); else setMessage('Invalid Spotify URL');
+    if (e) { setEmbedUrl(e); try { window.localStorage.setItem(LAST_EMBED_KEY, e); } catch {} } else setMessage('Invalid Spotify URL');
+  };
+
+  const onEmbedSet = (url) => {
+    setEmbedUrl(url);
+    try { window.localStorage.setItem(LAST_EMBED_KEY, url); } catch {}
   };
 
   return (
@@ -286,6 +321,14 @@ export default function SpotifyFloating() {
                   <div className="text-xs text-gray-400">You’re not connected. Click “Connect Spotify” to search and play previews.</div>
                 )}
 
+                {/* Search type toggle */}
+                <div className="flex items-center gap-2">
+                  <div className="flex rounded-lg overflow-hidden border border-white/10">
+                    <button type="button" onClick={()=>setResultType('track')} className={`px-2 py-1 text-xs ${resultType==='track'?'bg-white/10 text-cyan-200':'text-gray-300 hover:bg-white/5'}`}>Tracks</button>
+                    <button type="button" onClick={()=>setResultType('playlist')} className={`px-2 py-1 text-xs ${resultType==='playlist'?'bg-white/10 text-cyan-200':'text-gray-300 hover:bg-white/5'}`}>Playlists</button>
+                  </div>
+                </div>
+
                 <div className="flex items-center gap-2">
                   <input
                     value={query}
@@ -300,23 +343,49 @@ export default function SpotifyFloating() {
                   </button>
                 </div>
 
+                {/* Recent queries */}
+                {recentQueries?.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {recentQueries.map((rq) => (
+                      <button key={rq} onClick={()=>{ setQuery(rq); searchTracks(rq); }} className="text-xs px-2 py-1 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-gray-300">{rq}</button>
+                    ))}
+                  </div>
+                )}
+
                 {/* Results */}
                 <div className="max-h-60 overflow-y-auto divide-y divide-white/5 rounded-xl border border-white/10">
                   {results.length === 0 ? (
                     <div className="p-3 text-xs text-gray-500">No results yet.</div>
-                  ) : results.map((t) => (
-                    <div key={t.id} className="p-3 flex items-center gap-3">
-                      <img src={t.album?.images?.[2]?.url || t.album?.images?.[1]?.url || t.album?.images?.[0]?.url} alt="cover" className="h-10 w-10 rounded-md object-cover" />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm text-gray-100 truncate">{t.name}</div>
-                        <div className="text-xs text-gray-400 truncate">{(t.artists||[]).map(a=>a.name).join(', ')}</div>
+                  ) : resultType === 'track' ? (
+                    results.map((t) => (
+                      <div key={t.id} className="p-3 flex items-center gap-3">
+                        <img src={t.album?.images?.[2]?.url || t.album?.images?.[1]?.url || t.album?.images?.[0]?.url} alt="cover" className="h-10 w-10 rounded-md object-cover" />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm text-gray-100 truncate">{t.name}</div>
+                          <div className="text-xs text-gray-400 truncate">{(t.artists||[]).map(a=>a.name).join(', ')}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={()=>{ setNowPlayingId(t.id); playPreview(t.preview_url); }} className="text-xs px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
+                          <button onClick={pausePreview} className="text-xs px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Pause</button>
+                          <button onClick={stopPreview} className="text-xs px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Stop</button>
+                          <button onClick={()=>onEmbedSet(`https://open.spotify.com/embed/track/${t.id}`)} className="text-xs px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={()=>playPreview(t.preview_url)} className="text-xs px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play Preview</button>
-                        <button onClick={()=>setEmbedUrl(`https://open.spotify.com/embed/track/${t.id}`)} className="text-xs px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
+                    ))
+                  ) : (
+                    results.map((p) => (
+                      <div key={p.id} className="p-3 flex items-center gap-3">
+                        <img src={p.images?.[2]?.url || p.images?.[1]?.url || p.images?.[0]?.url} alt="cover" className="h-10 w-10 rounded-md object-cover" />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm text-gray-100 truncate">{p.name}</div>
+                          <div className="text-xs text-gray-400 truncate">{p.owner?.display_name || 'Playlist'}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={()=>onEmbedSet(`https://open.spotify.com/embed/playlist/${p.id}`)} className="text-xs px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
 
                 {/* Embed input */}
