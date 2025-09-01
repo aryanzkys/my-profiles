@@ -758,6 +758,8 @@ export default function SpotifyFloating() {
                   <div className="text-xs text-gray-400">Or paste a Spotify track/playlist/album link to embed:</div>
                   <input
                     onBlur={(e)=>onEmbedFromUrl(e.target.value)}
+                    onKeyDown={(e)=>{ if(e.key==='Enter'){ e.preventDefault(); onEmbedFromUrl(e.currentTarget.value); } }}
+                    onPaste={(e)=>{ try{ const t=e.clipboardData?.getData('text'); if(t && /open\.spotify\.com/.test(t)){ setTimeout(()=>onEmbedFromUrl(t),0); } }catch{} }}
                     placeholder="https://open.spotify.com/track/... or /playlist/..."
                     className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
                   />
