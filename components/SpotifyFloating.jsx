@@ -32,8 +32,11 @@ function randomString(len = 64) {
 
 function getRedirectUri() {
   if (typeof window === 'undefined') return '';
-  // Use the current path exactly (preserves /AI or /ai as visited)
-  return `${window.location.origin}${window.location.pathname}`;
+  const envOverride = process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI;
+  if (envOverride) return envOverride;
+  // Canonicalize to lowercase /ai without trailing slash to match Spotify allowlist exactly
+  const base = window.location.origin + (process.env.NEXT_PUBLIC_BASE_PATH || '');
+  return `${base}/ai`;
 }
 
 function parseSpotifyUrlToEmbed(url) {
