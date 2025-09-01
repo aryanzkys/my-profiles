@@ -11,6 +11,7 @@ export default function AIPage() {
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
   const cardRef = useRef(null);
   const [isMobile, setIsMobile] = useState(false);
+  const headerRef = useRef(null);
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 768);
@@ -30,6 +31,20 @@ export default function AIPage() {
     setTilt({ rx, ry });
   };
   const resetTilt = () => setTilt({ rx: 0, ry: 0 });
+
+  // Interactive RGB title: track mouse X to gently move gradient
+  const handleHeaderMove = (e) => {
+    const el = headerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width; // 0..1
+    el.style.setProperty('--mx', `${Math.max(0, Math.min(100, px * 100))}%`);
+  };
+  const resetHeaderMove = () => {
+    const el = headerRef.current;
+    if (!el) return;
+    el.style.setProperty('--mx', '50%');
+  };
 
   return (
   <div className="min-h-screen relative overflow-hidden bg-[#05070a] text-gray-100">
@@ -51,7 +66,7 @@ export default function AIPage() {
     <ParticleField />
       </div>
 
-      <header className="relative overflow-hidden">
+  <header className="relative overflow-hidden" ref={headerRef} onMouseMove={handleHeaderMove} onMouseLeave={resetHeaderMove}>
         {/* hero gradient cone */}
         <div className="absolute inset-0 opacity-30" style={{ background: 'radial-gradient(60% 40% at 70% 0%, rgba(34,211,238,0.25), transparent 70%)' }} />
         {/* parallax orbs */}
@@ -71,7 +86,7 @@ export default function AIPage() {
               loading="eager"
               decoding="async"
             />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-200 via-sky-200 to-blue-200 drop-shadow-[0_0_20px_rgba(34,211,238,0.15)]">Aryan’s AI Assistant</span>
+            <span className="title-rgb">Aryan’s AI Assistant</span>
           </motion.h1>
           <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mt-2 text-[13px] md:text-base text-gray-300 max-w-[720px]">
             Ask anything about Aryan — education, achievements, organizations, and more. Designed with a robotic, futuristic aesthetic for an elegant experience.
@@ -111,6 +126,30 @@ export default function AIPage() {
           </div>
         </div>
       </main>
+      {/* Elegant RGB title styles */}
+      <style jsx>{`
+        .title-rgb {
+          display: inline-block;
+          background-image: linear-gradient(90deg, rgba(34,211,238,0.95), rgba(96,165,250,0.95), rgba(167,139,250,0.95), rgba(34,211,238,0.95));
+          background-size: 200% 100%;
+          background-position: var(--mx, 50%) 50%;
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+          transition: background-position 120ms ease-out, text-shadow 200ms ease;
+          animation: titleShimmer 14s ease-in-out infinite;
+          text-shadow: 0 0 14px rgba(34,211,238,0.12);
+        }
+        @keyframes titleShimmer {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        /* Subtle emphasis on hover/focus within header */
+        header:hover .title-rgb, header:focus-within .title-rgb {
+          text-shadow: 0 0 18px rgba(34,211,238,0.18);
+        }
+      `}</style>
     </div>
   );
 }
