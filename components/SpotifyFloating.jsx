@@ -81,6 +81,7 @@ export default function SpotifyFloating() {
   const modalRef = useRef(null);
   const DRAG_HINT_SEEN_KEY = 'spotify_drag_hint_seen_v1';
   const [dragHintVisible, setDragHintVisible] = useState(false);
+  const [filterPreviewOnly, setFilterPreviewOnly] = useState(true);
 
   // Show a small drag handle hint once when modal opens (non-blocking, no pointer events)
   useEffect(() => {
@@ -260,7 +261,7 @@ export default function SpotifyFloating() {
         return;
       }
       const accessToken = (t?.access_token) || token.access_token;
-      const r = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=${resultType}&limit=10`, {
+  const r = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=${resultType}&limit=10&market=from_token`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (r.status === 401) {
@@ -473,6 +474,16 @@ export default function SpotifyFloating() {
                     <button type="button" onClick={()=>setResultType('track')} className={`px-2 py-1 text-[11px] ${resultType==='track'?'bg-white/10 text-cyan-200':'text-gray-300 hover:bg-white/5'}`}>Tracks</button>
                     <button type="button" onClick={()=>setResultType('playlist')} className={`px-2 py-1 text-[11px] ${resultType==='playlist'?'bg-white/10 text-cyan-200':'text-gray-300 hover:bg-white/5'}`}>Playlists</button>
                   </div>
+                  {resultType === 'track' && (
+                    <button
+                      type="button"
+                      onClick={()=>setFilterPreviewOnly(v=>!v)}
+                      className={`px-2 py-1 text-[11px] rounded-lg border ${filterPreviewOnly?'bg-cyan-500/15 border-cyan-400/30 text-cyan-200':'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'}`}
+                      title="Show only tracks with 30s preview"
+                    >
+                      Preview only
+                    </button>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -503,7 +514,10 @@ export default function SpotifyFloating() {
                   {(!Array.isArray(results) || results.length === 0) ? (
                     <div className="p-3 text-xs text-gray-500">No results yet.</div>
                   ) : resultType === 'track' ? (
-                    (results || []).filter(Boolean).map((t, idx) => (
+                    ((results || [])
+                      .filter(Boolean)
+                      .filter(t => !filterPreviewOnly || !!t.preview_url)
+                    ).map((t, idx) => (
                       <div key={t.id || t.uri || idx} className="p-2.5 flex items-center gap-2.5">
                         <img src={t.album?.images?.[2]?.url || t.album?.images?.[1]?.url || t.album?.images?.[0]?.url} alt="cover" className="h-9 w-9 rounded-md object-cover" />
                         <div className="min-w-0 flex-1">
@@ -511,9 +525,15 @@ export default function SpotifyFloating() {
                           <div className="text-[11px] text-gray-400 truncate">{(t.artists||[]).map(a=>a.name).join(', ')}</div>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <button onClick={()=>{ playPreviewFromTrack(t); }} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
-                          <button onClick={pausePreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Pause</button>
-                          <button onClick={stopPreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Stop</button>
+                          {t.preview_url ? (
+                            <>
+                              <button onClick={()=>{ playPreviewFromTrack(t); }} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
+                              <button onClick={pausePreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Pause</button>
+                              <button onClick={stopPreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Stop</button>
+                            </>
+                          ) : (
+                            <span className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 text-gray-400">No Preview</span>
+                          )}
                           <button onClick={()=>{ if (t?.id) onEmbedSet(`https://open.spotify.com/embed/track/${t.id}`); }} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
                         </div>
                       </div>
