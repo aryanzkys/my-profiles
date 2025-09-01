@@ -262,20 +262,27 @@ export default function SpotifyFloating() {
     if (!q?.trim()) { setResults([]); return; }
     setSearching(true);
     try {
-      const t = await refreshIfNeeded();
+      let t = await refreshIfNeeded();
       if (!t?.access_token && !token?.access_token) {
         setMessage('Please connect Spotify first.');
         return;
       }
-      const accessToken = (t?.access_token) || token.access_token;
-  const r = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=${resultType}&limit=10&market=from_token`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      let accessToken = (t?.access_token) || token.access_token;
+
+      const doFetch = async () => {
+        return fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=${resultType}&limit=10&market=from_token`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+      };
+
+      let r = await doFetch();
       if (r.status === 401) {
-        // Token invalid/expired — keep token but ask user to reconnect
-        setResults([]);
-        setMessage('Spotify session expired. Please reconnect.');
-        return;
+        // Try one refresh + retry
+        const rt = await refreshIfNeeded();
+        if (rt?.access_token) {
+          accessToken = rt.access_token;
+          r = await doFetch();
+        }
       }
       if (!r.ok) throw new Error(`Spotify search failed: ${r.status}`);
       const data = await r.json().catch(() => ({}));
@@ -355,9 +362,15 @@ export default function SpotifyFloating() {
     if (e) { setEmbedUrl(e); try { window.localStorage.setItem(LAST_EMBED_KEY, e); } catch {} } else setMessage('Invalid Spotify URL');
   };
 
-  const onEmbedSet = (url) => {
+  const onEmbedSet = (url, meta) => {
     setEmbedUrl(url);
     try { window.localStorage.setItem(LAST_EMBED_KEY, url); } catch {}
+    // If user embeds a track and it has a preview, start playing so Now Playing persists on close
+    if (meta?.track && meta.track.preview_url) {
+      playPreviewFromTrack(meta.track);
+    } else if (meta?.track && !meta.track.preview_url) {
+      setMessage('This track has no 30s preview. Embed set, but playback is unavailable.');
+    }
   };
 
   return (
@@ -551,7 +564,7 @@ export default function SpotifyFloating() {
                           ) : (
                             <span className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 text-gray-400">No Preview</span>
                           )}
-                          <button onClick={()=>{ if (t?.id) onEmbedSet(`https://open.spotify.com/embed/track/${t.id}`); }} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
+                          <button onClick={()=>{ if (t?.id) onEmbedSet(`https://open.spotify.com/embed/track/${t.id}`,{ track: t }); }} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
                         </div>
                       </div>
                       ));
