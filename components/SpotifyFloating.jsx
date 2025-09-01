@@ -123,6 +123,7 @@ export default function SpotifyFloating() {
   const playerRef = useRef(null);
   const [deviceId, setDeviceId] = useState(null);
   const [playerReady, setPlayerReady] = useState(false);
+  const [webPlaybackUnavailable, setWebPlaybackUnavailable] = useState(false);
 
   // Show a small drag handle hint once when modal opens (non-blocking, no pointer events)
   useEffect(() => {
@@ -420,6 +421,34 @@ export default function SpotifyFloating() {
     setIsPlaying(false);
   };
 
+  // Free-user-friendly fallback: open current item in Spotify site/app
+  const openInSpotifyFallback = () => {
+    try {
+      let openUrl = '';
+      const t = nowPlayingTrack;
+      if (t?.uri && /^spotify:track:/.test(t.uri)) {
+        openUrl = `https://open.spotify.com/track/${t.uri.split(':')[2]}`;
+      } else if (nowPlayingContextUri) {
+        if (/^spotify:playlist:/.test(nowPlayingContextUri)) {
+          openUrl = `https://open.spotify.com/playlist/${nowPlayingContextUri.split(':')[2]}`;
+        } else if (/^spotify:album:/.test(nowPlayingContextUri)) {
+          openUrl = `https://open.spotify.com/album/${nowPlayingContextUri.split(':')[2]}`;
+        }
+      }
+      if (!openUrl && embedUrl) {
+        try {
+          const u = new URL(embedUrl);
+          const parts = u.pathname.split('/').filter(Boolean);
+          if (parts[0] === 'embed' && parts[1] && parts[2]) {
+            openUrl = `https://open.spotify.com/${parts[1]}/${parts[2]}`;
+          }
+        } catch {}
+      }
+      if (!openUrl) openUrl = 'https://open.spotify.com/';
+      window.open(openUrl, '_blank', 'noopener,noreferrer');
+    } catch {}
+  };
+
   // Start playback for current Now Playing item
   const playNowPlaying = async () => {
     const nt = nowPlayingTrack;
@@ -442,17 +471,17 @@ export default function SpotifyFloating() {
       } catch {}
       return;
     }
-    // Otherwise try Web Playback (requires Premium)
+    // Otherwise try Web Playback (requires Premium), else open in Spotify
     if (nowPlayingContextUri) {
       const ok = await startWebPlaybackForContext(nowPlayingContextUri);
-      if (!ok) setMessage('Unable to start playback. Spotify Premium required.');
+      if (!ok) { openInSpotifyFallback(); }
       return;
     }
     if (nt.uri) {
       const ok = await startWebPlaybackForUris([nt.uri]);
-      if (!ok) setMessage('Unable to start playback. Spotify Premium required.');
+      if (!ok) { openInSpotifyFallback(); }
     } else {
-      setMessage('Cannot play this item.');
+      openInSpotifyFallback();
     }
   };
 
@@ -493,12 +522,13 @@ export default function SpotifyFloating() {
       player.addListener('ready', ({ device_id }) => {
         setDeviceId(device_id);
         setPlayerReady(true);
+        setWebPlaybackUnavailable(false);
         resolve(true);
       });
       player.addListener('not_ready', () => { setPlayerReady(false); });
       player.addListener('initialization_error', ({ message }) => { setMessage(`Player init error: ${message}`); resolve(false); });
-      player.addListener('authentication_error', ({ message }) => { setMessage('Spotify auth error. Disconnect and reconnect.'); resolve(false); });
-      player.addListener('account_error', ({ message }) => { setMessage('Spotify Premium required for full playback.'); resolve(false); });
+      player.addListener('authentication_error', ({ message }) => { setMessage('Spotify auth error. Disconnect and reconnect.'); setWebPlaybackUnavailable(true); resolve(false); });
+      player.addListener('account_error', ({ message }) => { setMessage('Spotify Premium required for full playback.'); setWebPlaybackUnavailable(true); resolve(false); });
 
       player.connect();
     });
@@ -532,9 +562,10 @@ export default function SpotifyFloating() {
         headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ uris })
       });
-      if (r.status === 204) { setIsPlaying(true); setPlaybackMode('web'); return true; }
+      if (r.status === 204) { setIsPlaying(true); setPlaybackMode('web'); setWebPlaybackUnavailable(false); return true; }
     } catch {}
     setMessage('Failed to start full playback.');
+    setWebPlaybackUnavailable(true);
     return false;
   };
 
@@ -551,9 +582,10 @@ export default function SpotifyFloating() {
         headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ context_uri })
       });
-      if (r.status === 204) { setIsPlaying(true); setPlaybackMode('web'); return true; }
+      if (r.status === 204) { setIsPlaying(true); setPlaybackMode('web'); setWebPlaybackUnavailable(false); return true; }
     } catch {}
     setMessage('Failed to start full playback.');
+    setWebPlaybackUnavailable(true);
     return false;
   };
 
@@ -804,6 +836,12 @@ export default function SpotifyFloating() {
                   <button onClick={playNowPlaying} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
                 )}
                 <button onClick={() => { playbackMode==='web' ? stopWebPlayback() : stopPreview(); }} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Stop</button>
+                {/* Visible fallback if web playback unavailable and no preview */}
+                {!nowPlayingTrack.preview_url && webPlaybackUnavailable && (
+                  <button onClick={openInSpotifyFallback} className="text-[11px] px-2 py-1 rounded-md bg-emerald-500/15 border border-emerald-400/30 text-emerald-200 hover:bg-emerald-500/25">
+                    Open in Spotify
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>
@@ -1016,10 +1054,18 @@ export default function SpotifyFloating() {
                       {isPlaying ? (
                         <button onClick={() => { playbackMode==='web' ? pauseWebPlayback() : pausePreview(); }} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Pause</button>
                       ) : (
-                        <button onClick={() => { playbackMode==='web' ? resumeWebPlayback() : resumePreview(); }} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
+                        <button onClick={playNowPlaying} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
                       )}
                       <button onClick={() => { playbackMode==='web' ? stopWebPlayback() : stopPreview(); }} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Stop</button>
+                      {/* Visible fallback if web playback unavailable and no preview */}
+                      {!nowPlayingTrack.preview_url && webPlaybackUnavailable && (
+                        <button onClick={openInSpotifyFallback} className="text-[11px] px-2 py-1 rounded-md bg-emerald-500/15 border border-emerald-400/30 text-emerald-200 hover:bg-emerald-500/25">Open in Spotify</button>
+                      )}
                     </div>
+                    {/* Subtle Premium note */}
+                    {!nowPlayingTrack.preview_url && webPlaybackUnavailable && (
+                      <div className="text-[10px] text-gray-400 mt-1">Premium required for in-app playback</div>
+                    )}
                   </div>
                 )}
 
