@@ -77,7 +77,7 @@ export default function AIPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45 }}
-            className="text-3xl md:text-4xl font-semibold flex items-center gap-3"
+            className="text-3xl md:text-4xl font-semibold leading-tight md:leading-snug flex items-baseline gap-3"
           >
             <img
               src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Coat_of_arms_of_the_United_Kingdom_%282022%2C_variant_2%29.svg/2241px-Coat_of_arms_of_the_United_Kingdom_%282022%2C_variant_2%29.svg.png"
@@ -86,7 +86,7 @@ export default function AIPage() {
               loading="eager"
               decoding="async"
             />
-            <span className="title-rgb">Aryan’s AI Assistant</span>
+            <span className="title-rgb align-baseline">Aryan’s AI Assistant</span>
           </motion.h1>
           <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mt-2 text-[13px] md:text-base text-gray-300 max-w-[720px]">
             Ask anything about Aryan — education, achievements, organizations, and more. Designed with a robotic, futuristic aesthetic for an elegant experience.
@@ -130,6 +130,7 @@ export default function AIPage() {
       <style jsx>{`
         .title-rgb {
           display: inline-block;
+          line-height: 1.15;
           /* Layer 1: base RGB gradient; Layer 2: subtle moving sheen */
           background-image:
             linear-gradient(90deg,
