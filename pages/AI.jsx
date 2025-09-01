@@ -130,7 +130,11 @@ export default function AIPage() {
       <style jsx>{`
         .title-rgb {
           display: inline-block;
-          line-height: 1.2;
+          position: relative;
+          top: -1px; /* nudge up to avoid visual sinking of descenders */
+          line-height: 1.25;
+          vertical-align: middle;
+          white-space: nowrap;
           /* Layer 1: base RGB gradient; Layer 2: subtle moving sheen */
           background-image:
             linear-gradient(90deg,
