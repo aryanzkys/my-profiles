@@ -81,7 +81,8 @@ export default function SpotifyFloating() {
   const modalRef = useRef(null);
   const DRAG_HINT_SEEN_KEY = 'spotify_drag_hint_seen_v1';
   const [dragHintVisible, setDragHintVisible] = useState(false);
-  const [filterPreviewOnly, setFilterPreviewOnly] = useState(true);
+  const PREVIEW_FILTER_KEY = 'spotify_preview_only_filter_v1';
+  const [filterPreviewOnly, setFilterPreviewOnly] = useState(false);
 
   // Show a small drag handle hint once when modal opens (non-blocking, no pointer events)
   useEffect(() => {
@@ -131,6 +132,12 @@ export default function SpotifyFloating() {
       if (rq) {
         try { setRecentQueries(JSON.parse(rq)); } catch {}
       }
+      // load preview filter preference
+      try {
+        const pref = typeof window !== 'undefined' ? window.localStorage.getItem(PREVIEW_FILTER_KEY) : null;
+        if (pref === '1') setFilterPreviewOnly(true);
+        else if (pref === '0') setFilterPreviewOnly(false);
+      } catch {}
   // Enable drag on medium+ screens only
   const setFromSize = () => setCanDrag(typeof window !== 'undefined' ? window.innerWidth >= 768 : false);
   setFromSize();
@@ -477,7 +484,9 @@ export default function SpotifyFloating() {
                   {resultType === 'track' && (
                     <button
                       type="button"
-                      onClick={()=>setFilterPreviewOnly(v=>!v)}
+                      onClick={()=> setFilterPreviewOnly(v=>{
+                        const nv = !v; try { window.localStorage.setItem(PREVIEW_FILTER_KEY, nv ? '1' : '0'); } catch {}; return nv;
+                      })}
                       className={`px-2 py-1 text-[11px] rounded-lg border ${filterPreviewOnly?'bg-cyan-500/15 border-cyan-400/30 text-cyan-200':'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'}`}
                       title="Show only tracks with 30s preview"
                     >
@@ -511,13 +520,21 @@ export default function SpotifyFloating() {
 
                 {/* Results */}
                 <div className="max-h-40 overflow-y-auto divide-y divide-white/5 rounded-xl border border-white/10">
-                  {(!Array.isArray(results) || results.length === 0) ? (
-                    <div className="p-3 text-xs text-gray-500">No results yet.</div>
-                  ) : resultType === 'track' ? (
-                    ((results || [])
-                      .filter(Boolean)
-                      .filter(t => !filterPreviewOnly || !!t.preview_url)
-                    ).map((t, idx) => (
+                  {resultType === 'track' ? (
+                    (() => {
+                      const base = Array.isArray(results) ? results : [];
+                      const filtered = base.filter(Boolean).filter(t => !filterPreviewOnly || !!t.preview_url);
+                      if (base.length === 0) {
+                        return <div className="p-3 text-xs text-gray-500">No results yet.</div>;
+                      }
+                      if (filtered.length === 0) {
+                        return (
+                          <div className="p-3 text-xs text-gray-500">
+                            {filterPreviewOnly ? 'No tracks with preview found. Try turning off “Preview only”.' : 'No matching tracks.'}
+                          </div>
+                        );
+                      }
+                      return filtered.map((t, idx) => (
                       <div key={t.id || t.uri || idx} className="p-2.5 flex items-center gap-2.5">
                         <img src={t.album?.images?.[2]?.url || t.album?.images?.[1]?.url || t.album?.images?.[0]?.url} alt="cover" className="h-9 w-9 rounded-md object-cover" />
                         <div className="min-w-0 flex-1">
@@ -537,7 +554,8 @@ export default function SpotifyFloating() {
                           <button onClick={()=>{ if (t?.id) onEmbedSet(`https://open.spotify.com/embed/track/${t.id}`); }} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
                         </div>
                       </div>
-                    ))
+                      ));
+                    })()
                   ) : (
                     (results || []).filter(Boolean).map((p, idx) => (
                       <div key={p.id || p.uri || idx} className="p-2.5 flex items-center gap-2.5">
