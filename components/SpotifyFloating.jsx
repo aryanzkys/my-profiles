@@ -224,20 +224,29 @@ export default function SpotifyFloating() {
       const r = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=${resultType}&limit=10`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
+      if (r.status === 401) {
+        // Token invalid/expired — keep token but ask user to reconnect
+        setResults([]);
+        setMessage('Spotify session expired. Please reconnect.');
+        return;
+      }
       if (!r.ok) throw new Error(`Spotify search failed: ${r.status}`);
-      const data = await r.json();
-      const items = resultType === 'playlist' ? (data?.playlists?.items || []) : (data?.tracks?.items || []);
+      const data = await r.json().catch(() => ({}));
+      const items = resultType === 'playlist'
+        ? (Array.isArray(data?.playlists?.items) ? data.playlists.items : [])
+        : (Array.isArray(data?.tracks?.items) ? data.tracks.items : []);
       setResults(items);
       // persist recent query
       try {
-        if (q.length > 1 && items.length > 0) {
+        if (q.length > 1 && Array.isArray(items) && items.length > 0) {
           const next = [q, ...(recentQueries.filter(x => x !== q))].slice(0, 5);
           setRecentQueries(next);
           window.localStorage.setItem(RECENT_QUERIES_KEY, JSON.stringify(next));
         }
       } catch {}
     } catch (e) {
-      setMessage('Search error. Try reconnecting Spotify.');
+      console.error('Spotify search error', e);
+      setMessage('Search error. Try again or reconnect Spotify.');
     } finally {
       setSearching(false);
     }
@@ -381,11 +390,11 @@ export default function SpotifyFloating() {
 
                 {/* Results */}
                 <div className="max-h-40 overflow-y-auto divide-y divide-white/5 rounded-xl border border-white/10">
-                  {results.length === 0 ? (
+                  {(!Array.isArray(results) || results.length === 0) ? (
                     <div className="p-3 text-xs text-gray-500">No results yet.</div>
                   ) : resultType === 'track' ? (
-                    results.map((t) => (
-                      <div key={t.id} className="p-2.5 flex items-center gap-2.5">
+                    (results || []).filter(Boolean).map((t, idx) => (
+                      <div key={t.id || t.uri || idx} className="p-2.5 flex items-center gap-2.5">
                         <img src={t.album?.images?.[2]?.url || t.album?.images?.[1]?.url || t.album?.images?.[0]?.url} alt="cover" className="h-9 w-9 rounded-md object-cover" />
                         <div className="min-w-0 flex-1">
                           <div className="text-[13px] text-gray-100 truncate">{t.name}</div>
@@ -395,20 +404,20 @@ export default function SpotifyFloating() {
                           <button onClick={()=>{ playPreviewFromTrack(t); }} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
                           <button onClick={pausePreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Pause</button>
                           <button onClick={stopPreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Stop</button>
-                          <button onClick={()=>onEmbedSet(`https://open.spotify.com/embed/track/${t.id}`)} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
+                          <button onClick={()=>{ if (t?.id) onEmbedSet(`https://open.spotify.com/embed/track/${t.id}`); }} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
                         </div>
                       </div>
                     ))
                   ) : (
-                    results.map((p) => (
-                      <div key={p.id} className="p-2.5 flex items-center gap-2.5">
+                    (results || []).filter(Boolean).map((p, idx) => (
+                      <div key={p.id || p.uri || idx} className="p-2.5 flex items-center gap-2.5">
                         <img src={p.images?.[2]?.url || p.images?.[1]?.url || p.images?.[0]?.url} alt="cover" className="h-9 w-9 rounded-md object-cover" />
                         <div className="min-w-0 flex-1">
                           <div className="text-[13px] text-gray-100 truncate">{p.name}</div>
                           <div className="text-[11px] text-gray-400 truncate">{p.owner?.display_name || 'Playlist'}</div>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <button onClick={()=>onEmbedSet(`https://open.spotify.com/embed/playlist/${p.id}`)} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
+                          <button onClick={()=>{ if (p?.id) onEmbedSet(`https://open.spotify.com/embed/playlist/${p.id}`); }} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
                         </div>
                       </div>
                     ))
