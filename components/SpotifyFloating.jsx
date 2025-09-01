@@ -76,6 +76,7 @@ export default function SpotifyFloating() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [nowPlayingTrack, setNowPlayingTrack] = useState(null);
   const [canDrag, setCanDrag] = useState(false);
+  const [trackPool, setTrackPool] = useState([]); // pool of tracks with preview for shuffle autoplay
 
   // Load token from storage
   useEffect(() => {
@@ -236,6 +237,10 @@ export default function SpotifyFloating() {
         ? (Array.isArray(data?.playlists?.items) ? data.playlists.items : [])
         : (Array.isArray(data?.tracks?.items) ? data.tracks.items : []);
       setResults(items);
+      if (resultType === 'track') {
+        const pool = (items || []).filter(t => t && t.preview_url);
+        setTrackPool(pool);
+      }
       // persist recent query
       try {
         if (q.length > 1 && Array.isArray(items) && items.length > 0) {
@@ -270,7 +275,19 @@ export default function SpotifyFloating() {
       });
       a.onplay = () => setIsPlaying(true);
       a.onpause = () => setIsPlaying(false);
-      a.onended = () => { setIsPlaying(false); setNowPlayingId(null); setNowPlayingTrack(null); };
+      a.onended = () => {
+        setIsPlaying(false);
+        // Shuffle autoplay from pool (exclude current)
+        const pool = (trackPool || []).filter(t => t && t.preview_url && t.id !== track.id);
+        if (pool.length > 0) {
+          const next = pool[Math.floor(Math.random() * pool.length)];
+          // slight timeout to avoid call stack issues
+          setTimeout(() => { playPreviewFromTrack(next); }, 50);
+        } else {
+          setNowPlayingId(null);
+          setNowPlayingTrack(null);
+        }
+      };
       await a.play();
     } catch {
       setMessage('Could not play preview.');
@@ -311,6 +328,40 @@ export default function SpotifyFloating() {
         <span className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-500/10 via-sky-500/10 to-blue-500/10" />
         <span className="relative grid place-items-center text-xl">🎧</span>
       </motion.button>
+
+      {/* Mini Now Playing pill (visible when modal closed) */}
+      <AnimatePresence>
+        {!open && nowPlayingTrack && (
+          <motion.div
+            key="np-pill"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 26 }}
+            className="absolute bottom-20 right-0 w-[min(92vw,300px)] rounded-2xl p-[1px] bg-gradient-to-r from-cyan-400/30 via-blue-500/25 to-cyan-400/30 shadow-[0_0_24px_rgba(34,211,238,0.3)] backdrop-blur-xl"
+          >
+            <div className="rounded-2xl border border-white/10 bg-black/85 px-2.5 py-2 flex items-center gap-2.5">
+              {nowPlayingTrack.imageUrl ? (
+                <img src={nowPlayingTrack.imageUrl} alt="cover" className="h-8 w-8 rounded-md object-cover" />
+              ) : (
+                <div className="h-8 w-8 rounded-md bg-white/10" />)
+              }
+              <button onClick={()=>setOpen(true)} className="min-w-0 flex-1 text-left">
+                <div className="text-[13px] text-cyan-200 truncate">{nowPlayingTrack.name}</div>
+                <div className="text-[11px] text-gray-400 truncate">{nowPlayingTrack.artists}</div>
+              </button>
+              <div className="flex items-center gap-1.5">
+                {isPlaying ? (
+                  <button onClick={pausePreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Pause</button>
+                ) : (
+                  <button onClick={resumePreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
+                )}
+                <button onClick={stopPreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Stop</button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Modal */}
       <AnimatePresence>
