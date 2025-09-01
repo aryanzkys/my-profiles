@@ -62,10 +62,10 @@ function SlowProcessing() {
   );
 }
 
-export default function Chatbot() {
+export default function Chatbot({ initialOpen = false }) {
   const STORAGE_KEY = 'aryan-chatbot-history-v1';
   const MAX_MESSAGES = 200;
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(!!initialOpen);
   const [messages, setMessages] = useState(() => [
     { role: 'ai', text: "Hi! I’m Aryan’s AI Assistant 🤖 — trained by Aryan to help you get to know him better. Ask me anything!" }
   ]);
