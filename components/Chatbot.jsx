@@ -78,6 +78,7 @@ export default function Chatbot({ initialOpen = false, fullScreen = false, hideF
   const [hintDismissed, setHintDismissed] = useState(false);
   const viewport = useRef(null);
   const inputRef = useRef(null);
+  const [isAIPage, setIsAIPage] = useState(false);
 
   const chatWidth = useMemo(() => ({ base: 320, lg: 420 }), []);
 
@@ -137,6 +138,16 @@ export default function Chatbot({ initialOpen = false, fullScreen = false, hideF
   setSlow(false);
     }
   };
+
+  useEffect(() => {
+    // Detect /ai page to suppress floating FAB regardless of props
+    try {
+      const p = (typeof window !== 'undefined' ? window.location.pathname : '').toLowerCase();
+      setIsAIPage(p === '/ai' || p.endsWith('/ai'));
+    } catch {}
+  }, []);
+
+  const shouldShowFab = !fullScreen && !hideFab && !isAIPage;
 
   useEffect(() => {
     // Optional: scroll to bottom when new message arrives
@@ -202,7 +213,7 @@ export default function Chatbot({ initialOpen = false, fullScreen = false, hideF
   return (
   <div className={fullScreen? 'relative z-10' : 'fixed bottom-4 right-4 z-40'}>
       {/* Floating button */}
-      {!fullScreen && !hideFab && (
+  {shouldShowFab && (
         <AnimatePresence>
         {!open && (
           <motion.button
@@ -246,7 +257,7 @@ export default function Chatbot({ initialOpen = false, fullScreen = false, hideF
       </AnimatePresence>)}
 
       {/* Hint tooltip */}
-  {!fullScreen && !hideFab && (
+  {shouldShowFab && (
       <AnimatePresence>
         {!open && showHint && (
           <motion.div
