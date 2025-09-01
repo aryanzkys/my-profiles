@@ -1,0 +1,90 @@
+{
+  "global": {
+    "chatbot": [
+      "Floating Chatbot shows on all routes except /AI and admin/login; on /AI it renders full-screen inside the page.",
+      "History persists locally; Clear chat button resets the conversation.",
+      "Keyboard: Enter to send, Shift+Enter for newline; Esc closes the floating chat window.",
+      "Short, friendly answers; supports Markdown (bold, lists, links, inline code)."
+    ],
+    "routes": [
+      "/ — Main Site with immersive 3D background and Overlay navigation.",
+      "/AI — Dedicated AI page with full-screen Chatbot and inline Spotify section."
+    ]
+  },
+  "main_site": {
+    "navigation": [
+      "Top bar with buttons: Home, About, Achievements, Education, Organizations, Projects, Contact, Message.",
+      "Switch sections by clicking buttons; About’s \"View Achievements\" also jumps to Achievements."
+    ],
+    "home": [
+      "Center hero text: ‘Hi, I'm Aryan – Computer Science Student’ with subtitle ‘Aspiring DevSecOps Engineer’."
+    ],
+    "about": [
+      "Interactive 3D-hover profile card with holographic avatar and light-following glow.",
+      "Stats pills and CTAs: Contact Me (mailto), View Achievements (navigates), GitHub link."
+    ],
+    "achievements": [
+      "Year-based timeline; each entry may include a certificate.",
+      "Preview certificate inline (Eye button) or open in Google Drive (Open button)."
+    ],
+    "education": [
+      "Scrollable timeline with animated progress line; active item tracks scroll/mouse position.",
+      "Logos shown for Brawijaya University and SMA Negeri 1 Singosari when applicable."
+    ],
+    "organizations": [
+      "Filter tabs: All, Active, Past; search box filters by org/role/year.",
+      "Cards highlight Active roles; grid adapts responsively."
+    ],
+    "projects": [
+      "Mini Games: tabs for Chess and Flappy Bird; scores/settings persist locally.",
+      "Banner notes the section is WIP and invites playing the mini games."
+    ],
+    "contact": [
+      "List of social links with copy buttons (copy link or handle).",
+      "Includes Email, LinkedIn, Instagram, GitHub; X is noted as ‘on development’."
+    ],
+    "message": [
+      "Send a direct message: Instagram username (optional, validated), Initials/Name (required), Message (required, 500 chars).",
+      "Shows success/fail status; sanitizes @username and validates via serverless API."
+    ],
+    "performance": [
+      "Performance button opens settings: Auto (device-aware), Lite (reduced motion), High (full effects)."
+    ],
+    "visuals": [
+      "Full-viewport 3D scene background, glassy overlay UI, mobile notice, optional shutdown overlay."
+    ]
+  },
+  "ai_page": {
+    "header": [
+      "British coat of arms icon left of the title.",
+      "RGB gradient title with elegant periodic sheen and mouse-responsive highlight.",
+      "Description: ‘Your intelligent gateway to explore Aryan’s journey and insights…’."
+    ],
+    "chatbot": [
+      "Full-screen Chatbot card with Clear chat, persistent history, and Markdown rendering.",
+      "Typing indicator and slow-processing hint, draggable in floating mode (not on /AI)."
+    ],
+    "spotify": [
+      "Inline ‘Tune Your AI Vibes’ section with small Spotify logo.",
+      "Connect via Spotify OAuth PKCE; Disconnect supported; token auto-refresh.",
+      "Search Tracks or Playlists; ‘Preview only’ filter for Tracks; recent queries chips.",
+      "Play 30s audio previews (Play/Pause/Stop). Embed track/playlist via button or paste a Spotify URL.",
+      "No ‘Now Playing’ queue or Web Playback SDK — previews and embeds only."
+    ],
+    "visuals": [
+      "Ambient particle field, gradient glows, subtle grid, and gentle 3D tilt on the chat card.",
+      "Reduced motion on mobile for comfort/performance."
+    ],
+    "access": [
+      "Floating Chatbot button is hidden on /AI to avoid duplication; use the full-screen Chatbot instead."
+    ]
+  },
+  "shortcuts": {
+    "chat": [
+      "Enter to send; Shift+Enter for newline; Esc closes floating chat (not applicable on full-screen /AI)."
+    ],
+    "spotify": [
+      "Press Enter in the search box to search; paste an open.spotify.com link to auto-embed on blur/paste."
+    ]
+  }
+}

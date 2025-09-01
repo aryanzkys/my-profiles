@@ -8,6 +8,7 @@ import education from '../data/education.json';
 import organizations from '../data/organizations.json';
 import about from '../data/about.json';
 import contact from '../data/contact.json';
+import siteFeatures from '../data/site_features.json';
 
 const SERVER_PROXY_PATHS = [
   '/.netlify/functions/gemini-chat',
@@ -544,6 +545,50 @@ function buildProfilePrompt() {
     if (lines.length) parts.push('\nPROFILE — Contact:\n' + lines.join('\n'));
   }
 
-  parts.push('\nGuidelines: Keep answers short and helpful. If asked “Who is Aryan?” provide a brief intro using the profile. Use accessible formatting (e.g., headings, bold, lists) when it helps readability.');
+  // Site Features and UI Guide
+  if (siteFeatures && typeof siteFeatures === 'object') {
+    const lines = [];
+    try {
+      const g = siteFeatures.global || {};
+      if (Array.isArray(g.chatbot) && g.chatbot.length) {
+        lines.push('Global Chatbot:');
+        lines.push(...g.chatbot.map(s => `- ${s}`));
+      }
+      if (Array.isArray(g.routes) && g.routes.length) {
+        lines.push('Routes:');
+        lines.push(...g.routes.map(s => `- ${s}`));
+      }
+      const main = siteFeatures.main_site || {};
+      const ai = siteFeatures.ai_page || {};
+      const pushSection = (title, obj) => {
+        const keys = Object.keys(obj || {});
+        if (!keys.length) return;
+        lines.push(`${title}:`);
+        keys.forEach(k => {
+          const arr = obj[k];
+          if (Array.isArray(arr) && arr.length) {
+            lines.push(`- ${k}:`);
+            arr.forEach(item => lines.push(`  • ${item}`));
+          }
+        });
+      };
+      pushSection('Main Site', main);
+      pushSection('AI Page', ai);
+      const sc = siteFeatures.shortcuts || {};
+      if (Object.keys(sc).length) {
+        lines.push('Shortcuts:');
+        Object.keys(sc).forEach(k => {
+          const arr = sc[k];
+          if (Array.isArray(arr) && arr.length) {
+            lines.push(`- ${k}:`);
+            arr.forEach(item => lines.push(`  • ${item}`));
+          }
+        });
+      }
+    } catch {}
+    if (lines.length) parts.push('\nPROFILE — Site Features (UI/UX Guide):\n' + lines.join('\n'));
+  }
+
+  parts.push('\nGuidelines: Keep answers short and helpful. If asked about navigating the site or using features (e.g., Spotify section, performance modes, messaging Aryan), explain steps clearly and reference the sections above. If asked “Who is Aryan?” provide a brief intro using the profile. Use accessible formatting (e.g., headings, bold, lists) when it helps readability.');
   return parts.join('\n');
 }
