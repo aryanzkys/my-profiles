@@ -554,6 +554,10 @@ function buildProfilePrompt() {
         lines.push('Global Chatbot:');
         lines.push(...g.chatbot.map(s => `- ${s}`));
       }
+      if (Array.isArray(g.links) && g.links.length) {
+        lines.push('Links:');
+        lines.push(...g.links.map(u => `- ${u}`));
+      }
       if (Array.isArray(g.routes) && g.routes.length) {
         lines.push('Routes:');
         lines.push(...g.routes.map(s => `- ${s}`));

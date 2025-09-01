@@ -6,6 +6,10 @@
       "Keyboard: Enter to send, Shift+Enter for newline; Esc closes the floating chat window.",
       "Short, friendly answers; supports Markdown (bold, lists, links, inline code)."
     ],
+    "links": [
+      "https://aryanstack.netlify.app",
+      "https://aryanstack.netlify.app/ai"
+    ],
     "routes": [
       "/ — Main Site with immersive 3D background and Overlay navigation.",
       "/AI — Dedicated AI page with full-screen Chatbot and inline Spotify section."
