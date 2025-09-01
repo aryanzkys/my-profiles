@@ -31,7 +31,7 @@ export default function AIPage() {
           {/* Centered, wider full-screen styled chat */}
           <div className="grid place-items-center">
             <div className="w-full max-w-[1040px] px-1">
-              <Chatbot initialOpen={true} fullScreen={true} />
+              <Chatbot initialOpen={true} fullScreen={true} hideFab={true} />
             </div>
           </div>
         </div>

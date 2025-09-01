@@ -62,7 +62,7 @@ function SlowProcessing() {
   );
 }
 
-export default function Chatbot({ initialOpen = false, fullScreen = false }) {
+export default function Chatbot({ initialOpen = false, fullScreen = false, hideFab = false }) {
   const STORAGE_KEY = 'aryan-chatbot-history-v1';
   const MAX_MESSAGES = 200;
   const [open, setOpen] = useState(!!initialOpen || !!fullScreen);
@@ -202,7 +202,7 @@ export default function Chatbot({ initialOpen = false, fullScreen = false }) {
   return (
   <div className={fullScreen? 'relative z-10' : 'fixed bottom-4 right-4 z-40'}>
       {/* Floating button */}
-      {!fullScreen && (
+      {!fullScreen && !hideFab && (
         <AnimatePresence>
         {!open && (
           <motion.button
@@ -246,7 +246,7 @@ export default function Chatbot({ initialOpen = false, fullScreen = false }) {
       </AnimatePresence>)}
 
       {/* Hint tooltip */}
-      {!fullScreen && (
+  {!fullScreen && !hideFab && (
       <AnimatePresence>
         {!open && showHint && (
           <motion.div
