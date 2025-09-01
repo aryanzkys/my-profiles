@@ -89,7 +89,7 @@ export default function AIPage() {
             <span className="title-rgb self-center">Aryan’s AI Assistant</span>
           </motion.h1>
           <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mt-2 text-[13px] md:text-base text-gray-300 max-w-[720px]">
-            Ask anything about Aryan — education, achievements, organizations, and more. Designed with a robotic, futuristic aesthetic for an elegant experience.
+            Your intelligent gateway to explore Aryan’s journey and insights. Engage freely with the AI Assistant for an immersive and refined experience.
           </motion.p>
           {/* accent underline */}
           <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.6, delay: 0.15, ease: 'easeOut' }} className="mt-4 h-[2px] w-32 origin-left bg-gradient-to-r from-cyan-400/80 via-sky-400/70 to-blue-400/60 shadow-[0_0_18px_rgba(34,211,238,0.35)]" />
