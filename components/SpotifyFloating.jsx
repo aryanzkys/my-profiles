@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
 const SPOTIFY_AUTH_URL = 'https://accounts.spotify.com/authorize';
+const SPOTIFY_SDK_URL = 'https://sdk.scdn.co/spotify-player.js';
 const TOKEN_PROXY_PATHS = [
   '/.netlify/functions/spotify-token',
   (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/.netlify/functions/spotify-token',
@@ -107,6 +108,7 @@ export default function SpotifyFloating() {
   const [nowPlayingId, setNowPlayingId] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [nowPlayingTrack, setNowPlayingTrack] = useState(null);
+  const [playbackMode, setPlaybackMode] = useState('preview'); // 'preview' | 'web'
   const [canDrag, setCanDrag] = useState(false);
   const [trackPool, setTrackPool] = useState([]); // pool of tracks with preview for shuffle autoplay
   const dragControls = useDragControls();
@@ -115,6 +117,11 @@ export default function SpotifyFloating() {
   const [dragHintVisible, setDragHintVisible] = useState(false);
   const PREVIEW_FILTER_KEY = 'spotify_preview_only_filter_v1';
   const [filterPreviewOnly, setFilterPreviewOnly] = useState(false);
+
+  // Spotify Web Playback SDK state (for full playback when no 30s preview)
+  const playerRef = useRef(null);
+  const [deviceId, setDeviceId] = useState(null);
+  const [playerReady, setPlayerReady] = useState(false);
 
   // Show a small drag handle hint once when modal opens (non-blocking, no pointer events)
   useEffect(() => {
@@ -278,7 +285,7 @@ export default function SpotifyFloating() {
       redirect_uri,
       code_challenge_method: 'S256',
       code_challenge: challenge,
-  scope: 'user-read-email user-read-private',
+  scope: 'user-read-email user-read-private streaming user-modify-playback-state user-read-playback-state',
       state,
     });
     try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ verifier, redirect_uri, state })); } catch {}
@@ -374,6 +381,7 @@ export default function SpotifyFloating() {
         imageUrl: track.album?.images?.[2]?.url || track.album?.images?.[1]?.url || track.album?.images?.[0]?.url || '',
         preview_url: url,
       });
+  setPlaybackMode('preview');
       a.onplay = () => setIsPlaying(true);
       a.onpause = () => setIsPlaying(false);
       a.onended = () => {
@@ -406,6 +414,130 @@ export default function SpotifyFloating() {
       preview_url: track.preview_url || '',
     });
     setIsPlaying(false);
+  };
+
+  // Web Playback SDK helpers
+  const ensureWebPlaybackSDK = async () => {
+    if (typeof window === 'undefined') return false;
+    if (window.Spotify) return true;
+    return new Promise((resolve) => {
+      const scriptId = 'spotify-web-playback-sdk';
+      if (document.getElementById(scriptId)) {
+        const check = () => window.Spotify ? resolve(true) : setTimeout(check, 50);
+        check();
+        return;
+      }
+      const s = document.createElement('script');
+      s.id = scriptId;
+      s.src = SPOTIFY_SDK_URL;
+      s.onload = () => resolve(true);
+      s.onerror = () => resolve(false);
+      document.body.appendChild(s);
+    });
+  };
+
+  const initWebPlayerIfNeeded = async () => {
+    const ok = await ensureWebPlaybackSDK();
+    if (!ok) { setMessage('Spotify player failed to load.'); return false; }
+    if (playerRef.current && playerReady && deviceId) return true;
+    const accessToken = await getAccessToken();
+    if (!accessToken) { setMessage('Please connect Spotify first.'); return false; }
+    return new Promise((resolve) => {
+      const player = new window.Spotify.Player({
+        name: 'AI Vibes Player',
+        getOAuthToken: cb => { cb(accessToken); },
+        volume: 0.8,
+      });
+      playerRef.current = player;
+
+      player.addListener('ready', ({ device_id }) => {
+        setDeviceId(device_id);
+        setPlayerReady(true);
+        resolve(true);
+      });
+      player.addListener('not_ready', () => { setPlayerReady(false); });
+      player.addListener('initialization_error', ({ message }) => { setMessage(`Player init error: ${message}`); resolve(false); });
+      player.addListener('authentication_error', ({ message }) => { setMessage('Spotify auth error. Disconnect and reconnect.'); resolve(false); });
+      player.addListener('account_error', ({ message }) => { setMessage('Spotify Premium required for full playback.'); resolve(false); });
+
+      player.connect();
+    });
+  };
+
+  const transferToWebPlayer = async () => {
+    const accessToken = await getAccessToken();
+    if (!accessToken || !deviceId) return false;
+    try {
+      const r = await fetch('https://api.spotify.com/v1/me/player', {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ device_ids: [deviceId], play: false })
+      });
+      return r.status === 202 || r.status === 204;
+    } catch {
+      return false;
+    }
+  };
+
+  const startWebPlaybackForUris = async (uris) => {
+    if (!Array.isArray(uris) || uris.length === 0) return false;
+    const inited = await initWebPlayerIfNeeded();
+    if (!inited) return false;
+    await playerRef.current?.activateElement?.();
+    await transferToWebPlayer();
+    const accessToken = await getAccessToken();
+    try {
+      const r = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${encodeURIComponent(deviceId)}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uris })
+      });
+      if (r.status === 204) { setIsPlaying(true); setPlaybackMode('web'); return true; }
+    } catch {}
+    setMessage('Failed to start full playback.');
+    return false;
+  };
+
+  const startWebPlaybackForContext = async (context_uri) => {
+    if (!context_uri) return false;
+    const inited = await initWebPlayerIfNeeded();
+    if (!inited) return false;
+    await playerRef.current?.activateElement?.();
+    await transferToWebPlayer();
+    const accessToken = await getAccessToken();
+    try {
+      const r = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${encodeURIComponent(deviceId)}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ context_uri })
+      });
+      if (r.status === 204) { setIsPlaying(true); setPlaybackMode('web'); return true; }
+    } catch {}
+    setMessage('Failed to start full playback.');
+    return false;
+  };
+
+  const pauseWebPlayback = async () => {
+    const accessToken = await getAccessToken();
+    try {
+      const r = await fetch('https://api.spotify.com/v1/me/player/pause', { method: 'PUT', headers: { Authorization: `Bearer ${accessToken}` } });
+      if (r.status === 204) setIsPlaying(false);
+    } catch {}
+  };
+  const resumeWebPlayback = async () => {
+    const accessToken = await getAccessToken();
+    try {
+      const r = await fetch('https://api.spotify.com/v1/me/player/play', { method: 'PUT', headers: { Authorization: `Bearer ${accessToken}` } });
+      if (r.status === 204) setIsPlaying(true);
+    } catch {}
+  };
+  const stopWebPlayback = async () => {
+    const accessToken = await getAccessToken();
+    try {
+      await fetch('https://api.spotify.com/v1/me/player/seek?position_ms=0', { method: 'PUT', headers: { Authorization: `Bearer ${accessToken}` } });
+      const r = await fetch('https://api.spotify.com/v1/me/player/pause', { method: 'PUT', headers: { Authorization: `Bearer ${accessToken}` } });
+      if (r.status === 204) { setIsPlaying(false); }
+    } catch {}
   };
 
   const pausePreview = () => {
@@ -469,11 +601,14 @@ export default function SpotifyFloating() {
         await playPreviewFromTrack(withPreview[0]);
         return true;
       }
-      // Show first track info in Now Playing even without preview
+      // Try full playback via Web Playback SDK
       if (tracks.length > 0) {
         setNowPlayingFromTrack(tracks[0]);
+        const ok = await startWebPlaybackForContext(`spotify:playlist:${playlistId}`);
+        if (!ok) setMessage('Playlist embedded. No preview; showing first track. Full playback needs Spotify Premium.');
+        return ok;
       }
-      setMessage('Playlist embedded. No track with 30s preview found. Showing first track in Now Playing.');
+      setMessage('Playlist embedded. No tracks available.');
       return false;
     } catch (e) {
       setMessage('Failed to start playback from playlist embed.');
@@ -507,7 +642,7 @@ export default function SpotifyFloating() {
         await playPreviewFromTrack(candidates[0]);
         return true;
       }
-      // Fetch album details for cover and show first track info in Now Playing
+      // Try full playback via Web Playback SDK
       let cover = '';
       try {
         const album = await fetchWithFallback(
@@ -519,8 +654,11 @@ export default function SpotifyFloating() {
       if (items.length > 0) {
         const first = items[0];
         setNowPlayingFromTrack(first, cover);
+        const ok = await startWebPlaybackForContext(`spotify:album:${albumId}`);
+        if (!ok) setMessage('Album embedded. No preview; showing first track. Full playback needs Spotify Premium.');
+        return ok;
       }
-      setMessage('Album embedded. No track with 30s preview found. Showing first track in Now Playing.');
+      setMessage('Album embedded. No tracks available.');
       return false;
     } catch (e) {
       setMessage('Failed to start playback from album embed.');
@@ -544,8 +682,9 @@ export default function SpotifyFloating() {
         if (track?.preview_url) {
           playPreviewFromTrack(track);
         } else {
-      setNowPlayingFromTrack(track);
-      setMessage('This track has no 30s preview. Showing in Now Playing.');
+          setNowPlayingFromTrack(track);
+          const ok = track?.uri ? await startWebPlaybackForUris([track.uri]) : false;
+          if (!ok) setMessage('This track has no 30s preview. Full playback needs Spotify Premium.');
         }
       } catch (err) {
         console.warn('Embed preview fetch error', err);
@@ -565,7 +704,8 @@ export default function SpotifyFloating() {
       playPreviewFromTrack(meta.track);
     } else if (meta?.track && !meta.track.preview_url) {
       setNowPlayingFromTrack(meta.track);
-      setMessage('This track has no 30s preview. Showing in Now Playing.');
+      const ok = meta.track?.uri ? await startWebPlaybackForUris([meta.track.uri]) : false;
+      if (!ok) setMessage('This track has no 30s preview. Full playback needs Spotify Premium.');
     } else if (meta?.playlistId) {
       const ok = await playFirstPreviewFromPlaylist(meta.playlistId);
       if (!ok) {
@@ -596,7 +736,7 @@ export default function SpotifyFloating() {
 
       {/* Mini Now Playing pill (visible when modal closed) */}
       <AnimatePresence>
-        {nowPlayingTrack && (
+                {nowPlayingTrack && (
           <motion.div
             key="np-pill"
             initial={{ opacity: 0, y: 8 }}
@@ -832,11 +972,11 @@ export default function SpotifyFloating() {
                     </div>
                     <div className="flex items-center gap-2">
                       {isPlaying ? (
-                        <button onClick={pausePreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Pause</button>
+                        <button onClick={() => { playbackMode==='web' ? pauseWebPlayback() : pausePreview(); }} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Pause</button>
                       ) : (
-                        <button onClick={resumePreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
+                        <button onClick={() => { playbackMode==='web' ? resumeWebPlayback() : resumePreview(); }} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
                       )}
-                      <button onClick={stopPreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Stop</button>
+                      <button onClick={() => { playbackMode==='web' ? stopWebPlayback() : stopPreview(); }} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Stop</button>
                     </div>
                   </div>
                 )}
