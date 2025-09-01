@@ -500,6 +500,9 @@ function buildProfilePrompt() {
   if (about && typeof about === 'object') {
     const lines = [];
     if (about.name) lines.push(`Name: ${about.name}`);
+  if (about.preferred_name) lines.push(`Preferred Name: ${about.preferred_name}`);
+  if (about.date_of_birth) lines.push(`Date of Birth: ${about.date_of_birth}`);
+  if (about.place_of_birth) lines.push(`Place of Birth: ${about.place_of_birth}`);
     if (about.role) lines.push(`Role: ${about.role}`);
     if (about.headline) lines.push(`Focus: ${about.headline}`);
     if (Array.isArray(about.summary) && about.summary.length) {
