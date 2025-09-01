@@ -77,16 +77,16 @@ export default function AIPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45 }}
-            className="text-3xl md:text-4xl font-semibold leading-tight md:leading-snug flex items-baseline gap-3"
+            className="text-3xl md:text-4xl font-semibold leading-[1.2] md:leading-[1.2] flex items-center gap-3"
           >
             <img
               src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Coat_of_arms_of_the_United_Kingdom_%282022%2C_variant_2%29.svg/2241px-Coat_of_arms_of_the_United_Kingdom_%282022%2C_variant_2%29.svg.png"
               alt="British coat of arms"
-              className="h-8 w-8 md:h-10 md:w-10 object-contain select-none pointer-events-none drop-shadow-[0_0_14px_rgba(34,211,238,0.22)]"
+              className="h-8 w-8 md:h-10 md:w-10 object-contain select-none pointer-events-none drop-shadow-[0_0_14px_rgba(34,211,238,0.22)] self-center align-middle"
               loading="eager"
               decoding="async"
             />
-            <span className="title-rgb align-baseline">Aryan’s AI Assistant</span>
+            <span className="title-rgb self-center">Aryan’s AI Assistant</span>
           </motion.h1>
           <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mt-2 text-[13px] md:text-base text-gray-300 max-w-[720px]">
             Ask anything about Aryan — education, achievements, organizations, and more. Designed with a robotic, futuristic aesthetic for an elegant experience.
@@ -130,7 +130,7 @@ export default function AIPage() {
       <style jsx>{`
         .title-rgb {
           display: inline-block;
-          line-height: 1.15;
+          line-height: 1.2;
           /* Layer 1: base RGB gradient; Layer 2: subtle moving sheen */
           background-image:
             linear-gradient(90deg,
