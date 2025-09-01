@@ -79,6 +79,24 @@ export default function SpotifyFloating() {
   const [trackPool, setTrackPool] = useState([]); // pool of tracks with preview for shuffle autoplay
   const dragControls = useDragControls();
   const modalRef = useRef(null);
+  const DRAG_HINT_SEEN_KEY = 'spotify_drag_hint_seen_v1';
+  const [dragHintVisible, setDragHintVisible] = useState(false);
+
+  // Show a small drag handle hint once when modal opens (non-blocking, no pointer events)
+  useEffect(() => {
+    if (!open) return;
+    try {
+      const seen = typeof window !== 'undefined' ? window.localStorage.getItem(DRAG_HINT_SEEN_KEY) : '1';
+      if (!seen) {
+        setDragHintVisible(true);
+        const t = setTimeout(() => {
+          setDragHintVisible(false);
+          try { window.localStorage.setItem(DRAG_HINT_SEEN_KEY, '1'); } catch {}
+        }, 3000);
+        return () => clearTimeout(t);
+      }
+    } catch {}
+  }, [open]);
 
   const shouldStartDrag = (target) => {
     if (!canDrag) return false;
@@ -408,6 +426,19 @@ export default function SpotifyFloating() {
                 className="flex items-center gap-3 px-3 py-2 border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent cursor-move md:cursor-grab active:md:cursor-grabbing"
               >
                 <div className="text-cyan-200 font-medium">Vibes for /AI</div>
+                {dragHintVisible && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 2 }}
+                    animate={{ opacity: 1, y: [0, -1, 0] }}
+                    transition={{ duration: 1.2, repeat: Infinity, repeatType: 'mirror' }}
+                    className="pointer-events-none select-none ml-1"
+                    aria-hidden
+                  >
+                    <div className="flex items-center gap-0.5">
+                      <span className="h-1 w-8 rounded-full bg-gradient-to-r from-cyan-400/70 via-sky-400/70 to-blue-400/70 shadow-[0_0_10px_rgba(34,211,238,0.35)]" />
+                    </div>
+                  </motion.div>
+                )}
                 {token && (
                   <div className="hidden sm:flex items-center gap-2 text-xs text-green-300">
                     <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" aria-hidden />
