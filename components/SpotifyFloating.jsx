@@ -74,6 +74,7 @@ export default function SpotifyFloating() {
   const [recentQueries, setRecentQueries] = useState([]);
   const [nowPlayingId, setNowPlayingId] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [nowPlayingTrack, setNowPlayingTrack] = useState(null);
 
   // Load token from storage
   useEffect(() => {
@@ -236,16 +237,25 @@ export default function SpotifyFloating() {
     }
   };
 
-  const playPreview = async (url) => {
+  const playPreviewFromTrack = async (track) => {
+    const url = track?.preview_url;
     if (!url) { setMessage('No preview available for this track.'); return; }
     try {
       if (!audioRef.current) audioRef.current = new Audio();
       const a = audioRef.current;
       if (!a.paused) { a.pause(); }
       a.src = url;
+      setNowPlayingId(track.id);
+      setNowPlayingTrack({
+        id: track.id,
+        name: track.name,
+        artists: (track.artists||[]).map(a=>a.name).join(', '),
+        imageUrl: track.album?.images?.[2]?.url || track.album?.images?.[1]?.url || track.album?.images?.[0]?.url || '',
+        preview_url: url,
+      });
       a.onplay = () => setIsPlaying(true);
       a.onpause = () => setIsPlaying(false);
-      a.onended = () => { setIsPlaying(false); setNowPlayingId(null); };
+      a.onended = () => { setIsPlaying(false); setNowPlayingId(null); setNowPlayingTrack(null); };
       await a.play();
     } catch {
       setMessage('Could not play preview.');
@@ -256,7 +266,10 @@ export default function SpotifyFloating() {
     try { const a = audioRef.current; if (a && !a.paused) a.pause(); } catch {}
   };
   const stopPreview = () => {
-    try { const a = audioRef.current; if (a) { a.pause(); a.currentTime = 0; } setNowPlayingId(null); setIsPlaying(false); } catch {}
+    try { const a = audioRef.current; if (a) { a.pause(); a.currentTime = 0; } setNowPlayingId(null); setIsPlaying(false); setNowPlayingTrack(null); } catch {}
+  };
+  const resumePreview = async () => {
+    try { const a = audioRef.current; if (a && a.paused) { await a.play(); } } catch {}
   };
 
   const onEmbedFromUrl = (val) => {
@@ -303,6 +316,13 @@ export default function SpotifyFloating() {
             <div className="rounded-2xl border border-white/10 bg-black/85 overflow-hidden">
               <div className="flex items-center gap-3 p-3 border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent">
                 <div className="text-cyan-200 font-medium">Vibes for /AI</div>
+                {token && (
+                  <div className="hidden sm:flex items-center gap-2 text-xs text-green-300">
+                    <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" aria-hidden />
+                    <span>Connected to Spotify</span>
+                    <a href="https://www.spotify.com/account/apps/" target="_blank" rel="noopener noreferrer" className="text-gray-300 underline decoration-cyan-400/50 hover:decoration-cyan-300">Manage</a>
+                  </div>
+                )}
                 <div className="ml-auto flex items-center gap-2">
                   {token ? (
                     <button onClick={logoutSpotify} className="text-xs px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Disconnect</button>
@@ -368,7 +388,7 @@ export default function SpotifyFloating() {
                           <div className="text-xs text-gray-400 truncate">{(t.artists||[]).map(a=>a.name).join(', ')}</div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button onClick={()=>{ setNowPlayingId(t.id); playPreview(t.preview_url); }} className="text-xs px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
+                          <button onClick={()=>{ playPreviewFromTrack(t); }} className="text-xs px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
                           <button onClick={pausePreview} className="text-xs px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Pause</button>
                           <button onClick={stopPreview} className="text-xs px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Stop</button>
                           <button onClick={()=>onEmbedSet(`https://open.spotify.com/embed/track/${t.id}`)} className="text-xs px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
@@ -413,6 +433,29 @@ export default function SpotifyFloating() {
                       title="Spotify Embed"
                       className="rounded-xl border border-white/10"
                     />
+                  </div>
+                )}
+
+                {/* Now Playing bar */}
+                {nowPlayingTrack && (
+                  <div className="mt-2 rounded-xl border border-white/10 bg-white/5 p-2 flex items-center gap-3">
+                    {nowPlayingTrack.imageUrl ? (
+                      <img src={nowPlayingTrack.imageUrl} alt="cover" className="h-9 w-9 rounded-md object-cover" />
+                    ) : (
+                      <div className="h-9 w-9 rounded-md bg-white/10" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm text-gray-100 truncate">{nowPlayingTrack.name}</div>
+                      <div className="text-xs text-gray-400 truncate">{nowPlayingTrack.artists}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isPlaying ? (
+                        <button onClick={pausePreview} className="text-xs px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Pause</button>
+                      ) : (
+                        <button onClick={resumePreview} className="text-xs px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
+                      )}
+                      <button onClick={stopPreview} className="text-xs px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Stop</button>
+                    </div>
                   </div>
                 )}
 
