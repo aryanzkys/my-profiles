@@ -68,6 +68,24 @@ function parseSpotifyUrlParts(url) {
   }
 }
 
+function parseEmbedOrOpenParts(url) {
+  try {
+    const u = new URL(url);
+    if (!/open\.spotify\.com$/.test(u.hostname)) return null;
+    const parts = u.pathname.split('/').filter(Boolean);
+    if (parts.length < 2) return null;
+    if (parts[0] === 'embed') {
+      const type = parts[1];
+      const id = parts[2];
+      if (!type || !id) return null;
+      return { type, id };
+    }
+    return { type: parts[0], id: parts[1] };
+  } catch {
+    return null;
+  }
+}
+
 export default function SpotifyFloating() {
   const CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || '';
   const STORAGE_KEY = 'spotify_pkce_state_v1';
@@ -387,6 +405,26 @@ export default function SpotifyFloating() {
     try { const a = audioRef.current; if (a && a.paused) { await a.play(); } } catch {}
   };
 
+  const ensureBackgroundPlaybackFromEmbed = async () => {
+    if (nowPlayingTrack || isPlaying === true) return;
+    if (!embedUrl) return;
+    const p = parseEmbedOrOpenParts(embedUrl);
+    if (!p?.type || !p.id) return;
+    if (p.type === 'track') {
+      try {
+        const track = await fetchWithFallback(
+          `https://api.spotify.com/v1/tracks/${p.id}?market=from_token`,
+          `https://api.spotify.com/v1/tracks/${p.id}`
+        );
+        if (track?.preview_url) await playPreviewFromTrack(track);
+      } catch {}
+    } else if (p.type === 'playlist') {
+      await playFirstPreviewFromPlaylist(p.id);
+    } else if (p.type === 'album') {
+      await playFirstPreviewFromAlbum(p.id);
+    }
+  };
+
   // Helpers for autoplaying from embeds
   const getAccessToken = async () => {
     const t = await refreshIfNeeded();
@@ -605,7 +643,7 @@ export default function SpotifyFloating() {
                       {connecting ? 'Connecting…' : 'Connect Spotify'}
                     </button>
                   )}
-                  <button onClick={() => setOpen(false)} aria-label="Close" className="h-7 w-7 grid place-items-center rounded-full text-gray-300 hover:text-white hover:bg-white/10">
+                  <button onClick={async () => { await ensureBackgroundPlaybackFromEmbed(); setOpen(false); }} aria-label="Close" className="h-7 w-7 grid place-items-center rounded-full text-gray-300 hover:text-white hover:bg-white/10">
                     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.3 6.3-6.3z"/></svg>
                   </button>
                 </div>
