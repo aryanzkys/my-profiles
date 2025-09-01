@@ -9,7 +9,8 @@ const Chatbot = dynamic(() => import('../components/Chatbot'), { ssr: false });
 export default function App({ Component, pageProps }) {
   const router = useRouter();
   const path = router?.pathname || '';
-  const isAdminArea = /^\/(?:admin|login)(?:$|\/)\/i.test(path);
+  // Admin and login areas should not show the global floating Chatbot
+  const isAdminArea = /^\/(?:admin|login)(?:$|\/)/i.test(path);
   // Suppress global floating Chatbot on the AI page; the AI page renders its own full-screen Chatbot
   const isAIPage = /^\/ai(?:\/|$)/i.test(path);
   return (
