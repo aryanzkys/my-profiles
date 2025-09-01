@@ -108,6 +108,7 @@ export default function SpotifyFloating() {
   const [nowPlayingId, setNowPlayingId] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [nowPlayingTrack, setNowPlayingTrack] = useState(null);
+  const [nowPlayingContextUri, setNowPlayingContextUri] = useState(null);
   const [playbackMode, setPlaybackMode] = useState('preview'); // 'preview' | 'web'
   const [canDrag, setCanDrag] = useState(false);
   const [trackPool, setTrackPool] = useState([]); // pool of tracks with preview for shuffle autoplay
@@ -380,7 +381,9 @@ export default function SpotifyFloating() {
         artists: (track.artists||[]).map(a=>a.name).join(', '),
         imageUrl: track.album?.images?.[2]?.url || track.album?.images?.[1]?.url || track.album?.images?.[0]?.url || '',
         preview_url: url,
+        uri: track.uri || (track.id ? `spotify:track:${track.id}` : ''),
       });
+      setNowPlayingContextUri(null);
   setPlaybackMode('preview');
       a.onplay = () => setIsPlaying(true);
       a.onpause = () => setIsPlaying(false);
@@ -412,8 +415,45 @@ export default function SpotifyFloating() {
       artists: Array.isArray(track.artists) ? track.artists.map(a=>a.name).join(', ') : (track.artists || ''),
       imageUrl: imageOverride || track.album?.images?.[2]?.url || track.album?.images?.[1]?.url || track.album?.images?.[0]?.url || '',
       preview_url: track.preview_url || '',
+      uri: track.uri || (track.id ? `spotify:track:${track.id}` : ''),
     });
     setIsPlaying(false);
+  };
+
+  // Start playback for current Now Playing item
+  const playNowPlaying = async () => {
+    const nt = nowPlayingTrack;
+    if (!nt) return;
+    // If preview available, use HTMLAudio preview
+    if (nt.preview_url) {
+      try {
+        if (audioRef.current && audioRef.current.src === nt.preview_url) {
+          await resumePreview();
+        } else {
+          await playPreviewFromTrack({
+            id: nt.id,
+            name: nt.name,
+            artists: (nt.artists || '').split(', ').map(n => ({ name: n })),
+            album: { images: [{ url: nt.imageUrl }, { url: nt.imageUrl }, { url: nt.imageUrl }] },
+            preview_url: nt.preview_url,
+            uri: nt.uri,
+          });
+        }
+      } catch {}
+      return;
+    }
+    // Otherwise try Web Playback (requires Premium)
+    if (nowPlayingContextUri) {
+      const ok = await startWebPlaybackForContext(nowPlayingContextUri);
+      if (!ok) setMessage('Unable to start playback. Spotify Premium required.');
+      return;
+    }
+    if (nt.uri) {
+      const ok = await startWebPlaybackForUris([nt.uri]);
+      if (!ok) setMessage('Unable to start playback. Spotify Premium required.');
+    } else {
+      setMessage('Cannot play this item.');
+    }
   };
 
   // Web Playback SDK helpers
@@ -604,6 +644,7 @@ export default function SpotifyFloating() {
       // Try full playback via Web Playback SDK
       if (tracks.length > 0) {
         setNowPlayingFromTrack(tracks[0]);
+        setNowPlayingContextUri(`spotify:playlist:${playlistId}`);
         const ok = await startWebPlaybackForContext(`spotify:playlist:${playlistId}`);
         if (!ok) setMessage('Playlist embedded. No preview; showing first track. Full playback needs Spotify Premium.');
         return ok;
@@ -654,6 +695,7 @@ export default function SpotifyFloating() {
       if (items.length > 0) {
         const first = items[0];
         setNowPlayingFromTrack(first, cover);
+        setNowPlayingContextUri(`spotify:album:${albumId}`);
         const ok = await startWebPlaybackForContext(`spotify:album:${albumId}`);
         if (!ok) setMessage('Album embedded. No preview; showing first track. Full playback needs Spotify Premium.');
         return ok;
@@ -700,7 +742,7 @@ export default function SpotifyFloating() {
     setEmbedUrl(url);
     try { window.localStorage.setItem(LAST_EMBED_KEY, url); } catch {}
     // If user embeds a track and it has a preview, start playing so Now Playing persists on close
-    if (meta?.track && meta.track.preview_url) {
+  if (meta?.track && meta.track.preview_url) {
       playPreviewFromTrack(meta.track);
     } else if (meta?.track && !meta.track.preview_url) {
       setNowPlayingFromTrack(meta.track);
@@ -757,11 +799,11 @@ export default function SpotifyFloating() {
               </button>
               <div className="flex items-center gap-1.5">
                 {isPlaying ? (
-                  <button onClick={pausePreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Pause</button>
+                  <button onClick={() => { playbackMode==='web' ? pauseWebPlayback() : pausePreview(); }} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Pause</button>
                 ) : (
-                  <button onClick={resumePreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
+                  <button onClick={playNowPlaying} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Play</button>
                 )}
-                <button onClick={stopPreview} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Stop</button>
+                <button onClick={() => { playbackMode==='web' ? stopWebPlayback() : stopPreview(); }} className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10">Stop</button>
               </div>
             </div>
           </motion.div>
