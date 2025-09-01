@@ -3,7 +3,7 @@ import Head from 'next/head';
 import { motion } from 'framer-motion';
 
 const Chatbot = dynamic(() => import('../components/Chatbot'), { ssr: false });
-const SpotifyFloating = dynamic(() => import('../components/SpotifyFloating'), { ssr: false });
+const SpotifySection = dynamic(() => import('../components/SpotifySection'), { ssr: false });
 
 export default function AIPage() {
   return (
@@ -35,9 +35,9 @@ export default function AIPage() {
             </div>
           </div>
         </div>
+        {/* Inline Spotify section under chat */}
+        <SpotifySection />
       </main>
-  {/* Spotify floating button & modal */}
-  <SpotifyFloating />
     </div>
   );
 }
