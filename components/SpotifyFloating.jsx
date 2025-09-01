@@ -395,6 +395,19 @@ export default function SpotifyFloating() {
     }
   };
 
+  const setNowPlayingFromTrack = (track, imageOverride) => {
+    if (!track) return;
+    setNowPlayingId(track.id || null);
+    setNowPlayingTrack({
+      id: track.id || null,
+      name: track.name || 'Unknown',
+      artists: Array.isArray(track.artists) ? track.artists.map(a=>a.name).join(', ') : (track.artists || ''),
+      imageUrl: imageOverride || track.album?.images?.[2]?.url || track.album?.images?.[1]?.url || track.album?.images?.[0]?.url || '',
+      preview_url: track.preview_url || '',
+    });
+    setIsPlaying(false);
+  };
+
   const pausePreview = () => {
     try { const a = audioRef.current; if (a && !a.paused) a.pause(); } catch {}
   };
@@ -456,7 +469,11 @@ export default function SpotifyFloating() {
         await playPreviewFromTrack(withPreview[0]);
         return true;
       }
-      setMessage('Playlist embedded. No track with 30s preview found.');
+      // Show first track info in Now Playing even without preview
+      if (tracks.length > 0) {
+        setNowPlayingFromTrack(tracks[0]);
+      }
+      setMessage('Playlist embedded. No track with 30s preview found. Showing first track in Now Playing.');
       return false;
     } catch (e) {
       setMessage('Failed to start playback from playlist embed.');
@@ -490,7 +507,20 @@ export default function SpotifyFloating() {
         await playPreviewFromTrack(candidates[0]);
         return true;
       }
-      setMessage('Album embedded. No track with 30s preview found.');
+      // Fetch album details for cover and show first track info in Now Playing
+      let cover = '';
+      try {
+        const album = await fetchWithFallback(
+          `https://api.spotify.com/v1/albums/${albumId}?market=from_token`,
+          `https://api.spotify.com/v1/albums/${albumId}`
+        );
+        cover = album?.images?.[2]?.url || album?.images?.[1]?.url || album?.images?.[0]?.url || '';
+      } catch {}
+      if (items.length > 0) {
+        const first = items[0];
+        setNowPlayingFromTrack(first, cover);
+      }
+      setMessage('Album embedded. No track with 30s preview found. Showing first track in Now Playing.');
       return false;
     } catch (e) {
       setMessage('Failed to start playback from album embed.');
@@ -505,7 +535,7 @@ export default function SpotifyFloating() {
     try { window.localStorage.setItem(LAST_EMBED_KEY, e); } catch {}
     // If it’s a track URL, try to auto-play preview so it persists to Now Playing even after closing modal.
     const parts = parseSpotifyUrlParts(val);
-    if (parts?.type === 'track' && parts.id) {
+  if (parts?.type === 'track' && parts.id) {
       try {
         const track = await fetchWithFallback(
           `https://api.spotify.com/v1/tracks/${parts.id}?market=from_token`,
@@ -514,7 +544,8 @@ export default function SpotifyFloating() {
         if (track?.preview_url) {
           playPreviewFromTrack(track);
         } else {
-          setMessage('This track has no 30s preview. Embed set, playback unavailable.');
+      setNowPlayingFromTrack(track);
+      setMessage('This track has no 30s preview. Showing in Now Playing.');
         }
       } catch (err) {
         console.warn('Embed preview fetch error', err);
@@ -533,11 +564,18 @@ export default function SpotifyFloating() {
     if (meta?.track && meta.track.preview_url) {
       playPreviewFromTrack(meta.track);
     } else if (meta?.track && !meta.track.preview_url) {
-      setMessage('This track has no 30s preview. Embed set, but playback is unavailable.');
+      setNowPlayingFromTrack(meta.track);
+      setMessage('This track has no 30s preview. Showing in Now Playing.');
     } else if (meta?.playlistId) {
-      await playFirstPreviewFromPlaylist(meta.playlistId);
+      const ok = await playFirstPreviewFromPlaylist(meta.playlistId);
+      if (!ok) {
+        // handled inside to set placeholder Now Playing
+      }
     } else if (meta?.albumId) {
-      await playFirstPreviewFromAlbum(meta.albumId);
+      const ok = await playFirstPreviewFromAlbum(meta.albumId);
+      if (!ok) {
+        // handled inside to set placeholder Now Playing
+      }
     }
   };
 
