@@ -78,6 +78,25 @@ export default function SpotifyFloating() {
   const [canDrag, setCanDrag] = useState(false);
   const [trackPool, setTrackPool] = useState([]); // pool of tracks with preview for shuffle autoplay
   const dragControls = useDragControls();
+  const modalRef = useRef(null);
+
+  const shouldStartDrag = (target) => {
+    if (!canDrag) return false;
+    let el = target;
+    const root = modalRef.current;
+    while (el && el !== root) {
+      const tag = el.tagName;
+      if (
+        (el.dataset && el.dataset.nodrag !== undefined) ||
+        tag === 'BUTTON' || tag === 'A' || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'IFRAME' || tag === 'SELECT' || tag === 'LABEL' ||
+        (el.getAttribute && (el.getAttribute('role') === 'button' || el.getAttribute('contenteditable') === 'true'))
+      ) {
+        return false;
+      }
+      el = el.parentElement;
+    }
+    return true;
+  };
 
   // Load token from storage
   useEffect(() => {
@@ -378,6 +397,8 @@ export default function SpotifyFloating() {
             dragListener={false}
             dragConstraints={{ left: -40, right: 40, top: -40, bottom: 40 }}
             dragElastic={0.2}
+            ref={modalRef}
+            onPointerDownCapture={(e) => { if (shouldStartDrag(e.target)) dragControls.start(e); }}
             className="absolute bottom-16 right-0 w-[min(94vw,360px)] sm:w-[min(92vw,420px)] rounded-2xl p-[1px] bg-gradient-to-r from-cyan-400/30 via-blue-500/25 to-cyan-400/30 shadow-[0_0_40px_rgba(34,211,238,0.35)] backdrop-blur-xl"
             role="dialog"
             aria-label="Spotify player"
@@ -385,7 +406,6 @@ export default function SpotifyFloating() {
             <div className="rounded-2xl border border-white/10 bg-black/85 overflow-hidden flex flex-col max-h-[70vh]">
               <div
                 className="flex items-center gap-3 px-3 py-2 border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent cursor-move md:cursor-grab active:md:cursor-grabbing"
-                onPointerDown={(e) => { if (canDrag) dragControls.start(e); }}
               >
                 <div className="text-cyan-200 font-medium">Vibes for /AI</div>
                 {token && (
