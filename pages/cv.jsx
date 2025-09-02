@@ -1,28 +1,44 @@
 import Head from 'next/head';
 import { useEffect } from 'react';
+import about from '../data/about.json';
+import contact from '../data/contact.json';
+import education from '../data/education.json';
+import organizations from '../data/organizations.json';
+import achievements from '../data/achievements.json';
 
 export default function CVPage() {
-  // Simple keyboard shortcut: Ctrl/Cmd+P to open print dialog (browser handles PDF save)
   useEffect(() => {
     const onKey = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
-        // Let browser handle
+        // let browser handle
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const printPDF = () => {
-    try { window.print(); } catch {}
-  };
+  const printPDF = () => { try { window.print(); } catch {} };
+
+  const name = (about?.name || '');
+  const headline = (about?.headline || '');
+  const location = 'Malang, Indonesia';
+  const email = contact?.email || 'prayogoaryan63@gmail.com';
+  const github = contact?.github || 'https://github.com/aryanzkys';
+  const linkedin = contact?.linkedin || '';
+  const instagram = contact?.instagram || '';
+
+  const years = Object.keys(achievements||{}).sort((a,b)=>Number(b)-Number(a));
+  const achievementsList = years.flatMap((y) => {
+    const items = achievements[y] || [];
+    return [{ year: y, header: true }, ...items.map((it) => (typeof it === 'string' ? { text: it } : it))];
+  });
 
   return (
     <main className="min-h-screen bg-white text-black">
       <Head>
-        <title>Aryan Zaky Prayogo — Curriculum Vitae</title>
+        <title>{name ? `${name} — Curriculum Vitae` : 'Curriculum Vitae'}</title>
         <meta name="robots" content="index,follow" />
-        <meta name="description" content="Curriculum Vitae of Aryan Zaky Prayogo" />
+        <meta name="description" content={`Curriculum Vitae of ${name || 'profile'}`} />
       </Head>
 
       {/* Toolbar (hidden in print) */}
@@ -40,100 +56,120 @@ export default function CVPage() {
       <div id="cv" className="mx-auto my-6 max-w-4xl bg-white text-[12px] leading-[1.35] print:my-0">
         {/* Header */}
         <section className="text-center">
-          <h2 className="text-[22px] font-bold tracking-tight">ARYAN ZAKY PRAYOGO</h2>
+          <h2 className="text-[22px] font-bold tracking-tight">{name?.toUpperCase?.() || 'YOUR NAME'}</h2>
           <div className="mt-1 text-[12px]">
-            Brawijaya University • Computer Science • Malang, Indonesia · Email: prayogoaryan63@gmail.com · GitHub: github.com/aryanzkys · LinkedIn: linkedin.com/in/aryan-zaky-prayogo-a24164365/
+            {headline ? `${headline} • ` : ''}{location} • Email: {email}
+            {github ? ` • GitHub: ${github.replace(/^https?:\/\//,'')}` : ''}
+            {linkedin ? ` • LinkedIn: ${linkedin.replace(/^https?:\/\//,'')}` : ''}
+            {instagram ? ` • Instagram: ${instagram.replace(/^https?:\/\//,'')}` : ''}
           </div>
         </section>
 
         {/* Education */}
-        <section className="mt-4">
+        <section className="mt-4 break-before-auto">
           <h3 className="font-bold uppercase tracking-wide text-[12px] border-b border-neutral-300">Education</h3>
-          <div className="mt-1">
-            <div className="flex items-baseline justify-between">
-              <div className="font-semibold">Brawijaya University — Bachelor of Computer Science</div>
-              <div className="text-[12px] text-neutral-700">2024 — Present</div>
-            </div>
-            <ul className="list-disc ml-6 mt-1">
-              <li>Relevant interests: DevSecOps, cybersecurity, software engineering; leadership and ethical tech.</li>
-            </ul>
-          </div>
-          <div className="mt-2">
-            <div className="flex items-baseline justify-between">
-              <div className="font-semibold">SMA Negeri 1 Singosari — Science</div>
-              <div className="text-[12px] text-neutral-700">—</div>
-            </div>
-            <ul className="list-disc ml-6 mt-1">
-              <li>Olympiad Club President; active in BDI, EC, BSC; ASEAN Youth Organization; SDG7 Youth Constituency.</li>
-            </ul>
+          <div className="mt-1 space-y-2">
+            {(education||[]).map((e) => (
+              <div key={`${e.title}-${e.period}`}>
+                <div className="flex items-baseline justify-between">
+                  <div className="font-semibold">{e.title}{e.subtitle ? ` — ${e.subtitle}` : ''}</div>
+                  <div className="text-[12px] text-neutral-700">{e.period}</div>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
-        {/* Experience / Leadership */}
-        <section className="mt-4">
+        {/* Leadership & Activities (from Organizations) */}
+        <section className="mt-5 break-before-auto">
           <h3 className="font-bold uppercase tracking-wide text-[12px] border-b border-neutral-300">Leadership & Activities</h3>
-          <div className="mt-1">
-            <div className="flex items-baseline justify-between">
-              <div className="font-semibold">Duta Gizi — Nutrition Goes To School (NGTS)</div>
-              <div className="text-[12px] text-neutral-700">—</div>
-            </div>
-            <ul className="list-disc ml-6 mt-1">
-              <li>Led classroom sessions on adolescent nutrition and health; identified unrecognized mild stunting cases.</li>
-              <li>Co-authored “Gen-YAWS: Youth Awareness of Stunting” to mobilize peer-led literacy and community action.</li>
-            </ul>
-          </div>
-          <div className="mt-2">
-            <div className="flex items-baseline justify-between">
-              <div className="font-semibold">Student Organizations & Communities</div>
-              <div className="text-[12px] text-neutral-700">—</div>
-            </div>
-            <ul className="list-disc ml-6 mt-1">
-              <li>Active roles across school and international orgs; collaboration in education, innovation, and SDGs.</li>
-            </ul>
+          <div className="mt-1 space-y-2">
+            {(organizations||[]).map((o, idx) => (
+              <div key={`${o.org}-${o.period}-${idx}`}>
+                <div className="flex items-baseline justify-between">
+                  <div className="font-semibold">{o.org}{o.role ? ` — ${o.role}` : ''}</div>
+                  <div className="text-[12px] text-neutral-700">{o.period}</div>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
-        {/* Projects */}
-        <section className="mt-4">
+        {/* Projects (static highlights) */}
+        <section className="mt-5 break-before-auto">
           <h3 className="font-bold uppercase tracking-wide text-[12px] border-b border-neutral-300">Projects</h3>
           <ul className="list-disc ml-6 mt-1">
-            <li>Portfolio site with AI Assistant and Spotify integration: Next.js, Tailwind, Framer Motion, Netlify Functions.</li>
-            <li>Mini Games: Chess and Flappy Bird implementations with local persistence.</li>
+            <li>Portfolio site with AI Assistant and Spotify integration — Next.js, Tailwind, Framer Motion, Netlify Functions.</li>
+            <li>Mini Games: Chess and Flappy Bird with local persistence and responsive UI.</li>
           </ul>
         </section>
 
-        {/* Awards */}
-        <section className="mt-4">
-          <h3 className="font-bold uppercase tracking-wide text-[12px] border-b border-neutral-300">Awards & Recognitions</h3>
+        {/* Achievements — complete list by year */}
+        <section className="mt-5 break-before-page">
+          <h3 className="font-bold uppercase tracking-wide text-[12px] border-b border-neutral-300">Achievements</h3>
+          <div className="mt-1">
+            {years.map((y) => {
+              const list = achievements[y] || [];
+              return (
+                <div key={y} className="mt-2">
+                  <div className="font-semibold text-[12px]">{y}</div>
+                  <ul className="list-disc ml-6 mt-1">
+                    {list.map((raw, i) => {
+                      const item = typeof raw === 'string' ? { text: raw } : raw;
+                      const label = item.text || '';
+                      return <li key={`${y}-${i}`}>{label}</li>;
+                    })}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Skills & Interests */}
+        <section className="mt-5 break-before-auto">
+          <h3 className="font-bold uppercase tracking-wide text-[12px] border-b border-neutral-300">Skills & Interests</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
+            <div>
+              <div className="font-semibold mt-1">Technical</div>
+              <ul className="list-disc ml-6 mt-1">
+                <li>DevSecOps fundamentals; CI/CD; automation; cloud basics</li>
+                <li>JavaScript/TypeScript, Node.js; React, Next.js, Tailwind CSS</li>
+                <li>APIs & OAuth (PKCE); Netlify/Next serverless</li>
+                <li>Framer Motion; UI/UX writing</li>
+              </ul>
+            </div>
+            <div>
+              <div className="font-semibold mt-1">Interests</div>
+              <ul className="list-disc ml-6 mt-1">
+                <li>Cybersecurity, software engineering, youth empowerment</li>
+                <li>Community health literacy, ethical technology</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* Contact */}
+        <section className="mt-5 break-before-auto">
+          <h3 className="font-bold uppercase tracking-wide text-[12px] border-b border-neutral-300">Contact</h3>
           <ul className="list-disc ml-6 mt-1">
-            <li>20+ awards spanning science, languages, research, and entrepreneurship.</li>
-          </ul>
-        </section>
-
-        {/* Skills */}
-        <section className="mt-4">
-          <h3 className="font-bold uppercase tracking-wide text-[12px] border-b border-neutral-300">Skills</h3>
-          <ul className="list-disc ml-6 mt-1 grid grid-cols-2 gap-x-8">
-            <li>DevSecOps fundamentals, CI/CD</li>
-            <li>Cybersecurity awareness & hardening</li>
-            <li>JavaScript/TypeScript, Node.js</li>
-            <li>React, Next.js, Tailwind CSS</li>
-            <li>APIs, OAuth (Spotify PKCE)</li>
-            <li>Framer Motion, UX writing</li>
+            {contact?.email && <li>Email: {contact.email}</li>}
+            {contact?.github && <li>GitHub: {contact.github}</li>}
+            {contact?.linkedin && <li>LinkedIn: {contact.linkedin}</li>}
+            {contact?.instagram && <li>Instagram: {contact.instagram}</li>}
           </ul>
         </section>
 
         {/* Publications */}
-        <section className="mt-4">
+        <section className="mt-5 break-before-auto">
           <h3 className="font-bold uppercase tracking-wide text-[12px] border-b border-neutral-300">Publications</h3>
           <ul className="list-disc ml-6 mt-1">
-            <li>“Gen-YAWS (Youth Awareness of Stunting)”: Community-based, tech-enabled adolescent nutrition literacy.</li>
+            <li>“Gen-YAWS (Youth Awareness of Stunting)” — tech-enabled, peer-led nutrition literacy and community action.</li>
           </ul>
         </section>
 
-        {/* Footer note */}
         <div className="mt-4 text-[11px] text-neutral-600">
-          References available upon request. For the latest profile and achievements, visit aryanstack.netlify.app.
+          References available upon request. Latest updates at aryanstack.netlify.app.
         </div>
       </div>
 
@@ -143,6 +179,7 @@ export default function CVPage() {
           .print\\:hidden { display: none !important; }
           @page { size: A4; margin: 0.6in; }
           html, body { background: #fff; }
+          .break-before-page { break-before: page; }
         }
       `}</style>
     </main>
