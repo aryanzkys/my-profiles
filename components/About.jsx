@@ -224,6 +224,16 @@ export default function About() {
                 >
                   <span>Contact Me</span>
                 </motion.a>
+                <motion.a
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  href="/cv"
+                  target="_blank" rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg px-4 py-2 border border-cyan-400/40 bg-cyan-600/15 text-cyan-200 hover:bg-cyan-600/25"
+                  onMouseEnter={() => playBlip(700)}
+                >
+                  <span>Curriculum Vitae (CV)</span>
+                </motion.a>
                 <motion.button
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}

@@ -11,8 +11,9 @@
       "https://aryanstack.netlify.app/ai"
     ],
     "routes": [
-      "/ — Main Site with immersive 3D background and Overlay navigation.",
-      "/AI — Dedicated AI page with full-screen Chatbot and inline Spotify section."
+  "/ — Main Site with immersive 3D background and Overlay navigation.",
+  "/AI — Dedicated AI page with full-screen Chatbot and inline Spotify section.",
+  "/cv — Harvard-style bullet-point CV with a Download PDF (print) button."
     ]
   },
   "main_site": {
