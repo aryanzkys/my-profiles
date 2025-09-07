@@ -93,7 +93,7 @@ export default function AIPrivacy() {
             <div className="rounded-2xl border border-white/10 bg-black/85 overflow-hidden">
               <div className="px-4 py-4 border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent">
                 <h1 className="text-xl md:text-2xl font-semibold text-cyan-300">Privacy Policy — Aryan’s AI Assistant</h1>
-                <p className="mt-1 text-sm text-gray-300 max-w-2xl">Here’s how the AI Pages handle your data, aligned with transparency and user control. Expand each section to learn more and use quick controls to manage your data locally.</p>
+                <p className="mt-1 text-sm text-gray-300 max-w-2xl">Welcome! These AI Pages are designed with transparency and control in mind. By continuing to use and interact with this website (including the chatbot and Spotify features), you acknowledge and agree to this Privacy Policy.</p>
               </div>
               {/* Quick controls */}
               <div className="px-4 py-3 flex flex-wrap gap-2">
@@ -142,11 +142,11 @@ export default function AIPrivacy() {
             <p>Spotify is used for search and 30s previews when you connect your account. Spotify’s own terms and privacy policy apply in addition to this page.</p>
           </Section>
           <Section title="Changes" idx={5}>
-            <p>This policy may be updated periodically. Significant changes will be announced on the AI Pages.</p>
+            <p>This policy may be updated periodically. Significant changes will be announced on the AI Pages. Your continued use of the site after such updates constitutes acceptance of the revised policy.</p>
           </Section>
         </div>
 
-        <div className="mt-6 text-xs text-gray-400">Last updated: September 2025</div>
+  <div className="mt-6 text-xs text-gray-400">Last updated: September 2025 • Using this site means you agree to the Privacy Policy above.</div>
       </div>
     </main>
   );
