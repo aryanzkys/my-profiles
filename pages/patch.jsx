@@ -20,6 +20,7 @@ export default function PatchPage() {
   const [data, setData] = useState({ meta: {}, patches: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [source, setSource] = useState('');
   const [query, setQuery] = useState('');
   const [routeFilter, setRouteFilter] = useState('');
   const [authorFilter, setAuthorFilter] = useState('');
@@ -31,18 +32,19 @@ export default function PatchPage() {
     try {
       const param = routeFilter ? `?route=${encodeURIComponent(routeFilter)}` : '';
       const endpoints = [
-        `/api/patches${param}`,
-        `/.netlify/functions/patches${param}`,
-        `/data/patches.json`
+        { url: `/api/patches${param}`, label: 'API' },
+        { url: `/.netlify/functions/patches${param}`, label: 'Function' },
+        { url: `/patches.json`, label: 'Static' },
       ];
       let ok = false, lastErr = '';
-      for (const url of endpoints) {
+      for (const ep of endpoints) {
         try {
-          const r = await fetch(url, { cache: 'no-store' });
-          const isJSON = url.endsWith('.json') || (r.headers.get('content-type')||'').includes('application/json');
+          const r = await fetch(ep.url, { cache: 'no-store' });
+          const isJSON = ep.url.endsWith('.json') || (r.headers.get('content-type')||'').includes('application/json');
           const j = isJSON ? await r.json() : await r.json();
           if (!r.ok) throw new Error(j?.error || 'HTTP ' + r.status);
           setData(j);
+          setSource(ep.label);
           ok = true; break;
         } catch (e) { lastErr = e?.message || String(e); }
       }
@@ -128,6 +130,9 @@ export default function PatchPage() {
             {error && (
               <div className="px-4 py-2 text-xs text-rose-300 border-b border-white/10">{error} — showing latest available data.</div>
             )}
+            {!error && source && (
+              <div className="px-4 py-2 text-xs text-cyan-300 border-b border-white/10">Source: {source}</div>
+            )}
             <div className="px-4 py-3 flex flex-col md:flex-row gap-2 md:items-end">
               <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
                 <div>
@@ -158,9 +163,9 @@ export default function PatchPage() {
               </div>
               <div className="flex items-center gap-2 ml-auto">
                 <button onClick={refresh} className="text-xs px-3 py-1.5 rounded-lg border border-cyan-400/30 bg-cyan-500/15 text-cyan-200 hover:shadow-[0_0_14px_rgba(34,211,238,0.25)]">Refresh</button>
-                <a href={`/api/patches${routeFilter?`?route=${encodeURIComponent(routeFilter)}`:''}&format=csv&download=1`} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-gray-200 hover:bg-white/10">Export CSV</a>
-                <a href={`/api/patches${routeFilter?`?route=${encodeURIComponent(routeFilter)}`:''}&download=1`} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-gray-200 hover:bg-white/10">Export JSON</a>
-                <a target="_blank" rel="noreferrer" href={`/api/patches${routeFilter?`?route=${encodeURIComponent(routeFilter)}`:''}&format=rss`} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-cyan-200 hover:bg-white/10 underline decoration-cyan-400/40">RSS</a>
+                <a href={`/api/patches${routeFilter?`?route=${encodeURIComponent(routeFilter)}&`:"?"}format=csv&download=1`} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-gray-200 hover:bg-white/10">Export CSV</a>
+                <a href={`/api/patches${routeFilter?`?route=${encodeURIComponent(routeFilter)}&`:"?"}download=1`} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-gray-200 hover:bg-white/10">Export JSON</a>
+                <a target="_blank" rel="noreferrer" href={`/api/patches${routeFilter?`?route=${encodeURIComponent(routeFilter)}&`:"?"}format=rss`} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-cyan-200 hover:bg-white/10 underline decoration-cyan-400/40">RSS</a>
                 <button onClick={() => { try { navigator.clipboard.writeText(window.location.href); } catch {} }} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-gray-200 hover:bg-white/10">Copy Link</button>
                 <a href="/ai" className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-cyan-200 hover:bg-white/10 underline decoration-cyan-400/40">Back to AI</a>
               </div>
