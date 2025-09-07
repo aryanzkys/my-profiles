@@ -1,0 +1,56 @@
+{
+  "title": "Privacy Policy — Aryan’s AI Assistant",
+  "link": "/ai-privacy",
+  "last_updated": "September 2025",
+  "consent_note": "By continuing to use and interact with this website (including the chatbot and Spotify features), you acknowledge and agree to this Privacy Policy.",
+  "collected_data": [
+    {
+      "name": "Chat Messages",
+      "details": "Your prompts and AI responses are processed to generate answers. Some interactions may be minimally logged for quality and abuse prevention."
+    },
+    {
+      "name": "Spotify Integration",
+      "details": "If you connect Spotify, your access token is stored only in your browser (never on Aryan’s server). Search and previews go through a secure proxy."
+    },
+    {
+      "name": "Usage Data",
+      "details": "Basic, aggregate analytics (e.g., visits, feature usage) may be collected to improve the experience."
+    }
+  ],
+  "usage": [
+    "Provide accurate, helpful AI responses and core features.",
+    "Improve safety, reliability, and UX of the AI Assistant.",
+    "Enable Spotify search and audio previews when connected."
+  ],
+  "storage_security": [
+    "Chat history persists locally in your browser and can be cleared any time.",
+    "Spotify tokens/preferences are kept in localStorage (client-side only).",
+    "All communications with APIs use HTTPS transport encryption."
+  ],
+  "controls": {
+    "quick_actions": [
+      "Clear Chat History",
+      "Disconnect Spotify",
+      "Clear Spotify Data"
+    ],
+    "in_chat": [
+      "Use the chat header ‘Clear chat’ button at any time."
+    ],
+    "local_storage_keys": [
+      "aryan-chatbot-history-v1",
+      "aryan-chatbot-hint-v1",
+      "spotify_token_v1",
+      "spotify_last_embed_url_v1",
+      "spotify_recent_queries_v1",
+      "spotify_preview_only_filter_v1"
+    ],
+    "contact": "prayogoaryan63@gmail.com"
+  },
+  "third_parties": [
+    {
+      "name": "Spotify",
+      "note": "Used for search and 30s previews when connected. Spotify’s own terms and privacy policy apply in addition to this page."
+    }
+  ],
+  "changes": "This policy may be updated periodically. Significant changes will be announced on the AI Pages. Continued use after updates means acceptance."
+}

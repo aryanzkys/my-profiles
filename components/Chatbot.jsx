@@ -9,6 +9,7 @@ import organizations from '../data/organizations.json';
 import about from '../data/about.json';
 import contact from '../data/contact.json';
 import siteFeatures from '../data/site_features.json';
+import aiPrivacy from '../data/ai_privacy.json';
 
 const SERVER_PROXY_PATHS = [
   '/.netlify/functions/gemini-chat',
@@ -591,6 +592,58 @@ function buildProfilePrompt() {
       }
     } catch {}
     if (lines.length) parts.push('\nPROFILE — Site Features (UI/UX Guide):\n' + lines.join('\n'));
+  }
+
+  // Privacy Policy (AI Pages)
+  if (aiPrivacy && typeof aiPrivacy === 'object') {
+    const lines = [];
+    try {
+      if (aiPrivacy.title) lines.push(`Title: ${aiPrivacy.title}`);
+      if (aiPrivacy.link) lines.push(`Link: ${aiPrivacy.link}`);
+      if (aiPrivacy.last_updated) lines.push(`Last Updated: ${aiPrivacy.last_updated}`);
+      if (aiPrivacy.consent_note) lines.push(`Consent: ${aiPrivacy.consent_note}`);
+      if (Array.isArray(aiPrivacy.collected_data) && aiPrivacy.collected_data.length) {
+        lines.push('What Data is Collected:');
+        aiPrivacy.collected_data.forEach(d => {
+          if (!d) return; const name = d.name || 'Data'; const details = d.details || '';
+          lines.push(`- ${name}: ${details}`);
+        });
+      }
+      if (Array.isArray(aiPrivacy.usage) && aiPrivacy.usage.length) {
+        lines.push('How Data is Used:');
+        aiPrivacy.usage.forEach(u => lines.push(`- ${u}`));
+      }
+      if (Array.isArray(aiPrivacy.storage_security) && aiPrivacy.storage_security.length) {
+        lines.push('Storage & Security:');
+        aiPrivacy.storage_security.forEach(s => lines.push(`- ${s}`));
+      }
+      if (aiPrivacy.controls && typeof aiPrivacy.controls === 'object') {
+        lines.push('Your Choices & Controls:');
+        const c = aiPrivacy.controls;
+        if (Array.isArray(c.quick_actions) && c.quick_actions.length) {
+          lines.push('- Quick Actions:');
+          c.quick_actions.forEach(a => lines.push(`  • ${a}`));
+        }
+        if (Array.isArray(c.in_chat) && c.in_chat.length) {
+          lines.push('- In-Chat:');
+          c.in_chat.forEach(a => lines.push(`  • ${a}`));
+        }
+        if (Array.isArray(c.local_storage_keys) && c.local_storage_keys.length) {
+          lines.push('- Local Storage Keys:');
+          c.local_storage_keys.forEach(k => lines.push(`  • ${k}`));
+        }
+        if (c.contact) lines.push(`- Contact: ${c.contact}`);
+      }
+      if (Array.isArray(aiPrivacy.third_parties) && aiPrivacy.third_parties.length) {
+        lines.push('Third-Party Services:');
+        aiPrivacy.third_parties.forEach(tp => {
+          if (!tp) return; const name = tp.name || 'Service'; const note = tp.note ? ` — ${tp.note}` : '';
+          lines.push(`- ${name}${note}`);
+        });
+      }
+      if (aiPrivacy.changes) lines.push(`Changes: ${aiPrivacy.changes}`);
+    } catch {}
+    if (lines.length) parts.push('\nPROFILE — AI Privacy Policy:\n' + lines.join('\n'));
   }
 
   parts.push('\nGuidelines: Keep answers short and helpful. If asked about navigating the site or using features (e.g., Spotify section, performance modes, messaging Aryan), explain steps clearly and reference the sections above. If asked “Who is Aryan?” provide a brief intro using the profile. Use accessible formatting (e.g., headings, bold, lists) when it helps readability.');
