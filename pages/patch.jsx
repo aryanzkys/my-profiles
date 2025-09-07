@@ -30,10 +30,23 @@ export default function PatchPage() {
     setLoading(true); setError('');
     try {
       const param = routeFilter ? `?route=${encodeURIComponent(routeFilter)}` : '';
-      const r = await fetch(`/api/patches${param}`, { cache: 'no-store' });
-      const j = await r.json();
-      if (!r.ok) throw new Error(j?.error || 'HTTP ' + r.status);
-      setData(j);
+      const endpoints = [
+        `/api/patches${param}`,
+        `/.netlify/functions/patches${param}`,
+        `/data/patches.json`
+      ];
+      let ok = false, lastErr = '';
+      for (const url of endpoints) {
+        try {
+          const r = await fetch(url, { cache: 'no-store' });
+          const isJSON = url.endsWith('.json') || (r.headers.get('content-type')||'').includes('application/json');
+          const j = isJSON ? await r.json() : await r.json();
+          if (!r.ok) throw new Error(j?.error || 'HTTP ' + r.status);
+          setData(j);
+          ok = true; break;
+        } catch (e) { lastErr = e?.message || String(e); }
+      }
+      if (!ok) throw new Error(lastErr || 'All endpoints failed');
     } catch (e) {
       setError(String(e?.message || e));
     } finally {
@@ -112,6 +125,9 @@ export default function PatchPage() {
               {!loading && <Badge>{(data.patches || []).length} patches</Badge>}
               {data?.meta?.last_generated && <span className="ml-auto text-xs text-gray-400">Updated: {new Date(data.meta.last_generated).toLocaleString()}</span>}
             </div>
+            {error && (
+              <div className="px-4 py-2 text-xs text-rose-300 border-b border-white/10">{error} — showing latest available data.</div>
+            )}
             <div className="px-4 py-3 flex flex-col md:flex-row gap-2 md:items-end">
               <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
                 <div>

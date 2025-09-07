@@ -1,28 +1,23 @@
-import { generatePatches } from '../../lib/generatePatches';
-import fs from 'fs';
-import path from 'path';
+'use strict';
+const { generatePatches } = require('../../lib/generatePatches');
+const fs = require('fs');
+const path = require('path');
 
 function toCSV(patches) {
-  const esc = (v) => '"' + String(v ?? '')
-    .replace(/"/g, '""')
-    .replace(/\r?\n/g, ' ') + '"';
+  const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ') + '"';
   const header = ['number','commit','date','author','message','routes','changed_count','changed_detail'];
   const rows = [header.join(',')];
   for (const p of patches) {
     const routes = (p.routes || []).join('; ');
     const changed = (p.changed || []).map(c => `${c.status} ${c.path}`).join('; ');
-    const row = [p.number, p.commit, p.date, p.author, p.message, routes, (p.changed||[]).length, changed].map(esc).join(',');
-    rows.push(row);
+    rows.push([p.number,p.commit,p.date,p.author,p.message,routes,(p.changed||[]).length,changed].map(esc).join(','));
   }
   return rows.join('\r\n');
 }
 
-function toRSS(req, patches, route) {
-  const host = req.headers['x-forwarded-host'] || req.headers.host || '';
-  const proto = req.headers['x-forwarded-proto'] || (host ? 'https' : 'http');
-  const base = host ? `${proto}://${host}` : '';
+function toRSS(baseUrl, patches, route) {
   const title = route ? `Patch feed — ${route}` : 'Patch feed — All routes';
-  const link = `${base}/patch${route ? `?route=${encodeURIComponent(route)}` : ''}`;
+  const link = `${baseUrl}/patch${route ? `?route=${encodeURIComponent(route)}` : ''}`;
   const desc = route ? `Recent page changes for ${route}` : 'Recent page changes for all routes';
   const items = [...(patches||[])].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,100).map(p => {
     const itemLink = `https://github.com/aryanzkys/my-profiles/commit/${p.commit}`;
@@ -32,43 +27,42 @@ function toRSS(req, patches, route) {
   return `<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\">\n  <channel>\n    <title><![CDATA[${title}]]></title>\n    <link>${link}</link>\n    <description><![CDATA[${desc}]]></description>\n    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>${items}\n  </channel>\n</rss>`;
 }
 
-export default function handler(req, res) {
+exports.handler = async (event, context) => {
   try {
+    const qs = event.queryStringParameters || {};
+    const route = typeof qs.route === 'string' ? qs.route : '';
+    const format = typeof qs.format === 'string' ? qs.format : '';
+    const download = qs.download === '1' || qs.download === 'true';
+
     let data;
     try {
       data = generatePatches({ repoRoot: process.cwd() });
     } catch (e) {
-      // Fallback in environments where git is unavailable (e.g., serverless runtime)
       const dataPath = path.join(process.cwd(), 'data', 'patches.json');
       const raw = fs.readFileSync(dataPath, 'utf8');
       data = JSON.parse(raw);
     }
-    const { route, format, download } = req.query || {};
+
     let out = data;
-    if (typeof route === 'string' && route) {
-      out = {
-        meta: data.meta,
-        patches: (data.patches || []).filter(p => Array.isArray(p.routes) && p.routes.includes(route))
-      };
+    if (route) {
+      out = { meta: data.meta, patches: (data.patches || []).filter(p => Array.isArray(p.routes) && p.routes.includes(route)) };
     }
-    res.setHeader('Cache-Control', 'no-store');
+
+    const host = event.headers['x-forwarded-host'] || event.headers.host || '';
+    const proto = event.headers['x-forwarded-proto'] || (host ? 'https' : 'http');
+    const baseUrl = host ? `${proto}://${host}` : '';
+
     if (format === 'csv') {
       const csv = toCSV(out.patches || []);
-      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-      if (download === '1' || download === 'true') res.setHeader('Content-Disposition', 'attachment; filename="patches.csv"');
-      return res.status(200).send(csv);
+      return { statusCode: 200, headers: { 'Content-Type': 'text/csv; charset=utf-8', ...(download ? { 'Content-Disposition': 'attachment; filename="patches.csv"' } : {}) }, body: csv };
     }
     if (format === 'rss') {
-      const rss = toRSS(req, out.patches || [], typeof route === 'string' ? route : '');
-      res.setHeader('Content-Type', 'application/rss+xml; charset=utf-8');
-      return res.status(200).send(rss);
+      const rss = toRSS(baseUrl, out.patches || [], route);
+      return { statusCode: 200, headers: { 'Content-Type': 'application/rss+xml; charset=utf-8' }, body: rss };
     }
-    if (download === '1' || download === 'true') {
-      res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Content-Disposition', 'attachment; filename="patches.json"');
-    }
-    return res.status(200).json(out);
+    const body = JSON.stringify(out);
+    return { statusCode: 200, headers: { 'Content-Type': 'application/json', ...(download ? { 'Content-Disposition': 'attachment; filename="patches.json"' } : {}) }, body };
   } catch (e) {
-    res.status(500).json({ error: 'Failed to generate patches', details: String(e && e.message || e) });
+    return { statusCode: 500, body: JSON.stringify({ error: 'Failed to generate patches', details: String(e && e.message || e) }) };
   }
-}
+};
