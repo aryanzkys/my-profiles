@@ -142,6 +142,9 @@ export default function PatchPage() {
               </div>
               <div className="flex items-center gap-2 ml-auto">
                 <button onClick={refresh} className="text-xs px-3 py-1.5 rounded-lg border border-cyan-400/30 bg-cyan-500/15 text-cyan-200 hover:shadow-[0_0_14px_rgba(34,211,238,0.25)]">Refresh</button>
+                <a href={`/api/patches${routeFilter?`?route=${encodeURIComponent(routeFilter)}`:''}&format=csv&download=1`} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-gray-200 hover:bg-white/10">Export CSV</a>
+                <a href={`/api/patches${routeFilter?`?route=${encodeURIComponent(routeFilter)}`:''}&download=1`} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-gray-200 hover:bg-white/10">Export JSON</a>
+                <a target="_blank" rel="noreferrer" href={`/api/patches${routeFilter?`?route=${encodeURIComponent(routeFilter)}`:''}&format=rss`} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-cyan-200 hover:bg-white/10 underline decoration-cyan-400/40">RSS</a>
                 <button onClick={() => { try { navigator.clipboard.writeText(window.location.href); } catch {} }} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-gray-200 hover:bg-white/10">Copy Link</button>
                 <a href="/ai" className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-cyan-200 hover:bg-white/10 underline decoration-cyan-400/40">Back to AI</a>
               </div>
