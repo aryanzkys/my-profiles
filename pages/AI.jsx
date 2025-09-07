@@ -125,6 +125,17 @@ export default function AIPage() {
             <SpotifySection />
           </div>
         </div>
+        {/* Privacy Policy link for AI Pages */}
+        <div className="mt-10 mb-6 flex justify-center">
+          <a
+            href="/ai-privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs md:text-sm text-cyan-300 underline hover:text-cyan-200 transition"
+          >
+            Privacy Policy for Aryan’s AI Assistant
+          </a>
+        </div>
       </main>
       {/* Elegant shining RGB title styles */}
       <style jsx>{`
