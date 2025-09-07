@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -15,6 +16,7 @@ function RouteBadge({ route }) {
 }
 
 export default function PatchPage() {
+  const router = useRouter();
   const [data, setData] = useState({ meta: {}, patches: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -27,7 +29,8 @@ export default function PatchPage() {
   const refresh = async () => {
     setLoading(true); setError('');
     try {
-      const r = await fetch('/api/patches', { cache: 'no-store' });
+      const param = routeFilter ? `?route=${encodeURIComponent(routeFilter)}` : '';
+      const r = await fetch(`/api/patches${param}`, { cache: 'no-store' });
       const j = await r.json();
       if (!r.ok) throw new Error(j?.error || 'HTTP ' + r.status);
       setData(j);
@@ -39,6 +42,30 @@ export default function PatchPage() {
   };
 
   useEffect(() => { refresh(); }, []);
+
+  // Initialize filters from query string (per-route feed support)
+  useEffect(() => {
+    if (!router.isReady) return;
+    const { route: r, author, q, since: s, until: u } = router.query || {};
+    if (typeof r === 'string') setRouteFilter(r);
+    if (typeof author === 'string') setAuthorFilter(author);
+    if (typeof q === 'string') setQuery(q);
+    if (typeof s === 'string') setSince(s);
+    if (typeof u === 'string') setUntil(u);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.isReady]);
+
+  // Keep URL in sync with filters (shallow)
+  useEffect(() => {
+    if (!router.isReady) return;
+    const q = {};
+    if (routeFilter) q.route = routeFilter;
+    if (authorFilter) q.author = authorFilter;
+    if (query) q.q = query;
+    if (since) q.since = since;
+    if (until) q.until = until;
+    router.replace({ pathname: '/patch', query: q }, undefined, { shallow: true });
+  }, [routeFilter, authorFilter, query, since, until]);
 
   const routes = useMemo(() => {
     const s = new Set();
@@ -115,6 +142,7 @@ export default function PatchPage() {
               </div>
               <div className="flex items-center gap-2 ml-auto">
                 <button onClick={refresh} className="text-xs px-3 py-1.5 rounded-lg border border-cyan-400/30 bg-cyan-500/15 text-cyan-200 hover:shadow-[0_0_14px_rgba(34,211,238,0.25)]">Refresh</button>
+                <button onClick={() => { try { navigator.clipboard.writeText(window.location.href); } catch {} }} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-gray-200 hover:bg-white/10">Copy Link</button>
                 <a href="/ai" className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-cyan-200 hover:bg-white/10 underline decoration-cyan-400/40">Back to AI</a>
               </div>
             </div>
