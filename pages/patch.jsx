@@ -2,6 +2,8 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+// Bundled fallback: use local data if all endpoints fail
+import bundledData from '../data/patches.json';
 
 function Badge({ children }) {
   return (
@@ -21,6 +23,7 @@ export default function PatchPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [source, setSource] = useState('');
+  const [attempts, setAttempts] = useState([]);
   const [query, setQuery] = useState('');
   const [routeFilter, setRouteFilter] = useState('');
   const [authorFilter, setAuthorFilter] = useState('');
@@ -28,7 +31,7 @@ export default function PatchPage() {
   const [until, setUntil] = useState('');
 
   const refresh = async () => {
-    setLoading(true); setError('');
+    setLoading(true); setError(''); setAttempts([]);
     try {
       const param = routeFilter ? `?route=${encodeURIComponent(routeFilter)}` : '';
       const endpoints = [
@@ -37,18 +40,44 @@ export default function PatchPage() {
         { url: `/patches.json`, label: 'Static' },
       ];
       let ok = false, lastErr = '';
+      const log = [];
       for (const ep of endpoints) {
         try {
           const r = await fetch(ep.url, { cache: 'no-store' });
-          const isJSON = ep.url.endsWith('.json') || (r.headers.get('content-type')||'').includes('application/json');
-          const j = isJSON ? await r.json() : await r.json();
-          if (!r.ok) throw new Error(j?.error || 'HTTP ' + r.status);
+          const ct = (r.headers.get('content-type') || '').split(';')[0].trim();
+          if (!r.ok) {
+            const t = await r.text();
+            throw new Error(`HTTP ${r.status} ${r.statusText || ''}${t ? ` — ${t.slice(0, 200)}` : ''}`.trim());
+          }
+          if (!(ct.includes('application/json') || ep.url.endsWith('.json'))) {
+            const t = await r.text();
+            throw new Error(`Non-JSON response (${ct || 'unknown'}) — ${t.slice(0, 120)}`);
+          }
+          const j = await r.json();
           setData(j);
           setSource(ep.label);
+          log.push({ label: ep.label, url: ep.url, ok: true });
+          setAttempts([...log]);
           ok = true; break;
-        } catch (e) { lastErr = e?.message || String(e); }
+        } catch (e) {
+          lastErr = e?.message || String(e);
+          log.push({ label: ep.label, url: ep.url, ok: false, error: lastErr });
+          setAttempts([...log]);
+        }
       }
-      if (!ok) throw new Error(lastErr || 'All endpoints failed');
+      if (!ok) {
+        // Final fallback to bundled data
+        try {
+          const local = bundledData && typeof bundledData === 'object' ? bundledData : { meta: {}, patches: [] };
+          setData(local);
+          setSource('Bundled');
+          log.push({ label: 'Bundled', url: 'local import', ok: true });
+          setAttempts([...log]);
+          throw new Error((lastErr ? `${lastErr} — ` : '') + 'All endpoints failed; using bundled fallback');
+        } catch (e) {
+          throw new Error(lastErr || 'All endpoints failed');
+        }
+      }
     } catch (e) {
       setError(String(e?.message || e));
     } finally {
@@ -57,6 +86,8 @@ export default function PatchPage() {
   };
 
   useEffect(() => { refresh(); }, []);
+  // Re-fetch when the route filter changes to leverage server-side filtering when available
+  useEffect(() => { if (router.isReady) refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [routeFilter]);
 
   // Initialize filters from query string (per-route feed support)
   useEffect(() => {
@@ -132,6 +163,21 @@ export default function PatchPage() {
             )}
             {!error && source && (
               <div className="px-4 py-2 text-xs text-cyan-300 border-b border-white/10">Source: {source}</div>
+            )}
+            {attempts.length > 0 && (
+              <details className="px-4 py-2 text-xs border-b border-white/10 text-gray-300">
+                <summary className="cursor-pointer text-gray-400">Endpoint diagnostics</summary>
+                <ul className="mt-1 space-y-1">
+                  {attempts.map((a, i) => (
+                    <li key={i} className="break-words">
+                      <span className={a.ok ? 'text-emerald-300' : 'text-rose-300'}>{a.label}</span>
+                      <span className="text-gray-500"> — </span>
+                      <span className="text-gray-300">{a.url}</span>
+                      {!a.ok && a.error ? <span className="text-gray-500"> — {a.error}</span> : null}
+                    </li>
+                  ))}
+                </ul>
+              </details>
             )}
             <div className="px-4 py-3 flex flex-col md:flex-row gap-2 md:items-end">
               <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
