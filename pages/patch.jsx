@@ -30,6 +30,81 @@ export default function PatchPage() {
   const [since, setSince] = useState('');
   const [until, setUntil] = useState('');
 
+  // Helpers for export/downloads
+  const toCSV = (patches) => {
+    const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ') + '"';
+    const header = ['number','commit','date','author','message','routes','changed_count','changed_detail'];
+    const rows = [header.join(',')];
+    for (const p of patches || []) {
+      const routes = (p.routes || []).join('; ');
+      const changed = (p.changed || []).map(c => `${c.status} ${c.path}`).join('; ');
+      rows.push([p.number, p.commit, p.date, p.author, p.message, routes, (p.changed||[]).length, changed].map(esc).join(','));
+    }
+    return rows.join('\r\n');
+  };
+
+  const toRSS = (patches, route) => {
+    const base = typeof window !== 'undefined' ? window.location.origin : '';
+    const title = route ? `Patch feed — ${route}` : 'Patch feed — All routes';
+    const link = `${base}/patch${route ? `?route=${encodeURIComponent(route)}` : ''}`;
+    const desc = route ? `Recent page changes for ${route}` : 'Recent page changes for all routes';
+    const items = [...(patches||[])].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,100).map(p => {
+      const itemLink = `https://github.com/aryanzkys/my-profiles/commit/${p.commit}`;
+      const itDesc = `${p.author} — Routes: ${(p.routes||[]).join(', ')} — Changed: ${(p.changed||[]).length} files`;
+      return `\n    <item>\n      <title><![CDATA[#${p.number}: ${p.message || 'No message'}]]></title>\n      <link>${itemLink}</link>\n      <guid isPermaLink=\"false\">${p.commit}</guid>\n      <pubDate>${new Date(p.date).toUTCString()}</pubDate>\n      <description><![CDATA[${itDesc}]]></description>\n    </item>`;
+    }).join('');
+    return `<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\">\n  <channel>\n    <title><![CDATA[${title}]]></title>\n    <link>${link}</link>\n    <description><![CDATA[${desc}]]></description>\n    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>${items}\n  </channel>\n</rss>`;
+  };
+
+  const downloadBlob = (content, filename, type) => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+  };
+
+  const tryDownload = async (format) => {
+    const param = routeFilter ? `?route=${encodeURIComponent(routeFilter)}` : '';
+    const endpoints = [
+      { url: `/api/patches${param}${param ? '&' : '?'}format=${format}`, label: 'API' },
+      { url: `/.netlify/functions/patches${param}${param ? '&' : '?'}format=${format}`, label: 'Function' },
+    ];
+    const expectedType = format === 'csv' ? 'text/csv' : (format === 'rss' ? 'application/rss+xml' : 'application/json');
+    for (const ep of endpoints) {
+      try {
+        const r = await fetch(ep.url, { cache: 'no-store' });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const ct = (r.headers.get('content-type') || '').split(';')[0].trim();
+        const body = await (format === 'json' ? r.json().then(x=>JSON.stringify(x, null, 2)) : r.text());
+        // Be lenient on ct for RSS; some hosts may return text/xml or text/plain
+        const type = format === 'csv' ? 'text/csv;charset=utf-8' : (format === 'rss' ? 'application/rss+xml;charset=utf-8' : 'application/json;charset=utf-8');
+        downloadBlob(body, `patches.${format === 'json' ? 'json' : format}`, type);
+        setError('');
+        return true;
+      } catch (e) {
+        // continue to next endpoint
+      }
+    }
+    // Client-side fallback
+    const patches = filtered.length ? filtered : (data.patches || []);
+    if (format === 'csv') {
+      downloadBlob(toCSV(patches), 'patches.csv', 'text/csv;charset=utf-8');
+      return true;
+    }
+    if (format === 'json') {
+      const out = JSON.stringify({ meta: data.meta || {}, patches }, null, 2);
+      downloadBlob(out, 'patches.json', 'application/json;charset=utf-8');
+      return true;
+    }
+    if (format === 'rss') {
+      const rss = toRSS(patches, routeFilter);
+      downloadBlob(rss, 'patches.rss', 'application/rss+xml;charset=utf-8');
+      return true;
+    }
+    return false;
+  };
+
   const refresh = async () => {
     setLoading(true); setError(''); setAttempts([]);
     try {
@@ -209,10 +284,10 @@ export default function PatchPage() {
               </div>
               <div className="flex items-center gap-2 ml-auto">
                 <button onClick={refresh} className="text-xs px-3 py-1.5 rounded-lg border border-cyan-400/30 bg-cyan-500/15 text-cyan-200 hover:shadow-[0_0_14px_rgba(34,211,238,0.25)]">Refresh</button>
-                <a href={`/api/patches${routeFilter?`?route=${encodeURIComponent(routeFilter)}&`:"?"}format=csv&download=1`} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-gray-200 hover:bg-white/10">Export CSV</a>
-                <a href={`/api/patches${routeFilter?`?route=${encodeURIComponent(routeFilter)}&`:"?"}download=1`} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-gray-200 hover:bg-white/10">Export JSON</a>
-                <a target="_blank" rel="noreferrer" href={`/api/patches${routeFilter?`?route=${encodeURIComponent(routeFilter)}&`:"?"}format=rss`} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-cyan-200 hover:bg-white/10 underline decoration-cyan-400/40">RSS</a>
-                <button onClick={() => { try { navigator.clipboard.writeText(window.location.href); } catch {} }} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-gray-200 hover:bg-white/10">Copy Link</button>
+                <button onClick={() => tryDownload('csv')} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-gray-200 hover:bg-white/10">Export CSV</button>
+                <button onClick={() => tryDownload('json')} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-gray-200 hover:bg-white/10">Export JSON</button>
+                <button onClick={() => tryDownload('rss')} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-cyan-200 hover:bg-white/10 underline decoration-cyan-400/40">RSS</button>
+                <button onClick={() => { try { navigator.clipboard.writeText(window.location.href); } catch { try { const el = document.createElement('input'); el.value = window.location.href; document.body.appendChild(el); el.select(); document.execCommand('copy'); el.remove(); } catch {} } }} className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-gray-200 hover:bg-white/10">Copy Link</button>
                 <a href="/ai" className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-cyan-200 hover:bg-white/10 underline decoration-cyan-400/40">Back to AI</a>
               </div>
             </div>
