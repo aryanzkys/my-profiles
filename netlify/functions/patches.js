@@ -34,23 +34,36 @@ exports.handler = async (event, context) => {
     const format = typeof qs.format === 'string' ? qs.format : '';
     const download = qs.download === '1' || qs.download === 'true';
 
+    // Build base URL for potential static fetch fallback
+    const host = event.headers['x-forwarded-host'] || event.headers.host || '';
+    const proto = event.headers['x-forwarded-proto'] || (host ? 'https' : 'http');
+    const baseUrl = host ? `${proto}://${host}` : '';
+
     let data;
     try {
       data = generatePatches({ repoRoot: process.cwd() });
     } catch (e) {
-      const dataPath = path.join(process.cwd(), 'data', 'patches.json');
-      const raw = fs.readFileSync(dataPath, 'utf8');
-      data = JSON.parse(raw);
+      // Prefer a bundled JSON fallback to avoid filesystem path issues in serverless
+      try {
+        // eslint-disable-next-line import/no-dynamic-require, global-require
+        data = require('../../data/patches.json');
+      } catch (e2) {
+        // Final fallback: fetch the public static JSON from the deployed site
+        const resp = await fetch(`${baseUrl}/patches.json`, { cache: 'no-store' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
+        const ct = (resp.headers.get('content-type') || '').split(';')[0].trim();
+        if (!ct.includes('application/json')) {
+          const t = await resp.text();
+          throw new Error(`Non-JSON static response (${ct || 'unknown'}) — ${t.slice(0, 120)}`);
+        }
+        data = await resp.json();
+      }
     }
 
     let out = data;
     if (route) {
       out = { meta: data.meta, patches: (data.patches || []).filter(p => Array.isArray(p.routes) && p.routes.includes(route)) };
     }
-
-    const host = event.headers['x-forwarded-host'] || event.headers.host || '';
-    const proto = event.headers['x-forwarded-proto'] || (host ? 'https' : 'http');
-    const baseUrl = host ? `${proto}://${host}` : '';
 
     if (format === 'csv') {
       const csv = toCSV(out.patches || []);

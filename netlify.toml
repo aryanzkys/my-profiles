@@ -11,3 +11,8 @@
 
 [[plugins]]
   package = "netlify-plugin-cache-nextjs"
+
+[[redirects]]
+  from = "/api/patches"
+  to = "/.netlify/functions/patches"
+  status = 200
