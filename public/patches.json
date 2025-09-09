@@ -1,6 +1,6 @@
 {
   "meta": {
-    "last_generated": "2025-09-07T14:17:30.443Z"
+    "last_generated": "2025-09-09T14:53:59.640Z"
   },
   "patches": [
     {
@@ -896,6 +896,23 @@
       "date": "2025-09-07T14:11:58.000Z",
       "author": "Aryan <prayogoaryan63@example.com>",
       "message": "fix: patch resilient fetch + diagnostics",
+      "routes": [
+        "/patch"
+      ],
+      "changed": [
+        {
+          "path": "pages/patch.jsx",
+          "status": "M",
+          "route": "/patch"
+        }
+      ]
+    },
+    {
+      "number": 51,
+      "commit": "d0dc6a22c7a3c305342f1499ba95578f9a9c0b59",
+      "date": "2025-09-07T14:18:32.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "fix(patch): export buttons use endpoint fallbacks + client-side CSV/JSON/RSS; better Copy Link fallback",
       "routes": [
         "/patch"
       ],

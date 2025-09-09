@@ -1,8 +1,9 @@
 import dynamic from 'next/dynamic';
 import Head from 'next/head';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import ParticleField from '../components/ParticleField';
+import aiPrivacy from '../data/ai_privacy.json';
 
 const Chatbot = dynamic(() => import('../components/Chatbot'), { ssr: false });
 const SpotifySection = dynamic(() => import('../components/SpotifySection'), { ssr: false });
@@ -12,12 +13,31 @@ export default function AIPage() {
   const cardRef = useRef(null);
   const [isMobile, setIsMobile] = useState(false);
   const headerRef = useRef(null);
+  // Consent gating
+  const [consentLoaded, setConsentLoaded] = useState(false);
+  const [consented, setConsented] = useState(false);
+  const [agree, setAgree] = useState(false);
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 768);
     onResize();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Load consent from localStorage (versioned by last_updated from policy)
+  useEffect(() => {
+    try {
+      const v = aiPrivacy?.last_updated || 'v1';
+      const raw = typeof window !== 'undefined' ? window.localStorage.getItem('aryan-ai-privacy-consent') : null;
+      if (raw) {
+        const obj = JSON.parse(raw);
+        if (obj && obj.version === v) {
+          setConsented(true);
+        }
+      }
+    } catch {}
+    setConsentLoaded(true);
   }, []);
 
   const handleTilt = (e) => {
@@ -125,17 +145,64 @@ export default function AIPage() {
             <SpotifySection />
           </div>
         </div>
-      {/* Privacy notice link for AI Pages */}
-        <div className="mt-10 mb-6 flex justify-center">
-          <a
-            href="/ai-privacy"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs md:text-sm text-cyan-300 underline hover:text-cyan-200 transition"
-          >
-        By interacting with this site, you agree to our Privacy Policy
-          </a>
-        </div>
+        {/* Full-screen consent modal overlay */}
+        <AnimatePresence>
+          {consentLoaded && !consented && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+              aria-modal="true"
+              role="dialog"
+            >
+              {/* glow background accents */}
+              <div className="absolute -top-32 right-[-10%] h-[60vh] w-[60vh] rounded-full blur-[110px] opacity-40" style={{ background: 'radial-gradient(50% 50% at 50% 50%, rgba(34,211,238,0.22) 0%, rgba(0,0,0,0) 70%)' }} />
+              <div className="absolute bottom-[-20%] left-[-10%] h-[70vh] w-[70vh] rounded-full blur-[120px] opacity-40" style={{ background: 'radial-gradient(50% 50% at 50% 50%, rgba(59,130,246,0.18) 0%, rgba(0,0,0,0) 70%)' }} />
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 10, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+                className="relative mx-4 w-full max-w-lg rounded-2xl border border-white/15 bg-[#0a0f14]/95 shadow-[0_0_40px_rgba(34,211,238,0.25)]"
+              >
+                <div className="px-5 py-4 border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent flex items-center gap-3">
+                  <h2 className="text-lg md:text-xl font-semibold text-cyan-300">Before you use Aryan’s AI Assistant</h2>
+                </div>
+                <div className="px-5 py-4 space-y-3 text-sm text-gray-200">
+                  <p className="text-gray-300">To continue, please review and agree to the AI Privacy Policy. This explains what data may be used and how you can control it.</p>
+                  <ul className="list-disc pl-5 text-gray-300 text-[13px] space-y-1">
+                    <li>Chat history is stored locally in your browser and can be cleared anytime.</li>
+                    <li>Spotify (if connected) stores tokens only in your browser.</li>
+                    <li>Basic usage may be measured to improve the experience.</li>
+                  </ul>
+                  <a href="/ai-privacy" target="_blank" rel="noreferrer" className="inline-flex items-center text-cyan-300 underline decoration-cyan-400/40 hover:text-cyan-200">Read the AI Privacy Policy</a>
+                  <label className="mt-2 flex items-start gap-2 text-[13px]">
+                    <input type="checkbox" checked={agree} onChange={e=>setAgree(e.target.checked)} className="mt-[3px] h-4 w-4 rounded border-white/20 bg-white/5" />
+                    <span>I have read and agree to the AI Privacy Policy.</span>
+                  </label>
+                </div>
+                <div className="px-5 py-4 border-t border-white/10 flex items-center gap-2 justify-end">
+                  <a href="/" className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-gray-200 hover:bg-white/10">Decline</a>
+                  <button
+                    disabled={!agree}
+                    onClick={() => {
+                      try {
+                        const version = aiPrivacy?.last_updated || 'v1';
+                        const payload = { version, accepted: true, ts: new Date().toISOString() };
+                        window.localStorage.setItem('aryan-ai-privacy-consent', JSON.stringify(payload));
+                      } catch {}
+                      setConsented(true);
+                    }}
+                    className={`text-xs px-3 py-1.5 rounded-lg border ${agree ? 'border-cyan-400/30 bg-cyan-500/20 text-cyan-200 hover:shadow-[0_0_14px_rgba(34,211,238,0.35)]' : 'border-white/10 bg-white/5 text-gray-400 cursor-not-allowed'}`}
+                  >
+                    Accept & Continue
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
       {/* Elegant shining RGB title styles */}
       <style jsx>{`
