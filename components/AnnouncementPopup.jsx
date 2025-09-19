@@ -7,7 +7,7 @@ function isMobileOrTablet() {
   return /Mobi|Android|iPhone|iPad|iPod|IEMobile|BlackBerry|Opera Mini/i.test(ua);
 }
 
-export function AnnouncementCard({ ann, onDismiss, preview = false }) {
+export function AnnouncementCard({ ann, onDismiss, preview = false, forceMobile = false }) {
   const version = String(ann?.version || '0');
   const published = ann?.updatedAt ? new Date(ann.updatedAt) : null;
   return (
@@ -15,8 +15,8 @@ export function AnnouncementCard({ ann, onDismiss, preview = false }) {
       role="dialog"
       aria-modal={!preview}
       aria-label="Site announcement"
-      className={`relative z-10 w-full ${preview ? 'max-w-2xl' : (isMobileOrTablet() ? 'max-w-md' : 'max-w-2xl')} rounded-2xl border border-white/10 bg-[#0a0f14]/95 shadow-2xl overflow-hidden`}
-      initial={{ y: preview ? 0 : (isMobileOrTablet() ? 30 : 12), scale: 0.98, opacity: 0 }}
+      className={`relative z-10 w-full ${preview ? (forceMobile ? 'max-w-md' : 'max-w-2xl') : ((forceMobile || isMobileOrTablet()) ? 'max-w-md' : 'max-w-2xl')} rounded-2xl border border-white/10 bg-[#0a0f14]/95 shadow-2xl overflow-hidden`}
+      initial={{ y: preview ? 0 : ((forceMobile || isMobileOrTablet()) ? 30 : 12), scale: 0.98, opacity: 0 }}
       animate={{ y: 0, scale: 1, opacity: 1 }}
       exit={{ y: 10, opacity: 0 }}
       transition={{ type: 'spring', stiffness: 260, damping: 22 }}
@@ -104,7 +104,7 @@ export default function AnnouncementPopup() {
     <AnimatePresence>
       {show && (
         <motion.div
-          className="fixed inset-0 z[70] flex items-center justify-center p-4 pointer-events-auto"
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4 pointer-events-auto"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

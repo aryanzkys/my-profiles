@@ -7,7 +7,6 @@ import { AuthProvider, useAuth } from '../components/AuthProvider';
 import dynamic from 'next/dynamic';
 const { default: _noop } = { default: null };
 const AnnouncementCard = dynamic(() => import('../components/AnnouncementPopup').then(m => ({ default: m.AnnouncementCard })), { ssr: false });
-import dynamic from 'next/dynamic';
 const MessagesAdmin = dynamic(() => import('../components/admin/MessagesAdmin'), { ssr: false });
 const DevSection = dynamic(() => import('../components/AdminPanel/DevSection'), { ssr: false });
 import { useRouter } from 'next/router';
@@ -46,6 +45,7 @@ function AdminInner() {
   // Announcements
   const [ann, setAnn] = useState({ active: false, title: '', message: '', severity: 'info', ctaText: '', ctaUrl: '', version: '1', expiresAt: '', dismissible: true });
   const [annSaving, setAnnSaving] = useState(false);
+  const [annMobilePreview, setAnnMobilePreview] = useState(false);
   // Admin authority
   const [authority, setAuthority] = useState(null); // { canEditSections, canAccessDev, banned }
   const [authzLoading, setAuthzLoading] = useState(true);
@@ -860,9 +860,16 @@ function AdminInner() {
               </div>
               <div className="mt-6">
                 <div className="text-sm text-gray-300 mb-2">Live Preview</div>
-                <div className="max-w-2xl">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs text-gray-400">Preview updates as you type</div>
+                  <label className="inline-flex items-center gap-2 text-xs text-gray-300">
+                    <input type="checkbox" checked={annMobilePreview} onChange={(e)=>setAnnMobilePreview(e.target.checked)} />
+                    Preview as mobile
+                  </label>
+                </div>
+                <div className={annMobilePreview? 'max-w-md' : 'max-w-2xl'}>
                   {/* Preview uses current form state; it does not persist dismissal */}
-                  {AnnouncementCard ? <AnnouncementCard ann={{...ann, updatedAt: ann.updatedAt || new Date().toISOString()}} preview /> : null}
+                  {AnnouncementCard ? <AnnouncementCard ann={{...ann, updatedAt: ann.updatedAt || new Date().toISOString()}} preview forceMobile={annMobilePreview} /> : null}
                 </div>
               </div>
             </section>
