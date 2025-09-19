@@ -21,20 +21,25 @@ exports.handler = async () => {
       const res = await fetch(url, { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, Accept: 'application/json' } });
       if (res.ok) {
         const rows = await res.json();
-        const row = rows?.[0] || {};
-        const out = {
-          active: !!row.active,
-          title: row.title || '',
-          message: row.message || '',
-          severity: row.severity || 'info',
-          ctaText: row.cta_text || '',
-          ctaUrl: row.cta_url || '',
-          version: String(row.version || '0'),
-          updatedAt: row.updated_at || null,
-          expiresAt: row.expires_at || null,
-          dismissible: row.dismissible !== false,
-        };
-        return { statusCode: 200, headers: { 'content-type':'application/json' }, body: JSON.stringify(out) };
+        if (Array.isArray(rows) && rows.length > 0) {
+          const row = rows[0] || {};
+          const out = {
+            active: !!row.active,
+            title: row.title || '',
+            message: row.message || '',
+            severity: row.severity || 'info',
+            ctaText: row.cta_text || '',
+            ctaUrl: row.cta_url || '',
+            version: String(row.version || '0'),
+            updatedAt: row.updated_at || null,
+            expiresAt: row.expires_at || null,
+            dismissible: row.dismissible !== false,
+          };
+          return { statusCode: 200, headers: { 'content-type':'application/json' }, body: JSON.stringify(out) };
+        }
+        // If table exists but is empty, attempt storage fallback
+        const s = await storageRead();
+        if (s) return { statusCode: 200, headers: { 'content-type':'application/json' }, body: JSON.stringify(s) };
       } else {
         const t = await res.text();
         if (res.status === 404 && /Could not find the table/i.test(t)) {

@@ -79,9 +79,8 @@ export default function AnnouncementPopup() {
     try {
       if (!ann || !ann.active) return false;
       const version = String(ann.version || '0');
-      const key = `announcement:dismissed:${version}`;
       if (typeof window !== 'undefined') {
-        if (localStorage.getItem(key) === '1') return false;
+        // Ignore stored dismissal so the popup reappears on refresh as requested
         if (ann.expiresAt) {
           const until = new Date(ann.expiresAt).getTime();
           if (Date.now() > until) return false;
@@ -96,7 +95,7 @@ export default function AnnouncementPopup() {
   if (!show || loading) return null;
   const version = String(ann.version || '0');
   const dismiss = () => {
-    try { if (ann.dismissible !== false) localStorage.setItem(`announcement:dismissed:${version}`, '1'); } catch {}
+    // Do not persist dismissal to localStorage; show again on refresh
     setShow(false);
   };
 
