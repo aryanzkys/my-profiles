@@ -5,7 +5,7 @@ const DATA_DIR = path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'admins.json');
 const SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const OWNER_EMAIL = 'prayogoaryan63@gmail.com';
+const OWNER_EMAIL = (process.env.OWNER_EMAIL || process.env.NEXT_PUBLIC_OWNER_EMAIL || 'prayogoaryan63@gmail.com').toLowerCase();
 
 async function storageRead(bucket = 'app_data', object = 'admins.json') {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
@@ -42,7 +42,7 @@ exports.handler = async () => {
     const raw = fs.readFileSync(DATA_FILE, 'utf8');
     let arr = [];
     try { arr = JSON.parse(raw) || []; } catch { arr = []; }
-    const hasOwner = Array.isArray(arr) && arr.some(r => r && String(r.email || '').toLowerCase() === OWNER_EMAIL);
+  const hasOwner = Array.isArray(arr) && arr.some(r => r && String(r.email || '').toLowerCase() === OWNER_EMAIL);
     const out = hasOwner ? arr : [...arr, { id: OWNER_EMAIL, email: OWNER_EMAIL, displayName: 'Owner', canEditSections: true, canAccessDev: true, banned: false }];
     return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify(out) };
   } catch {

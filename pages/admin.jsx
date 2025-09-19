@@ -44,7 +44,7 @@ function AdminInner() {
   const [authority, setAuthority] = useState(null); // { canEditSections, canAccessDev, banned }
   const [authzLoading, setAuthzLoading] = useState(true);
   const [authzError, setAuthzError] = useState('');
-  const OWNER_EMAIL = 'prayogoaryan63@gmail.com';
+  const OWNER_EMAIL = (process.env.NEXT_PUBLIC_OWNER_EMAIL || 'prayogoaryan63@gmail.com').toLowerCase();
 
   const years = useMemo(() => Object.keys(data).sort((a, b) => Number(b) - Number(a)), [data]);
 
@@ -111,6 +111,13 @@ function AdminInner() {
       if (!user) return;
       setAuthzLoading(true); setAuthzError('');
       try {
+        const email = (user.email || '').toLowerCase();
+        // Owner: grant full access immediately even if backend endpoints fail
+        if (email === OWNER_EMAIL) {
+          setAuthority({ canEditSections: true, canAccessDev: true, banned: false });
+          setAuthzLoading(false);
+          return;
+        }
         const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
         const urls = Array.from(new Set([
           '/.netlify/functions/admins-list',
@@ -123,15 +130,10 @@ function AdminInner() {
           try { const r = await fetch(url); if (r.ok) { data = await r.json(); break; } else lastErr = `HTTP ${r.status}`; } catch (e) { lastErr = e?.message || 'Network'; }
         }
         if (!data) throw new Error(lastErr || 'Failed');
-        const email = (user.email || '').toLowerCase();
         const uid = user.uid;
         // Owner gets full access automatically
-        if (email === OWNER_EMAIL) {
-          setAuthority({ canEditSections: true, canAccessDev: true, banned: false });
-        } else {
-          const row = (Array.isArray(data) ? data : []).find((a) => (uid && a.uid === uid) || (email && a.email && String(a.email).toLowerCase() === email)) || null;
-          setAuthority(row || { canEditSections: false, canAccessDev: false, banned: false });
-        }
+        const row = (Array.isArray(data) ? data : []).find((a) => (uid && a.uid === uid) || (email && a.email && String(a.email).toLowerCase() === email)) || null;
+        setAuthority(row || { canEditSections: false, canAccessDev: false, banned: false });
       } catch (e) { setAuthzError(e?.message || 'Failed to load permissions'); }
       finally { setAuthzLoading(false); }
     })();
@@ -925,7 +927,7 @@ function AdminInner() {
 function AdminGate() {
   const { user, loading, initError } = useAuth();
   const router = useRouter();
-  const OWNER_EMAIL = 'prayogoaryan63@gmail.com';
+  const OWNER_EMAIL = (process.env.NEXT_PUBLIC_OWNER_EMAIL || 'prayogoaryan63@gmail.com').toLowerCase();
   useEffect(() => {
     if (!loading && !user && !initError) router.replace('/login');
   }, [loading, user, initError, router]);
@@ -934,6 +936,9 @@ function AdminGate() {
     (async () => {
       if (!user) return;
       try {
+        const emailLower = (user.email || '').toLowerCase();
+        // Owner is never banned; skip network calls
+        if (emailLower === OWNER_EMAIL) return;
         const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
         const urls = Array.from(new Set([
           '/.netlify/functions/admins-list',
@@ -943,7 +948,7 @@ function AdminGate() {
         ]));
         let data = null;
         for (const url of urls) { try { const r = await fetch(url); if (r.ok) { data = await r.json(); break; } } catch {} }
-        const email = (user.email || '').toLowerCase();
+        const email = emailLower;
         const uid = user.uid;
   const row = (Array.isArray(data)?data:[]).find((a)=> (uid && a.uid===uid) || (email && a.email && String(a.email).toLowerCase()===email));
   if (email !== OWNER_EMAIL && row && row.banned) {

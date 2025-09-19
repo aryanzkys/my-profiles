@@ -19,7 +19,7 @@ export default function DevSection() {
   const [adminsError, setAdminsError] = useState('');
   const [form, setForm] = useState({ uid: '', email: '', displayName: '', canEditSections: true, canAccessDev: true, banned: false });
   const [formBusy, setFormBusy] = useState(false);
-  const OWNER_EMAIL = 'prayogoaryan63@gmail.com';
+  const OWNER_EMAIL = (process.env.NEXT_PUBLIC_OWNER_EMAIL || 'prayogoaryan63@gmail.com').toLowerCase();
   // Owner-only action notifications
   const [ownerNotice, setOwnerNotice] = useState({ show: false, kind: 'loading', text: '' });
   const isOwner = () => {
