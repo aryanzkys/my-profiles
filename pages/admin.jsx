@@ -174,6 +174,13 @@ function AdminInner() {
   useEffect(() => {
     const onKey = (e) => {
       if (!user) return;
+      const ae = document.activeElement;
+      const tag = (ae?.tagName || '').toLowerCase();
+      const typing = (tag === 'input' || tag === 'textarea' || tag === 'select' || ae?.isContentEditable);
+      if (typing) {
+        // Allow Ctrl/Cmd+S to save even when typing, but block other single-key actions
+        if (!(e.ctrlKey || e.metaKey)) return;
+      }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         if (e.shiftKey) {
