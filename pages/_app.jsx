@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 
 const Chatbot = dynamic(() => import('../components/Chatbot'), { ssr: false });
+const AnnouncementPopup = dynamic(() => import('../components/AnnouncementPopup'), { ssr: false });
 
 export default function App({ Component, pageProps }) {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function App({ Component, pageProps }) {
     <PerformanceProvider>
       <DataProvider>
   <Component {...pageProps} />
+  <AnnouncementPopup />
   {!isAdminArea && !isAIPage && <Chatbot />}
       </DataProvider>
     </PerformanceProvider>

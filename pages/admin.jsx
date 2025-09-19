@@ -5,6 +5,9 @@ import educationData from '../data/education.json';
 import orgsData from '../data/organizations.json';
 import { AuthProvider, useAuth } from '../components/AuthProvider';
 import dynamic from 'next/dynamic';
+const { default: _noop } = { default: null };
+const AnnouncementCard = dynamic(() => import('../components/AnnouncementPopup').then(m => ({ default: m.AnnouncementCard })), { ssr: false });
+import dynamic from 'next/dynamic';
 const MessagesAdmin = dynamic(() => import('../components/admin/MessagesAdmin'), { ssr: false });
 const DevSection = dynamic(() => import('../components/AdminPanel/DevSection'), { ssr: false });
 import { useRouter } from 'next/router';
@@ -40,6 +43,9 @@ function AdminInner() {
   const [pwVisible, setPwVisible] = useState({ current: false, next: false, confirm: false });
   const [selected, setSelected] = useState(null);
   const mouseRef = useRef({ x: 0, y: 0 });
+  // Announcements
+  const [ann, setAnn] = useState({ active: false, title: '', message: '', severity: 'info', ctaText: '', ctaUrl: '', version: '1', expiresAt: '', dismissible: true });
+  const [annSaving, setAnnSaving] = useState(false);
   // Admin authority
   const [authority, setAuthority] = useState(null); // { canEditSections, canAccessDev, banned }
   const [authzLoading, setAuthzLoading] = useState(true);
@@ -103,6 +109,25 @@ function AdminInner() {
         } catch {}
       }
     })();
+    // announcement
+    (async () => {
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const urls = Array.from(new Set([
+        '/.netlify/functions/get-announcement',
+        `${basePath}/.netlify/functions/get-announcement`,
+        '/api/get-announcement',
+        `${basePath}/api/get-announcement`,
+      ]));
+      for (const url of urls) {
+        try {
+          const res = await fetch(url, { headers: { accept: 'application/json' } });
+          if (!res.ok) continue;
+          const json = await res.json();
+          setAnn({ active: !!json.active, title: json.title||'', message: json.message||'', severity: json.severity||'info', ctaText: json.ctaText||'', ctaUrl: json.ctaUrl||'', version: String(json.version || '1'), expiresAt: json.expiresAt || '', dismissible: json.dismissible !== false });
+          break;
+        } catch {}
+      }
+    })();
   }, []);
 
   // Load authority for current user
@@ -157,11 +182,17 @@ function AdminInner() {
           if (tab === 'achievements') saveToDb();
           else if (tab === 'education') saveEdu();
           else if (tab === 'organizations') saveOrgs();
+          else if (tab === 'announcements') saveAnnouncement();
           else if (tab === 'admin-profile') onSaveDisplayName();
         }
       }
       if (!e.ctrlKey && !e.metaKey && !e.altKey) {
-        if (e.key.toLowerCase() === 'r') { reloadFromBackend(); }
+        if (e.key.toLowerCase() === 'r') {
+          if (tab === 'achievements') reloadFromBackend();
+          else if (tab === 'education') reloadEducation();
+          else if (tab === 'organizations') reloadOrganizations();
+          else if (tab === 'announcements') reloadAnnouncement();
+        }
         if (e.key.toLowerCase() === 'n' && tab === 'achievements') { addYear(); }
       }
     };
@@ -367,6 +398,26 @@ function AdminInner() {
     }
   };
 
+  const reloadAnnouncement = async () => {
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+    const urls = Array.from(new Set([
+      '/.netlify/functions/get-announcement',
+      `${basePath}/.netlify/functions/get-announcement`,
+      '/api/get-announcement',
+      `${basePath}/api/get-announcement`,
+    ]));
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { headers: { accept: 'application/json' } });
+        if (!res.ok) continue;
+        const json = await res.json();
+        setAnn({ active: !!json.active, title: json.title||'', message: json.message||'', severity: json.severity||'info', ctaText: json.ctaText||'', ctaUrl: json.ctaUrl||'', version: String(json.version || '1'), expiresAt: json.expiresAt || '', dismissible: json.dismissible !== false });
+        setMessage((m) => (m ? `${m} • Reloaded announcement` : 'Reloaded announcement'));
+        break;
+      } catch {}
+    }
+  };
+
   const saveToDb = async () => {
     setSaving(true);
     setSavingKind('achievements');
@@ -451,6 +502,31 @@ function AdminInner() {
       await reloadOrganizations();
     } catch (e) { setMessage(`Save organizations failed: ${e.message}`); }
     finally { setSaving(false); setSavingKind(null); }
+  };
+
+  const saveAnnouncement = async () => {
+    setAnnSaving(true); setMessage('');
+    try {
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const candidates = Array.from(new Set([
+        '/.netlify/functions/save-announcement',
+        `${basePath}/.netlify/functions/save-announcement`,
+        '/api/save-announcement',
+        `${basePath}/api/save-announcement`,
+      ]));
+      let ok = false; let lastErr = '';
+      const payload = JSON.stringify(ann);
+      for (const url of candidates) {
+        try {
+          const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: payload });
+          if (res.ok) { setMessage(`Announcement saved via ${url}`); triggerSuccess('Announcement saved'); ok = true; break; }
+          else { lastErr = `HTTP ${res.status} on ${url}: ${await res.text()}`; }
+        } catch (e) { lastErr = `Request failed on ${url}: ${e.message}`; }
+      }
+      if (!ok) throw new Error(lastErr || 'Unknown error');
+      await reloadAnnouncement();
+    } catch (e) { setMessage(`Save announcement failed: ${e.message}`); }
+    finally { setAnnSaving(false); }
   };
 
   const saveToFile = async () => {
@@ -540,6 +616,7 @@ function AdminInner() {
                   if (tab === 'achievements') reloadFromBackend();
                   else if (tab === 'education') reloadEducation();
                   else if (tab === 'organizations') reloadOrganizations();
+                  else if (tab === 'announcements') reloadAnnouncement();
                 }}
                 className="px-3 py-2 rounded-md bg-white/5 border border-white/10 hover:bg-white/10"
                 title={`Reload ${tab}`}
@@ -559,6 +636,7 @@ function AdminInner() {
                   if (tab === 'achievements') saveToDb();
                   else if (tab === 'education') saveEdu();
                   else if (tab === 'organizations') saveOrgs();
+                  else if (tab === 'announcements') saveAnnouncement();
                   else if (tab === 'admin-profile') onSaveDisplayName();
                 }}
                 disabled={saving}
@@ -572,10 +650,11 @@ function AdminInner() {
           </div>
           {/* Tabs visible depend on authority */}
           <div className="mb-4 flex gap-2">
-      {(['achievements','education','organizations','messages','dev','admin-profile']
+      {(['achievements','education','organizations','announcements','messages','dev','admin-profile']
               .filter((t)=>{
                 if (t==='dev') return !!authority?.canAccessDev;
         if (t==='messages') return !!authority?.canEditSections;
+        if (t==='announcements') return !!authority?.canEditSections;
         if (t==='admin-profile') return true; // profile always visible
                 // content editing tabs
                 return !!authority?.canEditSections;
@@ -728,6 +807,63 @@ function AdminInner() {
                     </div>
                   </motion.div>
                 ))}
+              </div>
+            </section>
+          )}
+
+          {tab === 'announcements' && authority?.canEditSections && (
+            <section className="bg-white/5 border border-white/10 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-white">Announcements</h2>
+                <div className="flex gap-2">
+                  <button onClick={reloadAnnouncement} className="px-2 py-1 rounded-md bg-white/10 border border-white/20 text-sm hover:bg-white/15">Reload</button>
+                  <button onClick={saveAnnouncement} disabled={annSaving} title="Save announcement to DB (Ctrl+S)" className="px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30">{annSaving?'Saving Announcement…':'Save to DB'}</button>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <label className="block text-xs text-gray-300">
+                  <span className="block mb-1">Title</span>
+                  <input value={ann.title} onChange={(e)=>setAnn(a=>({...a,title:e.target.value}))} className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2" placeholder="Announcement Title" />
+                </label>
+                <label className="block text-xs text-gray-300">
+                  <span className="block mb-1">Severity</span>
+                  <select value={ann.severity} onChange={(e)=>setAnn(a=>({...a,severity:e.target.value}))} className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2">
+                    <option value="info">Info</option>
+                    <option value="warning">Warning</option>
+                    <option value="success">Success</option>
+                  </select>
+                </label>
+                <label className="block text-xs text-gray-300 md:col-span-2">
+                  <span className="block mb-1">Message</span>
+                  <textarea value={ann.message} onChange={(e)=>setAnn(a=>({...a,message:e.target.value}))} className="w-full min-h-[120px] bg-black/40 border border-white/10 rounded-md px-3 py-2" placeholder="Write your announcement..." />
+                </label>
+                <label className="block text-xs text-gray-300">
+                  <span className="block mb-1">CTA Text (optional)</span>
+                  <input value={ann.ctaText} onChange={(e)=>setAnn(a=>({...a,ctaText:e.target.value}))} className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2" placeholder="Learn more" />
+                </label>
+                <label className="block text-xs text-gray-300">
+                  <span className="block mb-1">CTA URL (optional)</span>
+                  <input value={ann.ctaUrl} onChange={(e)=>setAnn(a=>({...a,ctaUrl:e.target.value}))} className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2" placeholder="https://..." />
+                </label>
+                <label className="block text-xs text-gray-300">
+                  <span className="block mb-1">Version</span>
+                  <input value={ann.version} onChange={(e)=>setAnn(a=>({...a,version:e.target.value}))} className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2" placeholder="1" />
+                </label>
+                <label className="block text-xs text-gray-300">
+                  <span className="block mb-1">Expires At (optional)</span>
+                  <input type="datetime-local" value={ann.expiresAt} onChange={(e)=>setAnn(a=>({...a,expiresAt:e.target.value}))} className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2" />
+                </label>
+                <div className="flex items-center gap-4">
+                  <label className="inline-flex items-center gap-2 text-xs text-gray-300"><input type="checkbox" checked={ann.active} onChange={(e)=>setAnn(a=>({...a,active:e.target.checked}))} /> Active</label>
+                  <label className="inline-flex items-center gap-2 text-xs text-gray-300"><input type="checkbox" checked={ann.dismissible} onChange={(e)=>setAnn(a=>({...a,dismissible:e.target.checked}))} /> Dismissible</label>
+                </div>
+              </div>
+              <div className="mt-6">
+                <div className="text-sm text-gray-300 mb-2">Live Preview</div>
+                <div className="max-w-2xl">
+                  {/* Preview uses current form state; it does not persist dismissal */}
+                  {AnnouncementCard ? <AnnouncementCard ann={{...ann, updatedAt: ann.updatedAt || new Date().toISOString()}} preview /> : null}
+                </div>
               </div>
             </section>
           )}
