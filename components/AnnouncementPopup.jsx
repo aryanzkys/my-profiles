@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/router';
 
 function isMobileOrTablet() {
   if (typeof navigator === 'undefined') return false;
@@ -24,7 +25,12 @@ export function AnnouncementCard({ ann, onDismiss, preview = false, forceMobile 
       <div className="px-5 py-4 bg-gradient-to-r from-cyan-500/10 via-fuchsia-500/10 to-cyan-500/10 border-b border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center justify-center h-6 w-6 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">{ann?.severity === 'warning' ? '!' : (ann?.severity === 'success' ? '✓' : 'i')}</span>
-          <div className="text-cyan-200 font-medium">{ann?.title || 'Announcement'}</div>
+          <div className="text-cyan-200 font-medium flex items-center gap-2">
+            <span>{ann?.title || 'Announcement'}</span>
+            {preview && (
+              <span className="text-[10px] text-gray-400 uppercase tracking-wide">Preview</span>
+            )}
+          </div>
         </div>
         {ann?.dismissible !== false && !!onDismiss && (
           <button onClick={onDismiss} className="text-gray-400 hover:text-gray-200">✕</button>
@@ -41,7 +47,14 @@ export function AnnouncementCard({ ann, onDismiss, preview = false, forceMobile 
         )}
       </div>
       <div className="px-5 py-3 border-t border-white/10 text-[11px] text-gray-400 flex items-center justify-between">
-        <div>Announcement v{version}</div>
+        <div className="flex items-center gap-2">
+          <span>Announcement v{version}</span>
+          {ann?.target && ann.target !== 'both' && (
+            <span className="inline-flex items-center rounded-md bg-white/5 border border-white/10 px-2 py-0.5 text-[10px] uppercase tracking-wide">
+              {ann.target === 'ai' ? 'AI Pages' : 'Main Site'}
+            </span>
+          )}
+        </div>
         <div>{published ? `Published ${published.toLocaleString()}` : 'Draft (not published)'}</div>
       </div>
     </motion.div>
@@ -52,6 +65,8 @@ export default function AnnouncementPopup() {
   const [loading, setLoading] = useState(true);
   const [ann, setAnn] = useState(null);
   const [show, setShow] = useState(false);
+  const [pathname, setPathname] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
     let alive = true;
@@ -75,9 +90,24 @@ export default function AnnouncementPopup() {
     return () => { alive = false; };
   }, []);
 
+  useEffect(() => {
+    // Track route changes
+    const p = (router && (router.asPath || router.pathname)) || (typeof window !== 'undefined' ? window.location?.pathname : '') || '';
+    setPathname(p);
+  }, [router?.asPath, router?.pathname]);
+
   const shouldShow = useMemo(() => {
     try {
       if (!ann || !ann.active) return false;
+      // Only allow on main site routes or AI pages, never on admin/patch/system routes
+      const p = pathname || '';
+      const disallowedPrefixes = ['/admin', '/login', '/patch', '/api', '/_next', '/static'];
+      if (disallowedPrefixes.some((pre) => p.startsWith(pre))) return false;
+      // route gating: only show on main site or AI pages
+      const target = ann.target || 'both';
+      const isAiRoute = pathname.startsWith('/ai');
+      if (target === 'main' && isAiRoute) return false;
+      if (target === 'ai' && !isAiRoute) return false;
       const version = String(ann.version || '0');
       if (typeof window !== 'undefined') {
         // Ignore stored dismissal so the popup reappears on refresh as requested
@@ -88,7 +118,7 @@ export default function AnnouncementPopup() {
       }
       return true;
     } catch { return false; }
-  }, [ann]);
+  }, [ann, pathname]);
 
   useEffect(() => { setShow(shouldShow); }, [shouldShow]);
 

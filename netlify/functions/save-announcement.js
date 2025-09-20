@@ -42,6 +42,7 @@ exports.handler = async (event) => {
       updatedAt: new Date().toISOString(),
       expiresAt: body.expiresAt || null,
       dismissible: body.dismissible !== false,
+      target: ['main','ai','both'].includes(body.target) ? body.target : 'both',
     };
 
     if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
@@ -49,11 +50,13 @@ exports.handler = async (event) => {
       let res = await fetch(url, {
         method: 'POST',
         headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates' },
-        body: JSON.stringify({ id: 1, active: payload.active, title: payload.title, message: payload.message, severity: payload.severity, cta_text: payload.ctaText, cta_url: payload.ctaUrl, version: payload.version, updated_at: payload.updatedAt, expires_at: payload.expiresAt, dismissible: payload.dismissible }),
+        body: JSON.stringify({ id: 1, active: payload.active, title: payload.title, message: payload.message, severity: payload.severity, cta_text: payload.ctaText, cta_url: payload.ctaUrl, version: payload.version, updated_at: payload.updatedAt, expires_at: payload.expiresAt, dismissible: payload.dismissible, target: payload.target }),
       });
       if (!res.ok) {
         const t = await res.text();
-        if (res.status === 404 && /Could not find the table/i.test(t)) {
+        // Fallback if table missing or column mismatch (e.g., new 'target' field not yet migrated)
+        const shouldFallback = (res.status === 404 && /Could not find the table/i.test(t)) || (res.status === 400 && /(column|target|invalid)/i.test(t));
+        if (shouldFallback) {
           await storageWrite(payload);
           return { statusCode: 200, headers: { 'content-type':'application/json' }, body: JSON.stringify({ ok: true, via: 'supabase-storage' }) };
         }

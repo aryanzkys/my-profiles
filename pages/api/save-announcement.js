@@ -21,6 +21,7 @@ export default function handler(req, res) {
       updatedAt: new Date().toISOString(),
       expiresAt: body.expiresAt || null,
       dismissible: body.dismissible !== false,
+      target: ['main','ai','both'].includes(body.target) ? body.target : 'both',
     };
     const filePath = path.join(process.cwd(), 'data', 'announcements.json');
     const dir = path.dirname(filePath);

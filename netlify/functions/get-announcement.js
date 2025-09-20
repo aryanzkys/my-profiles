@@ -34,25 +34,26 @@ exports.handler = async () => {
             updatedAt: row.updated_at || null,
             expiresAt: row.expires_at || null,
             dismissible: row.dismissible !== false,
+            target: row.target || 'both',
           };
           return { statusCode: 200, headers: { 'content-type':'application/json' }, body: JSON.stringify(out) };
         }
         // If table exists but is empty, attempt storage fallback
-        const s = await storageRead();
-        if (s) return { statusCode: 200, headers: { 'content-type':'application/json' }, body: JSON.stringify(s) };
+  const s = await storageRead();
+  if (s) return { statusCode: 200, headers: { 'content-type':'application/json' }, body: JSON.stringify({ target: 'both', ...s }) };
       } else {
         const t = await res.text();
         if (res.status === 404 && /Could not find the table/i.test(t)) {
           const s = await storageRead();
-          if (s) return { statusCode: 200, headers: { 'content-type':'application/json' }, body: JSON.stringify(s) };
+          if (s) return { statusCode: 200, headers: { 'content-type':'application/json' }, body: JSON.stringify({ target: 'both', ...s }) };
         }
       }
     }
     // FS fallback
     if (fs.existsSync(DATA_FILE)) {
       const json = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-      return { statusCode: 200, headers: { 'content-type':'application/json' }, body: JSON.stringify(json) };
+      return { statusCode: 200, headers: { 'content-type':'application/json' }, body: JSON.stringify({ target: 'both', ...json }) };
     }
-    return { statusCode: 200, headers: { 'content-type':'application/json' }, body: JSON.stringify({ active: false }) };
-  } catch { return { statusCode: 200, headers: { 'content-type':'application/json' }, body: JSON.stringify({ active: false }) }; }
+    return { statusCode: 200, headers: { 'content-type':'application/json' }, body: JSON.stringify({ active: false, target: 'both' }) };
+  } catch { return { statusCode: 200, headers: { 'content-type':'application/json' }, body: JSON.stringify({ active: false, target: 'both' }) }; }
 };

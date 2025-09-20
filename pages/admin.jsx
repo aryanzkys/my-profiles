@@ -43,7 +43,8 @@ function AdminInner() {
   const [selected, setSelected] = useState(null);
   const mouseRef = useRef({ x: 0, y: 0 });
   // Announcements
-  const [ann, setAnn] = useState({ active: false, title: '', message: '', severity: 'info', ctaText: '', ctaUrl: '', version: '1', expiresAt: '', dismissible: true });
+  const [ann, setAnn] = useState({ active: false, title: '', message: '', severity: 'info', ctaText: '', ctaUrl: '', version: '1', expiresAt: '', dismissible: true, target: 'both' });
+  const [annLiveStatus, setAnnLiveStatus] = useState({ state: 'unknown', via: null }); // unknown | live | pending
   const [annSaving, setAnnSaving] = useState(false);
   const [annMobilePreview, setAnnMobilePreview] = useState(false);
   // Admin authority
@@ -123,7 +124,8 @@ function AdminInner() {
           const res = await fetch(url, { headers: { accept: 'application/json' } });
           if (!res.ok) continue;
           const json = await res.json();
-          setAnn({ active: !!json.active, title: json.title||'', message: json.message||'', severity: json.severity||'info', ctaText: json.ctaText||'', ctaUrl: json.ctaUrl||'', version: String(json.version || '1'), expiresAt: json.expiresAt || '', dismissible: json.dismissible !== false });
+          setAnn({ active: !!json.active, title: json.title||'', message: json.message||'', severity: json.severity||'info', ctaText: json.ctaText||'', ctaUrl: json.ctaUrl||'', version: String(json.version || '1'), expiresAt: json.expiresAt || '', dismissible: json.dismissible !== false, target: json.target || 'both' });
+          setAnnLiveStatus({ state: json && json.active ? 'live' : 'unknown', via: null });
           break;
         } catch {}
       }
@@ -418,7 +420,7 @@ function AdminInner() {
         const res = await fetch(url, { headers: { accept: 'application/json' } });
         if (!res.ok) continue;
         const json = await res.json();
-        setAnn({ active: !!json.active, title: json.title||'', message: json.message||'', severity: json.severity||'info', ctaText: json.ctaText||'', ctaUrl: json.ctaUrl||'', version: String(json.version || '1'), expiresAt: json.expiresAt || '', dismissible: json.dismissible !== false });
+        setAnn({ active: !!json.active, title: json.title||'', message: json.message||'', severity: json.severity||'info', ctaText: json.ctaText||'', ctaUrl: json.ctaUrl||'', version: String(json.version || '1'), expiresAt: json.expiresAt || '', dismissible: json.dismissible !== false, target: json.target || 'both' });
         setMessage((m) => (m ? `${m} • Reloaded announcement` : 'Reloaded announcement'));
         break;
       } catch {}
@@ -532,9 +534,45 @@ function AdminInner() {
       }
       if (!ok) throw new Error(lastErr || 'Unknown error');
       await reloadAnnouncement();
+      // After save, verify live status once
+      await checkAnnouncementLive();
     } catch (e) { setMessage(`Save announcement failed: ${e.message}`); }
     finally { setAnnSaving(false); }
   };
+
+  const checkAnnouncementLive = async () => {
+    try {
+      setAnnLiveStatus({ state: 'pending', via: null });
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const urls = Array.from(new Set([
+        '/.netlify/functions/get-announcement',
+        `${basePath}/.netlify/functions/get-announcement`,
+        '/api/get-announcement',
+        `${basePath}/api/get-announcement`,
+      ]));
+      for (const url of urls) {
+        try {
+          const res = await fetch(url, { headers: { accept: 'application/json' }, cache: 'no-store' });
+          if (!res.ok) continue;
+          const json = await res.json();
+          const live = !!json && json.active === ann.active && (json.title||'') === (ann.title||'') && (json.message||'') === (ann.message||'') && (String(json.version||'')) === String(ann.version||'') && (json.target||'both') === (ann.target||'both');
+          if (live) { setAnnLiveStatus({ state: 'live', via: url.includes('/api/') ? 'dev' : 'prod' }); return; }
+        } catch {}
+      }
+      setAnnLiveStatus({ state: 'pending', via: null });
+    } catch {
+      setAnnLiveStatus({ state: 'unknown', via: null });
+    }
+  };
+
+  // Poll for live status while announcement is active and not yet live
+  useEffect(() => {
+    let timer;
+    if (tab === 'announcements' && ann.active && annLiveStatus.state !== 'live') {
+      timer = setInterval(() => { checkAnnouncementLive(); }, 4000);
+    }
+    return () => { if (timer) clearInterval(timer); };
+  }, [tab, ann.active, ann.title, ann.message, ann.version, ann.target, annLiveStatus.state]);
 
   const saveToFile = async () => {
     try {
@@ -840,6 +878,14 @@ function AdminInner() {
                     <option value="success">Success</option>
                   </select>
                 </label>
+                <label className="block text-xs text-gray-300">
+                  <span className="block mb-1">Target</span>
+                  <select value={ann.target} onChange={(e)=>setAnn(a=>({...a,target:e.target.value}))} className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2">
+                    <option value="both">Both</option>
+                    <option value="main">Main Site only</option>
+                    <option value="ai">AI Pages only</option>
+                  </select>
+                </label>
                 <label className="block text-xs text-gray-300 md:col-span-2">
                   <span className="block mb-1">Message</span>
                   <textarea value={ann.message} onChange={(e)=>setAnn(a=>({...a,message:e.target.value}))} className="w-full min-h-[120px] bg-black/40 border border-white/10 rounded-md px-3 py-2" placeholder="Write your announcement..." />
@@ -868,7 +914,15 @@ function AdminInner() {
               <div className="mt-6">
                 <div className="text-sm text-gray-300 mb-2">Live Preview</div>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-xs text-gray-400">Preview updates as you type</div>
+                  <div className="text-xs text-gray-400 flex items-center gap-2">
+                    <span>Preview updates as you type</span>
+                    {/* Release status indicator */}
+                    {ann.active && (
+                      <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 border text-[10px] ${annLiveStatus.state==='live' ? 'border-emerald-400/40 bg-emerald-600/15 text-emerald-200' : annLiveStatus.state==='pending' ? 'border-amber-400/40 bg-amber-600/15 text-amber-200' : 'border-white/10 bg-white/5 text-gray-300' }`}>
+                        {annLiveStatus.state==='live' ? 'Published' : annLiveStatus.state==='pending' ? 'Publishing…' : 'Status: unknown'}
+                      </span>
+                    )}
+                  </div>
                   <label className="inline-flex items-center gap-2 text-xs text-gray-300">
                     <input type="checkbox" checked={annMobilePreview} onChange={(e)=>setAnnMobilePreview(e.target.checked)} />
                     Preview as mobile
