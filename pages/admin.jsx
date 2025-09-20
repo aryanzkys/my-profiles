@@ -47,6 +47,39 @@ function AdminInner() {
   const [annLiveStatus, setAnnLiveStatus] = useState({ state: 'unknown', via: null }); // unknown | live | pending
   const [annSaving, setAnnSaving] = useState(false);
   const [annMobilePreview, setAnnMobilePreview] = useState(false);
+  const [annTab, setAnnTab] = useState('edit');
+  const [annList, setAnnList] = useState([]);
+  // List filters & pagination for announcements
+  const [annFilterTarget, setAnnFilterTarget] = useState('all'); // all | main | ai | both
+  const [annFilterStatus, setAnnFilterStatus] = useState('all'); // all | active | inactive
+  const [annSearch, setAnnSearch] = useState('');
+  const [annPage, setAnnPage] = useState(1);
+  const [annPageSize, setAnnPageSize] = useState(10);
+  const annFiltered = useMemo(() => {
+    const q = annSearch.trim().toLowerCase();
+    const arr = (Array.isArray(annList) ? annList : []).filter((it) => {
+      if (annFilterTarget !== 'all') {
+        const tgt = (it.target || 'both');
+        if (tgt !== annFilterTarget) return false;
+      }
+      if (annFilterStatus !== 'all') {
+        if (annFilterStatus === 'active' && !it.active) return false;
+        if (annFilterStatus === 'inactive' && it.active) return false;
+      }
+      if (q) {
+        const hay = `${it.title||''}\n${it.message||''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+    return arr;
+  }, [annList, annFilterTarget, annFilterStatus, annSearch]);
+  const annPageCount = useMemo(() => Math.max(1, Math.ceil(annFiltered.length / annPageSize)), [annFiltered.length, annPageSize]);
+  const annPageItems = useMemo(() => {
+    const page = Math.min(Math.max(1, annPage), annPageCount);
+    const start = (page - 1) * annPageSize;
+    return annFiltered.slice(start, start + annPageSize);
+  }, [annFiltered, annPage, annPageSize, annPageCount]);
   // Admin authority
   const [authority, setAuthority] = useState(null); // { canEditSections, canAccessDev, banned }
   const [authzLoading, setAuthzLoading] = useState(true);
@@ -427,6 +460,25 @@ function AdminInner() {
     }
   };
 
+  const reloadAnnouncementList = async () => {
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+    const urls = Array.from(new Set([
+      '/.netlify/functions/list-announcements',
+      `${basePath}/.netlify/functions/list-announcements`,
+      '/api/list-announcements',
+      `${basePath}/api/list-announcements`,
+    ]));
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { headers: { accept: 'application/json' }, cache: 'no-store' });
+        if (!res.ok) continue;
+        const json = await res.json();
+        setAnnList(Array.isArray(json) ? json : []);
+        break;
+      } catch {}
+    }
+  };
+
   const saveToDb = async () => {
     setSaving(true);
     setSavingKind('achievements');
@@ -544,20 +596,48 @@ function AdminInner() {
     try {
       setAnnLiveStatus({ state: 'pending', via: null });
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-      const urls = Array.from(new Set([
+      const baseUrls = Array.from(new Set([
         '/.netlify/functions/get-announcement',
         `${basePath}/.netlify/functions/get-announcement`,
         '/api/get-announcement',
         `${basePath}/api/get-announcement`,
       ]));
-      for (const url of urls) {
+
+      const checkOne = async (u) => {
         try {
-          const res = await fetch(url, { headers: { accept: 'application/json' }, cache: 'no-store' });
-          if (!res.ok) continue;
+          const res = await fetch(u, { headers: { accept: 'application/json' }, cache: 'no-store' });
+          if (!res.ok) return false;
           const json = await res.json();
-          const live = !!json && json.active === ann.active && (json.title||'') === (ann.title||'') && (json.message||'') === (ann.message||'') && (String(json.version||'')) === String(ann.version||'') && (json.target||'both') === (ann.target||'both');
-          if (live) { setAnnLiveStatus({ state: 'live', via: url.includes('/api/') ? 'dev' : 'prod' }); return; }
-        } catch {}
+          return !!json && json.active === ann.active && (json.title||'') === (ann.title||'') && (json.message||'') === (ann.message||'') && String(json.version||'') === String(ann.version||'') && (json.target||'both') === (ann.target||'both');
+        } catch { return false; }
+      };
+
+      // If target is specific, query with ?target first for precision
+      if (ann.target === 'main' || ann.target === 'ai') {
+        for (const b of baseUrls) {
+          const withTarget = `${b}?target=${encodeURIComponent(ann.target)}`;
+          if (await checkOne(withTarget)) { setAnnLiveStatus({ state: 'live', via: b.includes('/api/') ? 'dev' : 'prod' }); return; }
+        }
+        // Fallback: try without target param (older backends)
+        for (const b of baseUrls) {
+          if (await checkOne(b)) { setAnnLiveStatus({ state: 'live', via: b.includes('/api/') ? 'dev' : 'prod' }); return; }
+        }
+      } else {
+        // target === 'both' -> ensure both main and ai endpoints reflect the same content
+        let mainOk = false, aiOk = false, via = null;
+        for (const b of baseUrls) {
+          const um = `${b}?target=main`;
+          const ua = `${b}?target=ai`;
+          const m = await checkOne(um);
+          const a = await checkOne(ua);
+          if (m) { mainOk = true; via = b.includes('/api/') ? 'dev' : 'prod'; }
+          if (a) { aiOk = true; via = b.includes('/api/') ? 'dev' : 'prod'; }
+          if (mainOk && aiOk) { setAnnLiveStatus({ state: 'live', via }); return; }
+        }
+        // Fallback single call (no target param)
+        for (const b of baseUrls) {
+          if (await checkOne(b)) { setAnnLiveStatus({ state: 'live', via: b.includes('/api/') ? 'dev' : 'prod' }); return; }
+        }
       }
       setAnnLiveStatus({ state: 'pending', via: null });
     } catch {
@@ -860,11 +940,17 @@ function AdminInner() {
             <section className="bg-white/5 border border-white/10 rounded-xl p-4">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-white">Announcements</h2>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex rounded-md border border-white/10 overflow-hidden">
+                    {['edit','list'].map(t => (
+                      <button key={t} onClick={()=>{ setAnnTab(t); if (t==='list') reloadAnnouncementList(); }} className={`px-3 py-1.5 text-xs ${annTab===t ? 'bg-cyan-500/20 text-cyan-200' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>{t==='edit'?'Editor':'All Announcements'}</button>
+                    ))}
+                  </div>
                   <button onClick={reloadAnnouncement} className="px-2 py-1 rounded-md bg-white/10 border border-white/20 text-sm hover:bg-white/15">Reload</button>
                   <button onClick={saveAnnouncement} disabled={annSaving} title="Save announcement to DB (Ctrl+S)" className="px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/30">{annSaving?'Saving Announcement…':'Save to DB'}</button>
                 </div>
               </div>
+              {annTab==='edit' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <label className="block text-xs text-gray-300">
                   <span className="block mb-1">Title</span>
@@ -911,6 +997,116 @@ function AdminInner() {
                   <label className="inline-flex items-center gap-2 text-xs text-gray-300"><input type="checkbox" checked={ann.dismissible} onChange={(e)=>setAnn(a=>({...a,dismissible:e.target.checked}))} /> Dismissible</label>
                 </div>
               </div>
+              ) : (
+                <div className="mt-2">
+                  <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2 mb-2">
+                    <div className="text-sm text-gray-300">All Announcements</div>
+                    <div className="flex flex-wrap items-end gap-2">
+                      <label className="text-[11px] text-gray-400">
+                        <div className="mb-0.5">Target</div>
+                        <select value={annFilterTarget} onChange={(e)=>{ setAnnFilterTarget(e.target.value); setAnnPage(1); }} className="bg-black/40 border border-white/10 rounded-md px-2 py-1 text-xs">
+                          <option value="all">All</option>
+                          <option value="main">Main</option>
+                          <option value="ai">AI</option>
+                          <option value="both">Both</option>
+                        </select>
+                      </label>
+                      <label className="text-[11px] text-gray-400">
+                        <div className="mb-0.5">Status</div>
+                        <select value={annFilterStatus} onChange={(e)=>{ setAnnFilterStatus(e.target.value); setAnnPage(1); }} className="bg-black/40 border border-white/10 rounded-md px-2 py-1 text-xs">
+                          <option value="all">All</option>
+                          <option value="active">Active</option>
+                          <option value="inactive">Inactive</option>
+                        </select>
+                      </label>
+                      <label className="text-[11px] text-gray-400 md:w-52">
+                        <div className="mb-0.5">Search</div>
+                        <input value={annSearch} onChange={(e)=>{ setAnnSearch(e.target.value); setAnnPage(1); }} placeholder="Title or message" className="w-full bg-black/40 border border-white/10 rounded-md px-2 py-1 text-xs" />
+                      </label>
+                      <label className="text-[11px] text-gray-400">
+                        <div className="mb-0.5">Page size</div>
+                        <select value={annPageSize} onChange={(e)=>{ setAnnPageSize(Number(e.target.value)||10); setAnnPage(1); }} className="bg-black/40 border border-white/10 rounded-md px-2 py-1 text-xs">
+                          {[5,10,20,50].map(n=> <option key={n} value={n}>{n}</option>)}
+                        </select>
+                      </label>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {annFiltered.length === 0 && (
+                      <div className="text-xs text-gray-400">No announcements found.</div>
+                    )}
+                    {annPageItems.map((it, idx) => (
+                      <div key={idx} className="rounded-md bg-black/30 border border-white/10 p-3 flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-sm text-white flex items-center gap-2">
+                            <span className="font-medium">{it.title || '(no title)'}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/5 border border-white/10 uppercase">{(it.target||'both')==='ai'?'AI':'Main/Both'}</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-md uppercase ${it.active ? 'bg-emerald-600/15 border border-emerald-400/40 text-emerald-200' : 'bg-gray-600/15 border border-gray-400/30 text-gray-300'}`}>{it.active ? 'Active' : 'Inactive'}</span>
+                          </div>
+                          <div className="text-xs text-gray-400">{it.updated_at || it.updatedAt || ''}</div>
+                          <div className="text-xs text-gray-300 mt-1 line-clamp-2">{it.message || ''}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {it.id ? (
+                            <>
+                              {it.active && (
+                                <button
+                                  onClick={async()=>{
+                                    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+                                    const urls = Array.from(new Set([
+                                      '/.netlify/functions/delete-announcement',
+                                      `${basePath}/.netlify/functions/delete-announcement`,
+                                      '/api/delete-announcement',
+                                      `${basePath}/api/delete-announcement`,
+                                    ]));
+                                    for (const url of urls) {
+                                      try { const r = await fetch(url, { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ id: it.id, hardDelete: false }) }); if (r.ok) break; } catch {}
+                                    }
+                                    await reloadAnnouncementList();
+                                  }}
+                                  className="px-2 py-1 rounded-md bg-amber-600/20 border border-amber-500/40 text-amber-200 hover:bg-amber-600/30 text-xs"
+                                >Deactivate</button>
+                              )}
+                              <button
+                                onClick={async()=>{
+                                  if (!confirm('Permanently delete this announcement?')) return;
+                                  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+                                  const urls = Array.from(new Set([
+                                    '/.netlify/functions/delete-announcement',
+                                    `${basePath}/.netlify/functions/delete-announcement`,
+                                    '/api/delete-announcement',
+                                    `${basePath}/api/delete-announcement`,
+                                  ]));
+                                  for (const url of urls) {
+                                    try { const r = await fetch(url, { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ id: it.id, hardDelete: true }) }); if (r.ok) break; } catch {}
+                                  }
+                                  await reloadAnnouncementList();
+                                }}
+                                className="px-2 py-1 rounded-md bg-red-600/20 border border-red-500/40 text-red-200 hover:bg-red-600/30 text-xs"
+                              >Delete</button>
+                            </>
+                          ) : (
+                            <div className="text-[10px] text-gray-400">(local fallback item)</div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {annFiltered.length > 0 && (
+                      <div className="flex items-center justify-between text-xs text-gray-400 pt-2">
+                        <div>
+                          Page {Math.min(Math.max(1, annPage), annPageCount)} of {annPageCount} • {annFiltered.length} items
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button onClick={()=>setAnnPage(1)} disabled={annPage<=1} className="px-2 py-1 rounded-md bg-white/5 border border-white/10 disabled:opacity-40">« First</button>
+                          <button onClick={()=>setAnnPage(p=>Math.max(1,p-1))} disabled={annPage<=1} className="px-2 py-1 rounded-md bg-white/5 border border-white/10 disabled:opacity-40">‹ Prev</button>
+                          <button onClick={()=>setAnnPage(p=>Math.min(annPageCount,p+1))} disabled={annPage>=annPageCount} className="px-2 py-1 rounded-md bg-white/5 border border-white/10 disabled:opacity-40">Next ›</button>
+                          <button onClick={()=>setAnnPage(annPageCount)} disabled={annPage>=annPageCount} className="px-2 py-1 rounded-md bg-white/5 border border-white/10 disabled:opacity-40">Last »</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="mt-6">
                 <div className="text-sm text-gray-300 mb-2">Live Preview</div>
                 <div className="flex items-center justify-between mb-2">

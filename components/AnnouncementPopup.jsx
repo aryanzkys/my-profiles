@@ -73,11 +73,13 @@ export default function AnnouncementPopup() {
     (async () => {
       setLoading(true);
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const isAiRoute = (typeof window !== 'undefined' ? (window.location?.pathname || '') : pathname).startsWith('/ai');
+      const qp = isAiRoute ? '?target=ai' : '?target=main';
       const urls = Array.from(new Set([
-        '/.netlify/functions/get-announcement',
-        `${basePath}/.netlify/functions/get-announcement`,
-        '/api/get-announcement',
-        `${basePath}/api/get-announcement`,
+        `/.netlify/functions/get-announcement${qp}`,
+        `${basePath}/.netlify/functions/get-announcement${qp}`,
+        `/api/get-announcement${qp}`,
+        `${basePath}/api/get-announcement${qp}`,
       ]));
       let data = null;
       for (const url of urls) {
