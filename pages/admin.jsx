@@ -588,6 +588,10 @@ function AdminInner() {
       await reloadAnnouncement();
       // After save, verify live status once
       await checkAnnouncementLive();
+      // Also refresh list if admin is viewing list tab
+      if (annTab === 'list') {
+        await reloadAnnouncementList();
+      }
     } catch (e) { setMessage(`Save announcement failed: ${e.message}`); }
     finally { setAnnSaving(false); }
   };
