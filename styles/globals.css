@@ -10,6 +10,19 @@ body {
   background-color: #000; /* fallback in case Tailwind not loaded */
 }
 
+/* Pixel-art cursors for desktop/laptop (fine pointer devices) */
+@media (pointer: fine) {
+  html, body, * {
+    cursor: url('/cursors/pixel-arrow.svg') 0 0, auto;
+  }
+  a, button, [role="button"], .cursor-pointer {
+    cursor: url('/cursors/pixel-pointer.svg') 4 0, pointer;
+  }
+  input, textarea, select, .cursor-text, [contenteditable="true"] {
+    cursor: text; /* keep I-beam for typing */
+  }
+}
+
 /* Holographic sheen overlay used in About avatar */
 .holo::before {
   content: '';
