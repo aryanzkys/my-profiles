@@ -6,6 +6,7 @@ import { useRouter } from 'next/router';
 
 const Chatbot = dynamic(() => import('../components/Chatbot'), { ssr: false });
 const AnnouncementPopup = dynamic(() => import('../components/AnnouncementPopup'), { ssr: false });
+const AnimatedCursor = dynamic(() => import('../components/AnimatedCursor'), { ssr: false });
 
 export default function App({ Component, pageProps }) {
   const router = useRouter();
@@ -20,6 +21,8 @@ export default function App({ Component, pageProps }) {
   <Component {...pageProps} />
   <AnnouncementPopup />
   {!isAdminArea && !isAIPage && <Chatbot />}
+  {/* Animated cursor for desktop/laptop only (component self-detects pointer type) */}
+  <AnimatedCursor />
       </DataProvider>
     </PerformanceProvider>
   );

@@ -21,6 +21,16 @@ body {
   input, textarea, select, .cursor-text, [contenteditable="true"] {
     cursor: text; /* keep I-beam for typing */
   }
+
+  /* When animated cursor is active, hide the native cursor globally, but keep text caret in fields */
+  body.has-animated-cursor * { cursor: none !important; }
+  body.has-animated-cursor input,
+  body.has-animated-cursor textarea,
+  body.has-animated-cursor select,
+  body.has-animated-cursor .cursor-text,
+  body.has-animated-cursor [contenteditable="true"] {
+    cursor: text !important;
+  }
 }
 
 /* Holographic sheen overlay used in About avatar */
