@@ -1,5 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" shape-rendering="crispEdges">
-  <rect width="24" height="24" fill="none"/>
-  <!-- Simple pixel pointer/hand -->
-  <path d="M6 6 h2 v4 h1 V7 h2 v3 h1 V8 h2 v4 h1 v2 h1 v3 h-9 v-3 h-1 v-5 h1 z" fill="#ffffff" stroke="#000000" stroke-width="1"/>
-</svg>
+<!-- removed: using external animated cursor -->
