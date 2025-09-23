@@ -63,7 +63,6 @@ export default function SpotifySection() {
   const TOKEN_KEY = 'spotify_token_v1';
   const LAST_EMBED_KEY = 'spotify_last_embed_url_v1';
   const RECENT_QUERIES_KEY = 'spotify_recent_queries_v1';
-  const PREVIEW_FILTER_KEY = 'spotify_preview_only_filter_v1';
 
   const audioRef = useRef(null);
   const playerRef = useRef(null);
@@ -76,7 +75,7 @@ export default function SpotifySection() {
   const [searching, setSearching] = useState(false);
   const [embedUrl, setEmbedUrl] = useState('');
   const [recentQueries, setRecentQueries] = useState([]);
-  const [filterPreviewOnly, setFilterPreviewOnly] = useState(false);
+  // Removed "Preview only" filter per request
   const [message, setMessage] = useState('');
 
 
@@ -89,8 +88,7 @@ export default function SpotifySection() {
       if (last) setEmbedUrl(last);
       const rq = typeof window !== 'undefined' ? window.localStorage.getItem(RECENT_QUERIES_KEY) : null;
       if (rq) setRecentQueries(JSON.parse(rq));
-      const pref = typeof window !== 'undefined' ? window.localStorage.getItem(PREVIEW_FILTER_KEY) : null;
-      if (pref === '1') setFilterPreviewOnly(true);
+  // preview-only preference removed
     } catch {}
   }, []);
 
@@ -306,9 +304,7 @@ export default function SpotifySection() {
                 <button type="button" onClick={()=>setResultType('track')} className={`px-2 py-1 text-[11px] ${resultType==='track'?'bg-white/10 text-cyan-200':'text-gray-300 hover:bg-white/5'}`}>Tracks</button>
                 <button type="button" onClick={()=>setResultType('playlist')} className={`px-2 py-1 text-[11px] ${resultType==='playlist'?'bg-white/10 text-cyan-200':'text-gray-300 hover:bg-white/5'}`}>Playlists</button>
               </div>
-              {resultType === 'track' && (
-                <button type="button" onClick={()=> setFilterPreviewOnly(v=>{ const nv=!v; try { window.localStorage.setItem(PREVIEW_FILTER_KEY, nv?'1':'0'); } catch{}; return nv; })} className={`px-2 py-1 text-[11px] rounded-lg border ${filterPreviewOnly?'bg-cyan-500/15 border-cyan-400/30 text-cyan-200':'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'}`} title="Show only tracks with 30s preview">Preview only</button>
-              )}
+              {/* Preview-only toggle removed */}
             </div>
 
             <div className="flex items-center gap-2">
@@ -329,9 +325,9 @@ export default function SpotifySection() {
               {resultType === 'track' ? (
                 (() => {
                   const base = Array.isArray(results) ? results : [];
-                  const filtered = base.filter(Boolean).filter(t => !filterPreviewOnly || !!t.preview_url);
+                  const filtered = base.filter(Boolean);
                   if (base.length === 0) return <div className="p-3 text-xs text-gray-500">No results yet.</div>;
-                  if (filtered.length === 0) return <div className="p-3 text-xs text-gray-500">{filterPreviewOnly ? 'No tracks with preview found. Try turning off “Preview only”.' : 'No matching tracks.'}</div>;
+                  if (filtered.length === 0) return <div className="p-3 text-xs text-gray-500">No matching tracks.</div>;
                   return filtered.map((t, idx) => (
                     <div key={t.id || t.uri || idx} className="p-2.5 flex items-center gap-2.5">
                       <img src={t.album?.images?.[2]?.url || t.album?.images?.[1]?.url || t.album?.images?.[0]?.url} alt="cover" className="h-9 w-9 rounded-md object-cover" />
@@ -349,7 +345,7 @@ export default function SpotifySection() {
                         ) : (
                           <span className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 text-gray-400">No Preview</span>
                         )}
-                        <button onClick={()=>{ if (t?.id) onEmbedSet(`https://open.spotify.com/embed/track/${t.id}`,{ track: t }); }} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
+                        <button onClick={()=>{ if (t?.id) { onEmbedSet(`https://open.spotify.com/embed/track/${t.id}`,{ track: t }); if (t.preview_url) { playPreviewFromTrack(t); } } }} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Play</button>
                       </div>
                     </div>
                   ));
@@ -363,7 +359,7 @@ export default function SpotifySection() {
                       <div className="text-[11px] text-gray-400 truncate">{p.owner?.display_name || 'Playlist'}</div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <button onClick={()=>{ if (p?.id) onEmbedSet(`https://open.spotify.com/embed/playlist/${p.id}`, { playlistId: p.id }); }} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Embed</button>
+                      <button onClick={()=>{ if (p?.id) { onEmbedSet(`https://open.spotify.com/embed/playlist/${p.id}`, { playlistId: p.id }); setMessage('Attempting to play playlist in embedded player…'); } }} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/20 border border-cyan-400/30 text-cyan-200">Play</button>
                     </div>
                   </div>
                 ))
@@ -372,7 +368,7 @@ export default function SpotifySection() {
 
             {/* Embed input */}
             <div className="grid gap-2">
-              <div className="text-xs text-gray-400">Or paste a Spotify track/playlist/album link to embed:</div>
+              <div className="text-xs text-gray-400">Or paste a Spotify track/playlist/album link to play:</div>
               <input
                 onBlur={(e)=>onEmbedFromUrl(e.target.value)}
                 onKeyDown={(e)=>{ if(e.key==='Enter'){ e.preventDefault(); onEmbedFromUrl(e.currentTarget.value); } }}
