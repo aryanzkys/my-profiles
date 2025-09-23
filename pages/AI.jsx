@@ -58,12 +58,22 @@ export default function AIPage() {
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const px = (e.clientX - rect.left) / rect.width; // 0..1
+    const py = (e.clientY - rect.top) / rect.height; // 0..1
+    // Horizontal gradient tracking
     el.style.setProperty('--mx', `${Math.max(0, Math.min(100, px * 100))}%`);
+    // Proximity glow center (follows cursor)
+    el.style.setProperty('--px', `${(px * 100).toFixed(2)}%`);
+    el.style.setProperty('--py', `${(py * 100).toFixed(2)}%`);
+    // Increase glow when pointer is inside header
+    el.style.setProperty('--glow', '1');
   };
   const resetHeaderMove = () => {
     const el = headerRef.current;
     if (!el) return;
     el.style.setProperty('--mx', '50%');
+    el.style.setProperty('--px', '50%');
+    el.style.setProperty('--py', '50%');
+    el.style.setProperty('--glow', '0');
   };
 
   return (
@@ -89,7 +99,7 @@ export default function AIPage() {
     <ParticleField />
       </div>
 
-  <header className="relative overflow-hidden" ref={headerRef} onMouseMove={handleHeaderMove} onMouseLeave={resetHeaderMove}>
+  <header className="relative overflow-hidden" ref={headerRef} onMouseMove={handleHeaderMove} onMouseLeave={resetHeaderMove} onMouseEnter={() => { const el = headerRef.current; if (el) el.style.setProperty('--glow', '1'); }}>
         {/* hero gradient cone */}
         <div className="absolute inset-0 opacity-30" style={{ background: 'radial-gradient(60% 40% at 70% 0%, rgba(34,211,238,0.25), transparent 70%)' }} />
         {/* parallax orbs */}
@@ -216,28 +226,37 @@ export default function AIPage() {
           line-height: 1.25;
           vertical-align: middle;
           white-space: nowrap;
-          /* Layer 1: base RGB gradient; Layer 2: subtle moving sheen */
+          /* Layers: 1) Cursor-follow glow; 2) base RGB gradient; 3) subtle moving sheen */
           background-image:
+            radial-gradient(160px 160px at var(--px, 50%) var(--py, 50%),
+              rgba(34,211,238, calc(0.28 + 0.32 * var(--glow, 0))) 0%,
+              rgba(96,165,250, calc(0.22 + 0.28 * var(--glow, 0))) 45%,
+              rgba(167,139,250, calc(0.18 + 0.22 * var(--glow, 0))) 65%,
+              transparent 72%),
             linear-gradient(90deg,
-              rgba(34,211,238,0.95) 0%,
-              rgba(96,165,250,0.95) 35%,
-              rgba(167,139,250,0.95) 65%,
-              rgba(34,211,238,0.95) 100%),
+              rgba(34,211,238,0.98) 0%,
+              rgba(96,165,250,0.98) 35%,
+              rgba(167,139,250,0.98) 65%,
+              rgba(34,211,238,0.98) 100%),
             linear-gradient(115deg,
               rgba(255,255,255,0) 0%,
               rgba(255,255,255,0) 40%,
               rgba(255,255,255,0.55) 50%,
               rgba(255,255,255,0) 60%,
               rgba(255,255,255,0) 100%);
-          background-size: 200% 100%, 200% 100%;
-          background-position: var(--mx, 50%) 50%, -200% 50%;
+          background-size: cover, 200% 100%, 200% 100%;
+          background-position: 50% 50%, var(--mx, 50%) 50%, -200% 50%;
           -webkit-background-clip: text;
           background-clip: text;
           color: transparent;
-          transition: background-position 120ms ease-out, text-shadow 200ms ease;
+          transition: background-position 120ms ease-out, text-shadow 180ms ease, transform 160ms ease, letter-spacing 160ms ease;
           /* Periodic sheen sweep across the text */
           animation: titleSheen 9s ease-in-out infinite 1.2s;
-          text-shadow: 0 0 12px rgba(34,211,238,0.12);
+          /* Multi-layer neon glow (futuristic/robotic) */
+          text-shadow:
+            0 0 calc(6px + 10px * var(--glow, 0)) rgba(34,211,238, 0.35),
+            0 0 calc(14px + 14px * var(--glow, 0)) rgba(96,165,250, 0.28),
+            0 0 calc(28px + 20px * var(--glow, 0)) rgba(167,139,250, 0.22);
         }
         @keyframes titleSheen {
           0%   { background-position: var(--mx, 50%) 50%, -200% 50%; }
@@ -247,7 +266,8 @@ export default function AIPage() {
         }
         /* Subtle emphasis on hover/focus within header */
         header:hover .title-rgb, header:focus-within .title-rgb {
-          text-shadow: 0 0 18px rgba(34,211,238,0.18);
+          transform: translateZ(0) scale(1.02);
+          letter-spacing: 0.2px;
         }
       `}</style>
     </div>
