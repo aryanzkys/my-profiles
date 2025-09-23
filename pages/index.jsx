@@ -33,7 +33,7 @@ export default function Home() {
   return (
     <main className="h-screen w-screen overflow-hidden bg-black relative">
       <Head>
-        <meta name="google-site-verification" content="google12107fca04fa9b0f.html" />
+        <meta name="google-site-verification" content="gT52TjrWiHDvguyyVzacyDm1fopsUkLW6f0rPMt21Jo" /> 
       </Head>
       <Scene />
       <Overlay />
