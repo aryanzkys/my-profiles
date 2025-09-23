@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Main AI page; change <loc> to your canonical domain if it changes -->
+  <url>
+    <loc>https://aryanstack.netlify.app/ai</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- To add more pages later, copy this block and adjust the <loc>:
+  <url>
+    <loc>https://aryanstack.netlify.app/another-page</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  -->
+</urlset>

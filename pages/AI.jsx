@@ -71,7 +71,10 @@ export default function AIPage() {
       <Head>
         <title>Aryan’s AI Assistant</title>
         <meta name="robots" content="index,follow" />
-        <meta name="description" content="Chat with Aryan’s AI Assistant — trained by Aryan to help you get to know him better." />
+        <meta name="description" content="Chat with Aryan’s AI Assistant - trained by Aryan to help you get to know him better." />
+        <meta name="robots" content="index, follow" />
+        <meta name="keywords" content="AI, chatbot, image generator, AryanStack, Netlify AI, Aryan AI, Aryan AI Assistant, Aryan Zaky, Aryan, Aryan Zaky Prayogo" />
+        <link rel="canonical" href="https://aryanstack.netlify.app/ai" />
       </Head>
 
       {/* Global background accents: grid, glows, and orbs */}

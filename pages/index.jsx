@@ -1,4 +1,5 @@
 import dynamic from 'next/dynamic';
+import Head from 'next/head';
 import { useEffect, useState } from 'react';
 import Overlay from '../components/Overlay';
 import MobileNotice from '../components/MobileNotice';
@@ -31,6 +32,9 @@ export default function Home() {
 
   return (
     <main className="h-screen w-screen overflow-hidden bg-black relative">
+      <Head>
+        <meta name="google-site-verification" content="google12107fca04fa9b0f.html" />
+      </Head>
       <Scene />
       <Overlay />
       <MobileNotice />
