@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabaseClient';
 const STATUS_OPTIONS = ['Dalam Review', 'Di Acc', 'Di Tolak'];
 
 export default function AdminSignRequestsPage() {
+  const BUCKET = process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'documents';
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState([]);
   const [message, setMessage] = useState('');
@@ -89,14 +90,19 @@ export default function AdminSignRequestsPage() {
 
       // Upload to Supabase Storage under signed_documents folder
       const signedPath = `signed_documents/${Date.now()}_${row.id || Math.random().toString(36).slice(2)}.pdf`;
-      const { data: up, error: upErr } = await supabase.storage.from('documents').upload(signedPath, blob, {
+      const { data: up, error: upErr } = await supabase.storage.from(BUCKET).upload(signedPath, blob, {
         cacheControl: '3600',
         contentType: 'application/pdf',
         upsert: false,
       });
-      if (upErr) throw upErr;
+      if (upErr) {
+        if ((upErr?.message || '').toLowerCase().includes('bucket') || upErr?.statusCode === '404') {
+          throw new Error(`Bucket '${BUCKET}' tidak ditemukan. Buat bucket di Supabase Storage terlebih dahulu.`);
+        }
+        throw upErr;
+      }
 
-      const { data: urlData } = supabase.storage.from('documents').getPublicUrl(up.path);
+      const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(up.path);
       const signedUrl = urlData?.publicUrl || null;
       if (!signedUrl) throw new Error('Gagal mendapatkan URL publik dokumen tertandatangani.');
 

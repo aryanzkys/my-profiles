@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function SignMePage() {
+  const BUCKET = process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'documents';
   const [email, setEmail] = useState('');
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -40,26 +41,34 @@ export default function SignMePage() {
     }
     setUploading(true);
     try {
-      // Ensure bucket exists (idempotent attempt; requires appropriate storage policies)
-      try { await supabase.storage.createBucket('documents', { public: false }); } catch { /* ignore if exists or no permission */ }
-
       const ext = 'pdf';
       const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-      const { data: up, error: upErr } = await supabase.storage.from('documents').upload(path, file, {
+      const { data: up, error: upErr } = await supabase.storage.from(BUCKET).upload(path, file, {
         cacheControl: '3600',
         contentType: 'application/pdf',
         upsert: false,
       });
-      if (upErr) throw upErr;
+      if (upErr) {
+        if ((upErr?.message || '').toLowerCase().includes('bucket') || upErr?.statusCode === '404') {
+          throw new Error(`Bucket '${BUCKET}' tidak ditemukan. Buat bucket di Supabase Storage terlebih dahulu.`);
+        }
+        throw upErr;
+      }
 
-      const { data: urlData } = supabase.storage.from('documents').getPublicUrl(up.path);
+      const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(up.path);
       const file_url = urlData?.publicUrl || null;
 
       const { data: insertData, error: insertErr } = await supabase
         .from('sign_requests')
         .insert({ email, file_url, status: 'Dalam Review' })
         .select();
-      if (insertErr) throw insertErr;
+      if (insertErr) {
+        const msg = insertErr?.message || '';
+        if (msg.toLowerCase().includes('relation') && msg.toLowerCase().includes('sign_requests')) {
+          throw new Error("Tabel 'sign_requests' belum dibuat. Jalankan migrasi untuk membuat tabel.");
+        }
+        throw insertErr;
+      }
 
       setMessage('Berhasil mengunggah dokumen. Silakan cek status secara berkala.');
       setFile(null);
@@ -87,7 +96,13 @@ export default function SignMePage() {
         .select('id, email, file_url, status, signed_file_url, created_at')
         .eq('email', email)
         .order('created_at', { ascending: false });
-      if (error) throw error;
+      if (error) {
+        const msg = error?.message || '';
+        if (msg.toLowerCase().includes('could not find the table') || (msg.toLowerCase().includes('relation') && msg.toLowerCase().includes('sign_requests'))) {
+          throw new Error("Tabel 'sign_requests' belum dibuat. Jalankan migrasi untuk membuat tabel.");
+        }
+        throw error;
+      }
       setStatusResults(Array.isArray(data) ? data : []);
       if (!data || data.length === 0) setMessage('Tidak ada pengajuan ditemukan untuk email ini.');
     } catch (err) {
