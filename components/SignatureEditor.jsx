@@ -13,6 +13,9 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
   const [pages, setPages] = useState([]); // {num, width, height, canvasW, canvasH, scale}
   const [selected, setSelected] = useState(1);
   const [dragging, setDragging] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
   const containerRef = useRef(null);
   const canvasesRef = useRef({}); // page -> canvas
   const [layout, setLayout] = useState({
@@ -40,11 +43,18 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
     let cancelled = false;
     (async () => {
       try {
+        setError('');
+        setLoading(true);
         if (typeof window !== 'undefined') {
           const VERSION = '3.11.174';
-          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${VERSION}/build/pdf.worker.min.mjs`;
+          // Use classic worker JS to avoid module worker issues in static hosting
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${VERSION}/build/pdf.worker.min.js`;
         }
-        const doc = await pdfjsLib.getDocument(fileUrl).promise;
+        // Fetch PDF as ArrayBuffer to avoid cross-origin fetch inside worker
+        const res = await fetch(fileUrl, { cache: 'no-store' });
+        if (!res.ok) throw new Error('Gagal mengambil file PDF.');
+        const buf = await res.arrayBuffer();
+        const doc = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
         const pageCount = doc.numPages;
         const results = [];
         for (let i = 1; i <= pageCount; i++) {
@@ -57,24 +67,25 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
           results.push({ num: i, width: viewport.width, height: viewport.height, canvasW: Math.floor(scaled.width), canvasH: Math.floor(scaled.height), scale });
           if (cancelled) return;
           // Render
-          setTimeout(async () => {
-            try {
-              const canvas = canvasesRef.current[i];
-              if (!canvas) return;
+          // Render page
+          try {
+            const canvas = canvasesRef.current[i];
+            if (canvas) {
               canvas.width = Math.floor(scaled.width);
               canvas.height = Math.floor(scaled.height);
               const ctx = canvas.getContext('2d');
               await page.render({ canvasContext: ctx, viewport: scaled }).promise;
-            } catch {}
-          }, 0);
+            }
+          } catch {}
         }
         if (!cancelled) setPages(results);
       } catch (e) {
-        // ignore
+        if (!cancelled) setError(e?.message || 'Gagal memuat dokumen.');
       }
+      finally { if (!cancelled) setLoading(false); }
     })();
     return () => { cancelled = true; };
-  }, [fileUrl]);
+  }, [fileUrl, reloadKey]);
 
   useEffect(() => {
     if (value) {
@@ -210,6 +221,12 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
         </div>
       </div>
       <div ref={containerRef} className="flex-1 overflow-auto p-4 space-y-6">
+        {error && (
+          <div className="max-w-3xl mx-auto p-4 rounded-md border border-rose-400/30 bg-rose-500/10 text-rose-200 text-sm flex items-center justify-between">
+            <span>{error}</span>
+            <button onClick={()=> setReloadKey(k=>k+1)} className="text-[12px] px-2 py-1 rounded-md bg-white/10 border border-white/15 text-gray-100">Retry</button>
+          </div>
+        )}
         {pages.map(p => (
           <div key={p.num} className={`relative mx-auto border ${p.num===selected?'border-cyan-400/40':'border-white/10'} rounded-md w-fit`} onClick={()=>{ setVal({ sig_page: p.num }); setSelected(p.num); }}>
             <div className="absolute -top-3 left-2 text-[11px] px-2 py-0.5 rounded bg-black/70 border border-white/10">Page {p.num}</div>
@@ -235,8 +252,8 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
             )}
           </div>
         ))}
-        {pages.length === 0 && (
-          <div className="text-sm text-gray-300">Memuat dokumen…</div>
+        {pages.length === 0 && !error && (
+          <div className="text-sm text-gray-300">{loading ? 'Memuat dokumen…' : 'Tidak ada halaman untuk ditampilkan.'}</div>
         )}
       </div>
     </div>
