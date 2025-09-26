@@ -1,3 +1,6 @@
+-- Pre-req: ensure pgcrypto for gen_random_uuid (idempotent)
+create extension if not exists pgcrypto;
+
 -- Create table sign_requests
 create table if not exists public.sign_requests (
   id uuid primary key default gen_random_uuid(),
@@ -12,7 +15,7 @@ create table if not exists public.sign_requests (
 create index if not exists idx_sign_requests_created_at on public.sign_requests (created_at desc);
 create index if not exists idx_sign_requests_status on public.sign_requests (status);
 
--- Note: Configure RLS as needed. Example policies (adjust for your security model):
+-- Note: RLS must be enabled for policies to take effect; see separate migration 20250926_sign_requests_policies.sql for permissive defaults used by the current app flow.
 -- alter table public.sign_requests enable row level security;
 -- create policy "insert_sign_requests" on public.sign_requests for insert to anon, authenticated using (true);
 -- create policy "select_own_email" on public.sign_requests for select to anon, authenticated using (email = current_setting('request.jwt.claims', true)::jsonb->>'email');
