@@ -61,7 +61,6 @@ export default function AdminSignRequestsPage() {
     sig_scale: 0.35,
   };
 
-  const SignaturePreview = dynamic(() => import('../../components/SignaturePreview'), { ssr: false });
   const SignatureEditor = dynamic(() => import('../../components/SignatureEditor'), { ssr: false });
 
   const saveLayout = async (row) => {
@@ -278,56 +277,8 @@ export default function AdminSignRequestsPage() {
                       <button onClick={()=>signAndUpload(r)} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/15 border border-cyan-400/30 text-cyan-200 hover:bg-cyan-500/20">Sign & Upload</button>
                     </div>
                     {openId === r.id && (
-                      <div className="md:col-span-12 mt-3 p-3 rounded-lg bg-white/5 border border-white/10 grid grid-cols-2 md:grid-cols-12 gap-3">
-                        <div>
-                          <label className="block text-[10px] text-gray-400">Page</label>
-                          <input type="number" min={1} value={r.sig_page ?? ''} onChange={(e)=>handleLayoutChange(r.id, 'sig_page', e.target.value === '' ? null : parseInt(e.target.value,10))} className="w-full rounded-md bg-black/40 border border-white/10 px-2 py-1 text-xs" />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] text-gray-400">Anchor</label>
-                          <select value={r.sig_anchor ?? 'bottom-right'} onChange={(e)=>handleLayoutChange(r.id, 'sig_anchor', e.target.value)} className="w-full rounded-md bg-black/40 border border-white/10 px-2 py-1 text-xs">
-                            <option value="bottom-right">bottom-right</option>
-                            <option value="bottom-left">bottom-left</option>
-                            <option value="top-right">top-right</option>
-                            <option value="top-left">top-left</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-[10px] text-gray-400">Offset X</label>
-                          <input type="number" step="1" value={r.sig_offset_x ?? ''} onChange={(e)=>handleLayoutChange(r.id, 'sig_offset_x', e.target.value === '' ? null : Number(e.target.value))} className="w-full rounded-md bg-black/40 border border-white/10 px-2 py-1 text-xs" />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] text-gray-400">Offset Y</label>
-                          <input type="number" step="1" value={r.sig_offset_y ?? ''} onChange={(e)=>handleLayoutChange(r.id, 'sig_offset_y', e.target.value === '' ? null : Number(e.target.value))} className="w-full rounded-md bg-black/40 border border-white/10 px-2 py-1 text-xs" />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] text-gray-400">Scale</label>
-                          <input type="number" step="0.05" min="0.05" value={r.sig_scale ?? ''} onChange={(e)=>handleLayoutChange(r.id, 'sig_scale', e.target.value === '' ? null : Number(e.target.value))} className="w-full rounded-md bg-black/40 border border-white/10 px-2 py-1 text-xs" />
-                        </div>
-                        <div className="flex items-end gap-2">
-                          <button onClick={()=>saveLayout(r)} className="text-[11px] px-2 py-1 rounded-md bg-emerald-500/15 border border-emerald-400/30 text-emerald-200">Save</button>
-                          <button onClick={()=>resetLayout(r.id)} className="text-[11px] px-2 py-1 rounded-md bg-white/10 border border-white/15 text-gray-200">Defaults</button>
-                        </div>
-                        <div className="col-span-2 md:col-span-12 text-[10px] text-gray-400">Tip: Offset dihitung dari sudut sesuai Anchor (dalam satuan PDF points). Page mulai dari 1. Scale contoh: 0.35. Gunakan pratinjau di bawah ini, drag kotak cyan untuk mengatur posisi.</div>
-                        <div className="md:col-span-12">
-                          {r.file_url ? (
-                            <SignaturePreview
-                              fileUrl={r.file_url}
-                              anchor={r.sig_anchor || DEFAULT_LAYOUT.sig_anchor}
-                              offsetX={r.sig_offset_x ?? DEFAULT_LAYOUT.sig_offset_x}
-                              offsetY={r.sig_offset_y ?? DEFAULT_LAYOUT.sig_offset_y}
-                              scale={r.sig_scale ?? DEFAULT_LAYOUT.sig_scale}
-                              onChange={({anchor, offsetX, offsetY})=>{
-                                handleLayoutChange(r.id, 'sig_anchor', anchor || r.sig_anchor);
-                                handleLayoutChange(r.id, 'sig_offset_x', offsetX);
-                                handleLayoutChange(r.id, 'sig_offset_y', offsetY);
-                              }}
-                              onChangePageSize={()=>{}}
-                            />
-                          ) : (
-                            <div className="text-[11px] text-gray-400">Tidak ada file untuk pratinjau.</div>
-                          )}
-                        </div>
+                      <div className="md:col-span-12 mt-3 p-3 rounded-lg bg-white/5 border border-white/10 text-[11px] text-gray-400">
+                        Editor tata letak terbuka di layar penuh. Tutup editor untuk kembali ke daftar.
                       </div>
                     )}
                   </div>

@@ -22,12 +22,16 @@ export default function SignaturePreview({ fileUrl, anchor, offsetX, offsetY, sc
     let cancelled = false;
     (async () => {
       try {
-        // Configure worker via CDN to avoid bundling issues on Netlify/Next
+        // Configure worker via CDN (classic JS worker) to avoid module worker issues
         if (typeof window !== 'undefined') {
           const VERSION = '3.11.174';
-          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${VERSION}/build/pdf.worker.min.mjs`;
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${VERSION}/build/pdf.worker.min.js`;
         }
-        const doc = await pdfjsLib.getDocument(fileUrl).promise;
+        // Fetch PDF as ArrayBuffer to avoid CORS redirects inside worker
+        const res = await fetch(fileUrl, { cache: 'no-store' });
+        if (!res.ok) throw new Error('Gagal mengambil PDF untuk pratinjau.');
+        const buf = await res.arrayBuffer();
+        const doc = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
         const page = await doc.getPage(1);
         const viewport = page.getViewport({ scale: 1 });
         const desiredW = 600; // px preview width target
