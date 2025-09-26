@@ -5,21 +5,3 @@
 [build.environment]
   NODE_VERSION = "20.12.2"
   NPM_FLAGS = "--no-audit --prefer-offline"
-[build]
-  command = "next build"
-  publish = "out"
-
-[build.environment]
-  NODE_VERSION = "20.12.2"
-
-[functions]
-  directory = "netlify/functions"
-  node_bundler = "esbuild"
-
-[[plugins]]
-  package = "netlify-plugin-cache-nextjs"
-
-[[redirects]]
-  from = "/api/patches"
-  to = "/.netlify/functions/patches"
-  status = 200
