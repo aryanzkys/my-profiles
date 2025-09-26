@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { PDFDocument } from 'pdf-lib';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -59,6 +60,8 @@ export default function AdminSignRequestsPage() {
     sig_offset_y: 24,
     sig_scale: 0.35,
   };
+
+  const SignaturePreview = dynamic(() => import('../../components/SignaturePreview'), { ssr: false });
 
   const saveLayout = async (row) => {
     setMessage('');
@@ -274,7 +277,7 @@ export default function AdminSignRequestsPage() {
                       <button onClick={()=>signAndUpload(r)} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/15 border border-cyan-400/30 text-cyan-200 hover:bg-cyan-500/20">Sign & Upload</button>
                     </div>
                     {openId === r.id && (
-                      <div className="md:col-span-12 mt-3 p-3 rounded-lg bg-white/5 border border-white/10 grid grid-cols-2 md:grid-cols-6 gap-2">
+                      <div className="md:col-span-12 mt-3 p-3 rounded-lg bg-white/5 border border-white/10 grid grid-cols-2 md:grid-cols-12 gap-3">
                         <div>
                           <label className="block text-[10px] text-gray-400">Page</label>
                           <input type="number" min={1} value={r.sig_page ?? ''} onChange={(e)=>handleLayoutChange(r.id, 'sig_page', e.target.value === '' ? null : parseInt(e.target.value,10))} className="w-full rounded-md bg-black/40 border border-white/10 px-2 py-1 text-xs" />
@@ -304,7 +307,26 @@ export default function AdminSignRequestsPage() {
                           <button onClick={()=>saveLayout(r)} className="text-[11px] px-2 py-1 rounded-md bg-emerald-500/15 border border-emerald-400/30 text-emerald-200">Save</button>
                           <button onClick={()=>resetLayout(r.id)} className="text-[11px] px-2 py-1 rounded-md bg-white/10 border border-white/15 text-gray-200">Defaults</button>
                         </div>
-                        <div className="col-span-2 md:col-span-6 text-[10px] text-gray-400">Tip: Offset dihitung dari sudut sesuai Anchor (dalam satuan PDF points). Page mulai dari 1. Scale contoh: 0.35.</div>
+                        <div className="col-span-2 md:col-span-12 text-[10px] text-gray-400">Tip: Offset dihitung dari sudut sesuai Anchor (dalam satuan PDF points). Page mulai dari 1. Scale contoh: 0.35. Gunakan pratinjau di bawah ini, drag kotak cyan untuk mengatur posisi.</div>
+                        <div className="md:col-span-12">
+                          {r.file_url ? (
+                            <SignaturePreview
+                              fileUrl={r.file_url}
+                              anchor={r.sig_anchor || DEFAULT_LAYOUT.sig_anchor}
+                              offsetX={r.sig_offset_x ?? DEFAULT_LAYOUT.sig_offset_x}
+                              offsetY={r.sig_offset_y ?? DEFAULT_LAYOUT.sig_offset_y}
+                              scale={r.sig_scale ?? DEFAULT_LAYOUT.sig_scale}
+                              onChange={({anchor, offsetX, offsetY})=>{
+                                handleLayoutChange(r.id, 'sig_anchor', anchor || r.sig_anchor);
+                                handleLayoutChange(r.id, 'sig_offset_x', offsetX);
+                                handleLayoutChange(r.id, 'sig_offset_y', offsetY);
+                              }}
+                              onChangePageSize={()=>{}}
+                            />
+                          ) : (
+                            <div className="text-[11px] text-gray-400">Tidak ada file untuk pratinjau.</div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
