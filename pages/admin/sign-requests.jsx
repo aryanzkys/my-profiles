@@ -62,6 +62,7 @@ export default function AdminSignRequestsPage() {
   };
 
   const SignaturePreview = dynamic(() => import('../../components/SignaturePreview'), { ssr: false });
+  const SignatureEditor = dynamic(() => import('../../components/SignatureEditor'), { ssr: false });
 
   const saveLayout = async (row) => {
     setMessage('');
@@ -333,6 +334,28 @@ export default function AdminSignRequestsPage() {
                 ))}
               </div>
             </div>
+
+            {openId && (
+              <SignatureEditor
+                fileUrl={(rows.find(x=>x.id===openId)||{}).file_url}
+                value={{
+                  sig_page: (rows.find(x=>x.id===openId)||{}).sig_page ?? DEFAULT_LAYOUT.sig_page,
+                  sig_anchor: (rows.find(x=>x.id===openId)||{}).sig_anchor ?? DEFAULT_LAYOUT.sig_anchor,
+                  sig_offset_x: (rows.find(x=>x.id===openId)||{}).sig_offset_x ?? DEFAULT_LAYOUT.sig_offset_x,
+                  sig_offset_y: (rows.find(x=>x.id===openId)||{}).sig_offset_y ?? DEFAULT_LAYOUT.sig_offset_y,
+                  sig_scale: (rows.find(x=>x.id===openId)||{}).sig_scale ?? DEFAULT_LAYOUT.sig_scale,
+                }}
+                onChange={(val)=>{
+                  setRows(prev => prev.map(r=> r.id===openId ? { ...r, ...val } : r));
+                }}
+                onSave={async (val)=>{
+                  const row = rows.find(x=>x.id===openId);
+                  if (!row) return;
+                  await saveLayout({ ...row, ...val });
+                }}
+                onClose={()=> setOpenId(null)}
+              />
+            )}
 
             {message && <div className="mt-3 text-xs text-amber-300/90">{message}</div>}
           </>
