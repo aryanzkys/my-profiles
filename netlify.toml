@@ -5,3 +5,5 @@
 [build.environment]
   NODE_VERSION = "20.12.2"
   NPM_FLAGS = "--no-audit --prefer-offline"
+
+# No functions/plugins needed for static export; Netlify UI plugin may still show, but this config is minimal.

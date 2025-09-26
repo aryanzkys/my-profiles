@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:3001": "next dev -p 3001",
-    "build": "next build && next export",
+  "build": "next build",
     "patch:gen": "node scripts/generate-patches.js",
     "prebuild": "node scripts/generate-patches.js || echo skipped",
     "start": "npx serve -s out -l 3000"
