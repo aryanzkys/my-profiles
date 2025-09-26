@@ -23,6 +23,18 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
     sig_scale: Number(value?.sig_scale ?? 0.35),
   });
 
+  // Load actual signature image size to reflect real embed size with scale
+  const [sigBase, setSigBase] = useState({ w: 180, h: 60 });
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      if (img.naturalWidth && img.naturalHeight) {
+        setSigBase({ w: img.naturalWidth, h: img.naturalHeight });
+      }
+    };
+    img.src = '/signature.png';
+  }, []);
+
   // Render document
   useEffect(() => {
     let cancelled = false;
@@ -108,9 +120,9 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
     return { px: x * p.scale, py: (p.height - y - (sigHeightPdf())) * p.scale };
   };
 
-  // Approximate signature box size in PDF units for preview (independent from real image size)
-  const sigWidthPdf = () => 180; // points
-  const sigHeightPdf = () => 60; // points
+  // Signature box size in PDF units based on actual image size and chosen scale
+  const sigWidthPdf = () => (Number(sigBase.w) || 180) * (Number(layout.sig_scale) || 0.35);
+  const sigHeightPdf = () => (Number(sigBase.h) || 60) * (Number(layout.sig_scale) || 0.35);
 
   const getSigRectPixel = () => {
     const page = layout.sig_page || 1;
@@ -204,8 +216,19 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
             <canvas ref={el => { canvasesRef.current[p.num] = el; }} width={p.canvasW} height={p.canvasH} />
             {layout.sig_page === p.num && (
               <div
-                className="absolute cursor-move rounded-md border border-cyan-400/60 bg-cyan-500/25"
-                style={{ left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.w}px`, height: `${rect.h}px` }}
+                className="absolute cursor-move rounded-md border border-cyan-400/60"
+                style={{
+                  left: `${rect.left}px`,
+                  top: `${rect.top}px`,
+                  width: `${rect.w}px`,
+                  height: `${rect.h}px`,
+                  backgroundImage: 'url(/signature.png)',
+                  backgroundSize: '100% 100%',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'center',
+                  opacity: 0.9,
+                  boxShadow: '0 0 0 1px rgba(34,211,238,0.35) inset',
+                }}
                 onMouseDown={()=> setDragging(true)}
                 title="Drag untuk memindahkan"
               />
