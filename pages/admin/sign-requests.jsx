@@ -18,7 +18,7 @@ export default function AdminSignRequestsPage() {
     try {
       const { data, error } = await supabase
         .from('sign_requests')
-        .select('id, email, file_url, status, signed_file_url, created_at')
+        .select('id, email, file_url, status, signed_file_url, created_at, sig_page, sig_anchor, sig_offset_x, sig_offset_y, sig_scale')
         .order('created_at', { ascending: false })
         .limit(200);
       if (error) throw error;
@@ -50,6 +50,47 @@ export default function AdminSignRequestsPage() {
     } catch (err) { setMessage(err?.message || 'Gagal memperbarui status.'); }
   };
 
+  const [openId, setOpenId] = useState(null);
+
+  const DEFAULT_LAYOUT = {
+    sig_page: 1,
+    sig_anchor: 'bottom-right',
+    sig_offset_x: 24,
+    sig_offset_y: 24,
+    sig_scale: 0.35,
+  };
+
+  const saveLayout = async (row) => {
+    setMessage('');
+    try {
+      const payload = {
+        sig_page: row.sig_page ?? null,
+        sig_anchor: row.sig_anchor ?? null,
+        sig_offset_x: row.sig_offset_x ?? null,
+        sig_offset_y: row.sig_offset_y ?? null,
+        sig_scale: row.sig_scale ?? null,
+      };
+      const { error } = await supabase
+        .from('sign_requests')
+        .update(payload)
+        .eq('id', row.id);
+      if (error) throw error;
+      setMessage('Layout disimpan.');
+    } catch (err) {
+      setMessage(err?.message || 'Gagal menyimpan layout.');
+    }
+  };
+
+  const handleLayoutChange = (id, field, value) => {
+    setRows(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
+  };
+
+  const resetLayout = (id) => {
+    setRows(prev => prev.map(r => r.id === id ? { ...r, ...DEFAULT_LAYOUT } : r));
+  };
+
+  const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+
   const signAndUpload = async (row) => {
     setMessage('');
     try {
@@ -62,22 +103,49 @@ export default function AdminSignRequestsPage() {
       // Load PDF in pdf-lib
       const pdfDoc = await PDFDocument.load(pdfBytes);
       const pages = pdfDoc.getPages();
-      const first = pages[0];
-      if (!first) throw new Error('PDF tidak memiliki halaman pertama.');
+      if (!pages || pages.length === 0) throw new Error('PDF tidak memiliki halaman.');
+
+      // Determine target page (1-based)
+      const targetPageIndex = (() => {
+        const p = Number(row?.sig_page ?? DEFAULT_LAYOUT.sig_page);
+        if (!Number.isFinite(p) || p < 1) return 0;
+        return Math.min(pages.length - 1, p - 1);
+      })();
+      const page = pages[targetPageIndex];
 
       // Fetch signature image (PNG) from public directory
       const sigRes = await fetch('/signature.png');
       if (!sigRes.ok) throw new Error('Gagal memuat signature.png');
       const sigBytes = await sigRes.arrayBuffer();
       const sigImage = await pdfDoc.embedPng(sigBytes);
-      const sigDims = sigImage.scale(0.35); // scale down; adjust as needed
+      const scale = Number(row?.sig_scale ?? DEFAULT_LAYOUT.sig_scale);
+      const sigDims = sigImage.scale(Number.isFinite(scale) && scale > 0 ? scale : DEFAULT_LAYOUT.sig_scale);
 
-      const { width, height } = first.getSize();
-      const margin = 24; // px in PDF user space
-      const x = width - sigDims.width - margin;
-      const y = margin;
+      const { width: pageW, height: pageH } = page.getSize();
+      const anchor = (row?.sig_anchor || DEFAULT_LAYOUT.sig_anchor).toLowerCase();
+      const offX = Number(row?.sig_offset_x ?? DEFAULT_LAYOUT.sig_offset_x);
+      const offY = Number(row?.sig_offset_y ?? DEFAULT_LAYOUT.sig_offset_y);
+      const dx = Number.isFinite(offX) ? offX : DEFAULT_LAYOUT.sig_offset_x;
+      const dy = Number.isFinite(offY) ? offY : DEFAULT_LAYOUT.sig_offset_y;
 
-      first.drawImage(sigImage, {
+      let x = 0, y = 0;
+      switch (anchor) {
+        case 'bottom-left':
+          x = dx; y = dy; break;
+        case 'top-left':
+          x = dx; y = pageH - sigDims.height - dy; break;
+        case 'top-right':
+          x = pageW - sigDims.width - dx; y = pageH - sigDims.height - dy; break;
+        case 'bottom-right':
+        default:
+          x = pageW - sigDims.width - dx; y = dy; break;
+      }
+
+      // Clamp within page
+      x = clamp(x, 0, Math.max(0, pageW - sigDims.width));
+      y = clamp(y, 0, Math.max(0, pageH - sigDims.height));
+
+      page.drawImage(sigImage, {
         x,
         y,
         width: sigDims.width,
@@ -202,8 +270,43 @@ export default function AdminSignRequestsPage() {
                     <div className="md:col-span-2 md:text-right flex md:justify-end gap-2">
                       <button onClick={()=>updateStatus(r.id, 'Di Acc')} className="text-[11px] px-2 py-1 rounded-md bg-emerald-500/15 border border-emerald-400/30 text-emerald-200 hover:bg-emerald-500/20">Acc</button>
                       <button onClick={()=>updateStatus(r.id, 'Di Tolak')} className="text-[11px] px-2 py-1 rounded-md bg-rose-500/15 border border-rose-400/30 text-rose-200 hover:bg-rose-500/20">Tolak</button>
+                      <button onClick={()=>setOpenId(openId === r.id ? null : r.id)} className="text-[11px] px-2 py-1 rounded-md bg-white/10 border border-white/15 text-gray-200 hover:bg-white/15">Layout</button>
                       <button onClick={()=>signAndUpload(r)} className="text-[11px] px-2 py-1 rounded-md bg-cyan-500/15 border border-cyan-400/30 text-cyan-200 hover:bg-cyan-500/20">Sign & Upload</button>
                     </div>
+                    {openId === r.id && (
+                      <div className="md:col-span-12 mt-3 p-3 rounded-lg bg-white/5 border border-white/10 grid grid-cols-2 md:grid-cols-6 gap-2">
+                        <div>
+                          <label className="block text-[10px] text-gray-400">Page</label>
+                          <input type="number" min={1} value={r.sig_page ?? ''} onChange={(e)=>handleLayoutChange(r.id, 'sig_page', e.target.value === '' ? null : parseInt(e.target.value,10))} className="w-full rounded-md bg-black/40 border border-white/10 px-2 py-1 text-xs" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-gray-400">Anchor</label>
+                          <select value={r.sig_anchor ?? 'bottom-right'} onChange={(e)=>handleLayoutChange(r.id, 'sig_anchor', e.target.value)} className="w-full rounded-md bg-black/40 border border-white/10 px-2 py-1 text-xs">
+                            <option value="bottom-right">bottom-right</option>
+                            <option value="bottom-left">bottom-left</option>
+                            <option value="top-right">top-right</option>
+                            <option value="top-left">top-left</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-gray-400">Offset X</label>
+                          <input type="number" step="1" value={r.sig_offset_x ?? ''} onChange={(e)=>handleLayoutChange(r.id, 'sig_offset_x', e.target.value === '' ? null : Number(e.target.value))} className="w-full rounded-md bg-black/40 border border-white/10 px-2 py-1 text-xs" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-gray-400">Offset Y</label>
+                          <input type="number" step="1" value={r.sig_offset_y ?? ''} onChange={(e)=>handleLayoutChange(r.id, 'sig_offset_y', e.target.value === '' ? null : Number(e.target.value))} className="w-full rounded-md bg-black/40 border border-white/10 px-2 py-1 text-xs" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-gray-400">Scale</label>
+                          <input type="number" step="0.05" min="0.05" value={r.sig_scale ?? ''} onChange={(e)=>handleLayoutChange(r.id, 'sig_scale', e.target.value === '' ? null : Number(e.target.value))} className="w-full rounded-md bg-black/40 border border-white/10 px-2 py-1 text-xs" />
+                        </div>
+                        <div className="flex items-end gap-2">
+                          <button onClick={()=>saveLayout(r)} className="text-[11px] px-2 py-1 rounded-md bg-emerald-500/15 border border-emerald-400/30 text-emerald-200">Save</button>
+                          <button onClick={()=>resetLayout(r.id)} className="text-[11px] px-2 py-1 rounded-md bg-white/10 border border-white/15 text-gray-200">Defaults</button>
+                        </div>
+                        <div className="col-span-2 md:col-span-6 text-[10px] text-gray-400">Tip: Offset dihitung dari sudut sesuai Anchor (dalam satuan PDF points). Page mulai dari 1. Scale contoh: 0.35.</div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
