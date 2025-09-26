@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
-import 'pdfjs-dist/build/pdf.worker.mjs';
 
 // Simple PDF first-page preview with draggable signature rectangle.
 // Props:
@@ -23,8 +22,11 @@ export default function SignaturePreview({ fileUrl, anchor, offsetX, offsetY, sc
     let cancelled = false;
     (async () => {
       try {
-        // Configure worker dynamically for Next.js
-        pdfjsLib.GlobalWorkerOptions.workerSrc = window?.pdfjsWorker || pdfjsLib.GlobalWorkerOptions.workerSrc;
+        // Configure worker via CDN to avoid bundling issues on Netlify/Next
+        if (typeof window !== 'undefined') {
+          const VERSION = '3.11.174';
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${VERSION}/build/pdf.worker.min.mjs`;
+        }
         const doc = await pdfjsLib.getDocument(fileUrl).promise;
         const page = await doc.getPage(1);
         const viewport = page.getViewport({ scale: 1 });
