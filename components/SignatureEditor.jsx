@@ -13,6 +13,7 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
   const [pages, setPages] = useState([]); // {num, width, height, canvasW, canvasH, scale}
   const [selected, setSelected] = useState(1);
   const [dragging, setDragging] = useState(false);
+  const dragRef = useRef({ pointerId: null, grabDx: 0, grabDy: 0 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
@@ -190,27 +191,28 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
     return { left, top, w: sigWidthPdf() * p.scale, h: sigHeightPdf() * p.scale };
   };
 
-  const onDrag = (e) => {
+  // Pointer drag helpers on the signature handle
+  const handlePointerMove = (e) => {
     if (!dragging) return;
     const page = layout.sig_page || 1;
     const p = pages.find(p => p.num === page);
     if (!p) return;
-    const rect = canvasesRef.current[page]?.getBoundingClientRect();
-    if (!rect) return;
-    // Position center-aligned drag (assume cursor at center of box)
-    let px = e.clientX - rect.left - (sigWidthPdf() * p.scale) / 2;
-    let py = e.clientY - rect.top - (sigHeightPdf() * p.scale) / 2;
-    // Clamp within canvas
-    const maxX = p.canvasW - sigWidthPdf() * p.scale;
-    const maxY = p.canvasH - sigHeightPdf() * p.scale;
+    const canvasRect = canvasesRef.current[page]?.getBoundingClientRect();
+    if (!canvasRect) return;
+    const sigWpx = sigWidthPdf() * p.scale;
+    const sigHpx = sigHeightPdf() * p.scale;
+    // position top-left by subtracting the grab offset captured on pointerdown
+    let px = e.clientX - canvasRect.left - dragRef.current.grabDx;
+    let py = e.clientY - canvasRect.top - dragRef.current.grabDy;
+    // clamp to keep fully inside canvas
+    const maxX = p.canvasW - sigWpx;
+    const maxY = p.canvasH - sigHpx;
     px = clamp(px, 0, maxX);
     py = clamp(py, 0, maxY);
-    // Convert back to offsets w.r.t anchor
-    const a = (layout.sig_anchor || 'bottom-right').toLowerCase();
-    // Convert pixel to PDF units position of bottom-left corner of box
+    // convert to PDF units (bottom-left origin)
     const xPdf = px / p.scale;
-    const yPdfBottom = (p.canvasH - (py + sigHeightPdf() * p.scale)) / p.scale; // distance from bottom
-    // Compute offsets from anchor
+    const yPdfBottom = (p.canvasH - (py + sigHpx)) / p.scale;
+    const a = (layout.sig_anchor || 'bottom-right').toLowerCase();
     let dx = 0, dy = 0;
     switch (a) {
       case 'bottom-left':
@@ -225,16 +227,6 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
     }
     setVal({ sig_offset_x: dx, sig_offset_y: dy });
   };
-
-  useEffect(() => {
-    const up = () => setDragging(false);
-    window.addEventListener('mousemove', onDrag);
-    window.addEventListener('mouseup', up);
-    return () => {
-      window.removeEventListener('mousemove', onDrag);
-      window.removeEventListener('mouseup', up);
-    };
-  }, [onDrag]);
 
   const rect = getSigRectPixel();
 
@@ -319,13 +311,25 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
                   backgroundRepeat: 'no-repeat',
                   backgroundPosition: 'center',
                   opacity: 0.9,
-                  boxShadow: '0 0 0 1px rgba(34,211,238,0.35) inset',
+                  boxShadow: dragging ? '0 8px 24px rgba(34,211,238,0.35), 0 0 0 1px rgba(34,211,238,0.35) inset' : '0 0 0 1px rgba(34,211,238,0.35) inset',
                   cursor: dragging ? 'grabbing' : 'grab',
                   userSelect: 'none',
+                  transform: dragging ? 'scale(1.02)' : 'none',
+                  transition: dragging ? 'none' : 'transform 80ms ease-out',
                 }}
                 draggable={false}
                 onDragStart={(e)=> { e.preventDefault(); }}
-                onMouseDown={(e)=> { e.preventDefault(); e.stopPropagation(); setDragging(true); }}
+                onPointerDown={(e)=> {
+                  e.preventDefault(); e.stopPropagation();
+                  setDragging(true);
+                  try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch {}
+                  const boxRect = e.currentTarget.getBoundingClientRect();
+                  dragRef.current.pointerId = e.pointerId;
+                  dragRef.current.grabDx = e.clientX - boxRect.left;
+                  dragRef.current.grabDy = e.clientY - boxRect.top;
+                }}
+                onPointerMove={handlePointerMove}
+                onPointerUp={(e)=> { e.preventDefault(); e.stopPropagation(); setDragging(false); try { e.currentTarget.releasePointerCapture?.(e.pointerId); } catch {} }}
                 title="Drag untuk memindahkan"
               />
             )}
