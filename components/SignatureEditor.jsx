@@ -246,7 +246,7 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
       onContextMenu={stopAll}
       onDragOver={stopAll}
       onDrop={stopAll}
-      style={{ userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'none' }}
+      style={{ userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'none', cursor: dragging ? 'grabbing' : 'auto' }}
     >
       <div className="px-4 py-3 flex items-center gap-2 border-b border-white/10 bg-[#0b1015]">
         <div className="text-sm font-medium">Atur Posisi Tanda Tangan</div>
@@ -308,7 +308,7 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
             />
             {layout.sig_page === p.num && (
               <div
-                className="absolute cursor-move rounded-md border border-cyan-400/60"
+                className="absolute rounded-md border border-cyan-400/60"
                 style={{
                   left: `${rect.left}px`,
                   top: `${rect.top}px`,
@@ -320,6 +320,7 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
                   backgroundPosition: 'center',
                   opacity: 0.9,
                   boxShadow: '0 0 0 1px rgba(34,211,238,0.35) inset',
+                  cursor: dragging ? 'grabbing' : 'grab',
                   userSelect: 'none',
                 }}
                 draggable={false}
