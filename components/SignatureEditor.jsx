@@ -176,6 +176,28 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
     return { px: x * p.scale, py: (p.height - y - (sigHeightPdf())) * p.scale };
   };
 
+  // Move current signature by dx/dy in PDF units, clamped to page
+  const moveByPdf = (dxPdf, dyPdf) => {
+    const page = layout.sig_page || 1;
+    const p = pages.find(p => p.num === page);
+    if (!p) return;
+    const sigW = sigWidthPdf();
+    const sigH = sigHeightPdf();
+    const cur = anchorToXY(page, sigW, sigH);
+    let x = clamp((cur.x || 0) + dxPdf, 0, Math.max(0, p.width - sigW));
+    let y = clamp((cur.y || 0) + dyPdf, 0, Math.max(0, p.height - sigH));
+    const a = (layout.sig_anchor || 'bottom-right').toLowerCase();
+    let offX = 0, offY = 0;
+    switch (a) {
+      case 'bottom-left': offX = x; offY = y; break;
+      case 'top-left': offX = x; offY = (p.height - sigH) - y; break;
+      case 'top-right': offX = (p.width - sigW) - x; offY = (p.height - sigH) - y; break;
+      case 'bottom-right':
+      default: offX = (p.width - sigW) - x; offY = y; break;
+    }
+    setVal({ sig_offset_x: offX, sig_offset_y: offY });
+  };
+
   // Signature box size in PDF units based on actual image size and chosen scale
   const sigWidthPdf = () => (Number(sigBase.w) || 180) * (Number(layout.sig_scale) || 0.35);
   const sigHeightPdf = () => (Number(sigBase.h) || 60) * (Number(layout.sig_scale) || 0.35);
@@ -194,6 +216,9 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
   // Pointer drag helpers on the signature handle
   const handlePointerMove = (e) => {
     if (!dragging) return;
+    // prevent default to avoid any browser gestures or scroll triggering in Chrome
+    e.preventDefault();
+    e.stopPropagation();
     const page = layout.sig_page || 1;
     const p = pages.find(p => p.num === page);
     if (!p) return;
@@ -229,6 +254,29 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
   };
 
   const rect = getSigRectPixel();
+
+  // Auto-focus container to capture keyboard arrows; also suppress global drag/drop
+  useEffect(() => {
+    try { containerRef.current?.focus(); } catch {}
+    const prevent = (e) => { e.preventDefault(); };
+    window.addEventListener('dragstart', prevent, { passive: false });
+    window.addEventListener('drop', prevent, { passive: false });
+    return () => {
+      window.removeEventListener('dragstart', prevent);
+      window.removeEventListener('drop', prevent);
+    };
+  }, []);
+
+  const onKeyDown = (e) => {
+    const p = pages.find(p => p.num === (layout.sig_page || 1));
+    if (!p) return;
+    const pxStep = e.shiftKey ? 8 : 2; // pixels step
+    const stepPdf = pxStep / (p.scale || 1);
+    if (e.key === 'ArrowLeft') { e.preventDefault(); moveByPdf(-stepPdf, 0); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); moveByPdf(stepPdf, 0); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); moveByPdf(0, stepPdf); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); moveByPdf(0, -stepPdf); }
+  };
 
   const stopAll = (e) => { e.preventDefault(); e.stopPropagation(); };
 
@@ -267,11 +315,14 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
       <div
         ref={containerRef}
         className="flex-1 overflow-auto p-4 space-y-6"
+        tabIndex={0}
+        role="dialog"
         onClick={stopAll}
         onMouseDown={stopAll}
         onMouseUp={stopAll}
         onPointerDown={stopAll}
         onPointerUp={stopAll}
+        onKeyDown={onKeyDown}
         style={{ userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'none' }}
       >
         {error && (
@@ -330,6 +381,7 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
                 }}
                 onPointerMove={handlePointerMove}
                 onPointerUp={(e)=> { e.preventDefault(); e.stopPropagation(); setDragging(false); try { e.currentTarget.releasePointerCapture?.(e.pointerId); } catch {} }}
+                onPointerCancel={(e)=> { e.preventDefault(); e.stopPropagation(); setDragging(false); try { e.currentTarget.releasePointerCapture?.(e.pointerId); } catch {} }}
                 title="Drag untuk memindahkan"
               />
             )}
