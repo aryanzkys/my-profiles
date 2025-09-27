@@ -121,16 +121,26 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
     };
   }, []);
 
+  const normalizeLayout = (v) => ({
+    sig_page: Number(v?.sig_page ?? 1),
+    sig_anchor: String(v?.sig_anchor || 'bottom-right').toLowerCase(),
+    sig_offset_x: Number(v?.sig_offset_x ?? 24),
+    sig_offset_y: Number(v?.sig_offset_y ?? 24),
+    sig_scale: Number(v?.sig_scale ?? 0.35),
+  });
+
   useEffect(() => {
-    if (value) {
-      setLayout({
-        sig_page: value.sig_page ?? 1,
-        sig_anchor: (value.sig_anchor || 'bottom-right').toLowerCase(),
-        sig_offset_x: Number(value.sig_offset_x ?? 24),
-        sig_offset_y: Number(value.sig_offset_y ?? 24),
-        sig_scale: Number(value.sig_scale ?? 0.35),
-      });
-      setSelected(Number(value.sig_page ?? 1));
+    if (!value) return;
+    const incoming = normalizeLayout(value);
+    const same =
+      incoming.sig_page === layout.sig_page &&
+      incoming.sig_anchor === layout.sig_anchor &&
+      incoming.sig_offset_x === layout.sig_offset_x &&
+      incoming.sig_offset_y === layout.sig_offset_y &&
+      incoming.sig_scale === layout.sig_scale;
+    if (!same) {
+      setLayout(incoming);
+      setSelected(Number(incoming.sig_page || 1));
     }
   }, [value]);
 
@@ -228,8 +238,16 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
 
   const rect = getSigRectPixel();
 
+  const stopAll = (e) => { e.preventDefault(); e.stopPropagation(); };
+
   return (
-    <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex flex-col">
+    <div
+      className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex flex-col"
+      onContextMenu={stopAll}
+      onDragOver={stopAll}
+      onDrop={stopAll}
+      style={{ userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'none' }}
+    >
       <div className="px-4 py-3 flex items-center gap-2 border-b border-white/10 bg-[#0b1015]">
         <div className="text-sm font-medium">Atur Posisi Tanda Tangan</div>
         <div className="ml-auto flex items-center gap-3">
@@ -254,7 +272,16 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
           <button onClick={onClose} className="text-[12px] px-3 py-1 rounded-md bg-white/10 border border-white/15 text-gray-200">Close</button>
         </div>
       </div>
-      <div ref={containerRef} className="flex-1 overflow-auto p-4 space-y-6">
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-auto p-4 space-y-6"
+        onClick={stopAll}
+        onMouseDown={stopAll}
+        onMouseUp={stopAll}
+        onPointerDown={stopAll}
+        onPointerUp={stopAll}
+        style={{ userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'none' }}
+      >
         {error && (
           <div className="max-w-3xl mx-auto p-4 rounded-md border border-rose-400/30 bg-rose-500/10 text-rose-200 text-sm flex items-center justify-between">
             <span>{error}</span>
