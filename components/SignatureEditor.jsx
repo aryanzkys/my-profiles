@@ -104,6 +104,23 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
     return () => { cancelled = true; };
   }, [pages]);
 
+  // Block native drag/drop within the editor to avoid accidental navigation/refresh
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onDragStart = (e) => { e.preventDefault(); e.stopPropagation(); };
+    const onDrop = (e) => { e.preventDefault(); e.stopPropagation(); };
+    const onMouseDown = (e) => { /* prevent text selection/drag triggers */ e.preventDefault(); };
+    el.addEventListener('dragstart', onDragStart);
+    el.addEventListener('drop', onDrop);
+    el.addEventListener('mousedown', onMouseDown);
+    return () => {
+      el.removeEventListener('dragstart', onDragStart);
+      el.removeEventListener('drop', onDrop);
+      el.removeEventListener('mousedown', onMouseDown);
+    };
+  }, []);
+
   useEffect(() => {
     if (value) {
       setLayout({
@@ -245,9 +262,23 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
           </div>
         )}
         {pages.map(p => (
-          <div key={p.num} className={`relative mx-auto border ${p.num===selected?'border-cyan-400/40':'border-white/10'} rounded-md w-fit`} onClick={()=>{ setVal({ sig_page: p.num }); setSelected(p.num); }}>
+          <div
+            key={p.num}
+            className={`relative mx-auto border ${p.num===selected?'border-cyan-400/40':'border-white/10'} rounded-md w-fit`}
+            onClick={(e)=>{
+              e.preventDefault(); e.stopPropagation();
+              if (p.num !== layout.sig_page) { setVal({ sig_page: p.num }); setSelected(p.num); }
+            }}
+          >
             <div className="absolute -top-3 left-2 text-[11px] px-2 py-0.5 rounded bg-black/70 border border-white/10">Page {p.num}</div>
-            <canvas ref={el => { canvasesRef.current[p.num] = el; }} width={p.canvasW} height={p.canvasH} />
+            <canvas
+              ref={el => { canvasesRef.current[p.num] = el; }}
+              width={p.canvasW}
+              height={p.canvasH}
+              draggable={false}
+              onDragStart={(e)=> { e.preventDefault(); }}
+              onMouseDown={(e)=> { /* prevent default drag/select on canvas */ e.preventDefault(); }}
+            />
             {layout.sig_page === p.num && (
               <div
                 className="absolute cursor-move rounded-md border border-cyan-400/60"
