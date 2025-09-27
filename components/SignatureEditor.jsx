@@ -18,6 +18,7 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
   const [reloadKey, setReloadKey] = useState(0);
   const containerRef = useRef(null);
   const canvasesRef = useRef({}); // page -> canvas
+  const docRef = useRef(null); // hold loaded pdf.js document for rendering after canvases mount
   const [layout, setLayout] = useState({
     sig_page: value?.sig_page ?? 1,
     sig_anchor: (value?.sig_anchor || 'bottom-right').toLowerCase(),
@@ -38,7 +39,7 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
     img.src = '/signature.png';
   }, []);
 
-  // Render document
+  // Load document and compute page sizes; render happens in a separate effect after canvases mount
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -55,6 +56,8 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
         if (!res.ok) throw new Error('Gagal mengambil file PDF.');
         const buf = await res.arrayBuffer();
         const doc = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+        if (cancelled) return;
+        docRef.current = doc;
         const pageCount = doc.numPages;
         const results = [];
         for (let i = 1; i <= pageCount; i++) {
@@ -66,17 +69,6 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
           const scaled = page.getViewport({ scale });
           results.push({ num: i, width: viewport.width, height: viewport.height, canvasW: Math.floor(scaled.width), canvasH: Math.floor(scaled.height), scale });
           if (cancelled) return;
-          // Render
-          // Render page
-          try {
-            const canvas = canvasesRef.current[i];
-            if (canvas) {
-              canvas.width = Math.floor(scaled.width);
-              canvas.height = Math.floor(scaled.height);
-              const ctx = canvas.getContext('2d');
-              await page.render({ canvasContext: ctx, viewport: scaled }).promise;
-            }
-          } catch {}
         }
         if (!cancelled) setPages(results);
       } catch (e) {
@@ -86,6 +78,31 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
     })();
     return () => { cancelled = true; };
   }, [fileUrl, reloadKey]);
+
+  // Render pages onto canvases after pages state is set and canvases are mounted
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const doc = docRef.current;
+        if (!doc || pages.length === 0) return;
+        for (const p of pages) {
+          if (cancelled) return;
+          try {
+            const page = await doc.getPage(p.num);
+            const viewport = page.getViewport({ scale: p.scale });
+            const canvas = canvasesRef.current[p.num];
+            if (!canvas) continue;
+            canvas.width = Math.floor(viewport.width);
+            canvas.height = Math.floor(viewport.height);
+            const ctx = canvas.getContext('2d');
+            await page.render({ canvasContext: ctx, viewport }).promise;
+          } catch {}
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [pages]);
 
   useEffect(() => {
     if (value) {
@@ -245,8 +262,11 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
                   backgroundPosition: 'center',
                   opacity: 0.9,
                   boxShadow: '0 0 0 1px rgba(34,211,238,0.35) inset',
+                  userSelect: 'none',
                 }}
-                onMouseDown={()=> setDragging(true)}
+                draggable={false}
+                onDragStart={(e)=> { e.preventDefault(); }}
+                onMouseDown={(e)=> { e.preventDefault(); e.stopPropagation(); setDragging(true); }}
                 title="Drag untuk memindahkan"
               />
             )}
