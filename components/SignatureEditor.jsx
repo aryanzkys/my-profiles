@@ -28,6 +28,69 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
     sig_offset_y: Number(value?.sig_offset_y ?? 24),
     sig_scale: Number(value?.sig_scale ?? 0.35),
   });
+  const latestLayoutRef = useRef(null);
+  const lastBroadcastRef = useRef(null);
+
+  const layoutsEqual = useCallback(
+    (a, b) =>
+      a.sig_page === b.sig_page &&
+      a.sig_anchor === b.sig_anchor &&
+      a.sig_offset_x === b.sig_offset_x &&
+      a.sig_offset_y === b.sig_offset_y &&
+      a.sig_scale === b.sig_scale,
+    []
+  );
+
+  const normalizeLayout = useCallback(
+    (v) => ({
+      sig_page: Number(v?.sig_page ?? 1),
+      sig_anchor: String(v?.sig_anchor || 'bottom-right').toLowerCase(),
+      sig_offset_x: Number(v?.sig_offset_x ?? 24),
+      sig_offset_y: Number(v?.sig_offset_y ?? 24),
+      sig_scale: Number(v?.sig_scale ?? 0.35),
+    }),
+    []
+  );
+
+  useEffect(() => {
+    const normalized = normalizeLayout(layout);
+    latestLayoutRef.current = normalized;
+    if (!lastBroadcastRef.current) {
+      lastBroadcastRef.current = normalized;
+    }
+  }, [layout, normalizeLayout]);
+
+  const broadcastLayout = useCallback(
+    (next) => {
+      if (!onChange) return;
+      const normalized = normalizeLayout(next);
+      if (lastBroadcastRef.current && layoutsEqual(lastBroadcastRef.current, normalized)) return;
+      lastBroadcastRef.current = normalized;
+      onChange(normalized);
+    },
+    [normalizeLayout, onChange, layoutsEqual]
+  );
+
+  const updateLayout = useCallback(
+    (patch, options = {}) => {
+      const { skipBroadcast = false } = options;
+      setLayout((prev) => {
+        const next = normalizeLayout({ ...prev, ...patch });
+        if (layoutsEqual(prev, next)) return prev;
+        latestLayoutRef.current = next;
+        if (!skipBroadcast) {
+          broadcastLayout(next);
+        }
+        return next;
+      });
+    },
+    [broadcastLayout, layoutsEqual, normalizeLayout]
+  );
+
+  const flushLayout = useCallback(() => {
+    const current = latestLayoutRef.current || normalizeLayout(layout);
+    broadcastLayout(current);
+  }, [broadcastLayout, layout, normalizeLayout]);
 
   // Signature base size
   const [sigBase, setSigBase] = useState({ w: 180, h: 60 });
@@ -133,34 +196,16 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
     };
   }, []);
 
-  const normalizeLayout = (v) => ({
-    sig_page: Number(v?.sig_page ?? 1),
-    sig_anchor: String(v?.sig_anchor || 'bottom-right').toLowerCase(),
-    sig_offset_x: Number(v?.sig_offset_x ?? 24),
-    sig_offset_y: Number(v?.sig_offset_y ?? 24),
-    sig_scale: Number(v?.sig_scale ?? 0.35),
-  });
-
   useEffect(() => {
     if (!value) return;
     const incoming = normalizeLayout(value);
-    const same =
-      incoming.sig_page === layout.sig_page &&
-      incoming.sig_anchor === layout.sig_anchor &&
-      incoming.sig_offset_x === layout.sig_offset_x &&
-      incoming.sig_offset_y === layout.sig_offset_y &&
-      incoming.sig_scale === layout.sig_scale;
+    const same = layoutsEqual(incoming, layout);
     if (!same) {
+      lastBroadcastRef.current = incoming;
       setLayout(incoming);
       setSelected(Number(incoming.sig_page || 1));
     }
-  }, [value]);
-
-  const setVal = (patch) => {
-    const next = { ...layout, ...patch };
-    setLayout(next);
-    onChange?.(next);
-  };
+  }, [layout, layoutsEqual, normalizeLayout, value]);
 
   const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 
@@ -249,7 +294,7 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
         offY = y;
         break;
     }
-    setVal({ sig_offset_x: offX, sig_offset_y: offY });
+    updateLayout({ sig_offset_x: offX, sig_offset_y: offY }, { skipBroadcast: dragging });
   };
 
   // Smooth drag with RAF + pointer capture fallback
@@ -307,11 +352,11 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
             offsetY = yPdfBottom;
             break;
         }
-        setVal({ sig_offset_x: offsetX, sig_offset_y: offsetY });
+        updateLayout({ sig_offset_x: offsetX, sig_offset_y: offsetY }, { skipBroadcast: true });
         rafRef.current = null;
       });
     },
-    [dragging, layout, pages, sigBase]
+    [dragging, layout, pages, sigBase, updateLayout]
   );
 
   const rect = getSigRectPixel();
@@ -326,6 +371,7 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
         rafRef.current = null;
       }
       setDragging(false);
+      flushLayout();
       const target = dragRef.current.target;
       const pointerId = dragRef.current.pointerId;
       if (target && pointerId != null) {
@@ -338,7 +384,7 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
       dragRef.current.grabDy = 0;
       dragRef.current.target = null;
     },
-    [dragging]
+    [dragging, flushLayout]
   );
 
   useEffect(() => {
@@ -368,6 +414,10 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
       rafRef.current = null;
     }
   }, []);
+
+  useEffect(() => () => {
+    flushLayout();
+  }, [flushLayout]);
 
   const onKeyDown = (e) => {
     const p = pages.find((p) => p.num === (layout.sig_page || 1));
@@ -419,7 +469,7 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
             value={layout.sig_page}
             onChange={(e) => {
               const v = parseInt(e.target.value || '1', 10);
-              setVal({ sig_page: clamp(v, 1, pages.length || 1) });
+              updateLayout({ sig_page: clamp(v, 1, pages.length || 1) });
               setSelected(clamp(v, 1, pages.length || 1));
             }}
             className="w-16 rounded bg-white/5 border border-white/10 px-2 py-1 text-xs"
@@ -427,7 +477,7 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
           <label className="text-[12px] text-gray-300">Anchor</label>
           <select
             value={layout.sig_anchor}
-            onChange={(e) => setVal({ sig_anchor: e.target.value })}
+            onChange={(e) => updateLayout({ sig_anchor: e.target.value })}
             className="rounded bg-white/5 border border-white/10 px-2 py-1 text-xs"
           >
             <option value="bottom-right">bottom-right</option>
@@ -443,18 +493,24 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
             max="2"
             value={layout.sig_scale}
             onChange={(e) =>
-              setVal({ sig_scale: Number(e.target.value || 0.35) })
+              updateLayout({ sig_scale: Number(e.target.value || 0.35) })
             }
             className="w-20 rounded bg-white/5 border border-white/10 px-2 py-1 text-xs"
           />
           <button
-            onClick={() => onSave?.(layout)}
+            onClick={() => {
+              flushLayout();
+              onSave?.(latestLayoutRef.current || layout);
+            }}
             className="text-[12px] px-3 py-1 rounded-md bg-emerald-500/20 border border-emerald-400/30 text-emerald-200"
           >
             Save
           </button>
           <button
-            onClick={onClose}
+            onClick={() => {
+              flushLayout();
+              onClose?.();
+            }}
             className="text-[12px] px-3 py-1 rounded-md bg-white/10 border border-white/15 text-gray-200"
           >
             Close
@@ -493,7 +549,7 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
               e.preventDefault();
               e.stopPropagation();
               if (p.num !== layout.sig_page) {
-                setVal({ sig_page: p.num });
+                updateLayout({ sig_page: p.num });
                 setSelected(p.num);
               }
             }}
