@@ -12,7 +12,7 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
   const [pages, setPages] = useState([]);
   const [selected, setSelected] = useState(1);
   const [dragging, setDragging] = useState(false);
-  const dragRef = useRef({ pointerId: null, grabDx: 0, grabDy: 0 });
+  const dragRef = useRef({ pointerId: null, grabDx: 0, grabDy: 0, target: null });
   const rafRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -125,16 +125,11 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
       e.preventDefault();
       e.stopPropagation();
     };
-    const onMouseDown = (e) => {
-      e.preventDefault();
-    };
     el.addEventListener('dragstart', onDragStart);
     el.addEventListener('drop', onDrop);
-    el.addEventListener('mousedown', onMouseDown);
     return () => {
       el.removeEventListener('dragstart', onDragStart);
       el.removeEventListener('drop', onDrop);
-      el.removeEventListener('mousedown', onMouseDown);
     };
   }, []);
 
@@ -223,64 +218,155 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
     };
   };
 
-  // Smooth drag with RAF
-  const handlePointerMove = (e) => {
-    if (!dragging) return;
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = requestAnimationFrame(() => {
-      const page = layout.sig_page || 1;
-      const p = pages.find((p) => p.num === page);
-      if (!p) return;
-      const canvasRect = canvasesRef.current[page]?.getBoundingClientRect();
-      if (!canvasRect) return;
-      const sigWpx = sigWidthPdf() * p.scale;
-      const sigHpx = sigHeightPdf() * p.scale;
-
-      let px = e.clientX - canvasRect.left - dragRef.current.grabDx;
-      let py = e.clientY - canvasRect.top - dragRef.current.grabDy;
-
-      px = clamp(px, 0, p.canvasW - sigWpx);
-      py = clamp(py, 0, p.canvasH - sigHpx);
-
-      const xPdf = px / p.scale;
-      const yPdfBottom = (p.canvasH - (py + sigHpx)) / p.scale;
-
-      const a = (layout.sig_anchor || 'bottom-right').toLowerCase();
-      let dx = 0,
-        dy = 0;
-      switch (a) {
-        case 'bottom-left':
-          dx = xPdf;
-          dy = yPdfBottom;
-          break;
-        case 'top-left':
-          dx = xPdf;
-          dy = p.height - sigHeightPdf() - yPdfBottom;
-          break;
-        case 'top-right':
-          dx = p.width - sigWidthPdf() - xPdf;
-          dy = p.height - sigHeightPdf() - yPdfBottom;
-          break;
-        case 'bottom-right':
-        default:
-          dx = p.width - sigWidthPdf() - xPdf;
-          dy = yPdfBottom;
-          break;
-      }
-      setVal({ sig_offset_x: dx, sig_offset_y: dy });
-    });
+  const moveByPdf = (dxPdf, dyPdf) => {
+    const page = layout.sig_page || 1;
+    const p = pages.find((p) => p.num === page);
+    if (!p) return;
+    const sigW = sigWidthPdf();
+    const sigH = sigHeightPdf();
+    const cur = anchorToXY(page, sigW, sigH);
+    let x = clamp((cur.x || 0) + dxPdf, 0, Math.max(0, p.width - sigW));
+    let y = clamp((cur.y || 0) + dyPdf, 0, Math.max(0, p.height - sigH));
+    const a = (layout.sig_anchor || 'bottom-right').toLowerCase();
+    let offX = 0,
+      offY = 0;
+    switch (a) {
+      case 'bottom-left':
+        offX = x;
+        offY = y;
+        break;
+      case 'top-left':
+        offX = x;
+        offY = p.height - sigH - y;
+        break;
+      case 'top-right':
+        offX = p.width - sigW - x;
+        offY = p.height - sigH - y;
+        break;
+      case 'bottom-right':
+      default:
+        offX = p.width - sigW - x;
+        offY = y;
+        break;
+    }
+    setVal({ sig_offset_x: offX, sig_offset_y: offY });
   };
 
+  // Smooth drag with RAF + pointer capture fallback
+  const handlePointerMove = useCallback(
+    (event) => {
+      if (!dragging) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      const clientX = event.clientX;
+      const clientY = event.clientY;
+
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+        const pageNumber = layout.sig_page || 1;
+        const pageMeta = pages.find((item) => item.num === pageNumber);
+        if (!pageMeta) return;
+
+        const canvasRect = canvasesRef.current[pageNumber]?.getBoundingClientRect();
+        if (!canvasRect) return;
+
+        const sigW = sigWidthPdf();
+        const sigH = sigHeightPdf();
+        const sigWpx = sigW * pageMeta.scale;
+        const sigHpx = sigH * pageMeta.scale;
+
+        let px = clientX - canvasRect.left - dragRef.current.grabDx;
+        let py = clientY - canvasRect.top - dragRef.current.grabDy;
+
+        px = clamp(px, 0, pageMeta.canvasW - sigWpx);
+        py = clamp(py, 0, pageMeta.canvasH - sigHpx);
+
+        const xPdf = px / pageMeta.scale;
+        const yPdfBottom = (pageMeta.canvasH - (py + sigHpx)) / pageMeta.scale;
+
+        const anchor = (layout.sig_anchor || 'bottom-right').toLowerCase();
+        let offsetX = 0;
+        let offsetY = 0;
+        switch (anchor) {
+          case 'bottom-left':
+            offsetX = xPdf;
+            offsetY = yPdfBottom;
+            break;
+          case 'top-left':
+            offsetX = xPdf;
+            offsetY = pageMeta.height - sigH - yPdfBottom;
+            break;
+          case 'top-right':
+            offsetX = pageMeta.width - sigW - xPdf;
+            offsetY = pageMeta.height - sigH - yPdfBottom;
+            break;
+          case 'bottom-right':
+          default:
+            offsetX = pageMeta.width - sigW - xPdf;
+            offsetY = yPdfBottom;
+            break;
+        }
+        setVal({ sig_offset_x: offsetX, sig_offset_y: offsetY });
+        rafRef.current = null;
+      });
+    },
+    [dragging, layout, pages, sigBase]
+  );
+
   const rect = getSigRectPixel();
+
+  const endDrag = useCallback(
+    (e) => {
+      if (!dragging) return;
+      e?.preventDefault?.();
+      e?.stopPropagation?.();
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      setDragging(false);
+      const target = dragRef.current.target;
+      const pointerId = dragRef.current.pointerId;
+      if (target && pointerId != null) {
+        try {
+          target.releasePointerCapture?.(pointerId);
+        } catch {}
+      }
+      dragRef.current.pointerId = null;
+      dragRef.current.grabDx = 0;
+      dragRef.current.grabDy = 0;
+      dragRef.current.target = null;
+    },
+    [dragging]
+  );
+
+  useEffect(() => {
+    if (!dragging) return;
+    const move = (ev) => handlePointerMove(ev);
+    const up = (ev) => endDrag(ev);
+    window.addEventListener('pointermove', move, { passive: false });
+    window.addEventListener('pointerup', up, { passive: false });
+    window.addEventListener('pointercancel', up, { passive: false });
+    return () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+    };
+  }, [dragging, handlePointerMove, endDrag]);
 
   // Auto focus
   useEffect(() => {
     try {
       containerRef.current?.focus();
     } catch {}
+  }, []);
+
+  useEffect(() => () => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
   }, []);
 
   const onKeyDown = (e) => {
@@ -290,16 +376,16 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
     const stepPdf = pxStep / (p.scale || 1);
     if (e.key === 'ArrowLeft') {
       e.preventDefault();
-      setVal({ sig_offset_x: layout.sig_offset_x + stepPdf });
+      moveByPdf(-stepPdf, 0);
     } else if (e.key === 'ArrowRight') {
       e.preventDefault();
-      setVal({ sig_offset_x: layout.sig_offset_x - stepPdf });
+      moveByPdf(stepPdf, 0);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setVal({ sig_offset_y: layout.sig_offset_y + stepPdf });
+      moveByPdf(0, stepPdf);
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setVal({ sig_offset_y: layout.sig_offset_y - stepPdf });
+      moveByPdf(0, -stepPdf);
     }
   };
 
@@ -455,27 +541,15 @@ export default function SignatureEditor({ fileUrl, value, onChange, onSave, onCl
                   try {
                     e.currentTarget.setPointerCapture?.(e.pointerId);
                   } catch {}
-                  dragRef.current.grabDx =
-                    e.clientX - e.currentTarget.getBoundingClientRect().left;
-                  dragRef.current.grabDy =
-                    e.clientY - e.currentTarget.getBoundingClientRect().top;
+                  const rectBox = e.currentTarget.getBoundingClientRect();
+                  dragRef.current.pointerId = e.pointerId;
+                  dragRef.current.target = e.currentTarget;
+                  dragRef.current.grabDx = e.clientX - rectBox.left;
+                  dragRef.current.grabDy = e.clientY - rectBox.top;
                 }}
                 onPointerMove={handlePointerMove}
-                onPointerUp={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setDragging(false);
-                  try {
-                    e.currentTarget.releasePointerCapture?.(e.pointerId);
-                  } catch {}
-                }}
-                onPointerCancel={(e) => {
-                  e.preventDefault();
-                  setDragging(false);
-                  try {
-                    e.currentTarget.releasePointerCapture?.(e.pointerId);
-                  } catch {}
-                }}
+                onPointerUp={endDrag}
+                onPointerCancel={endDrag}
               />
             )}
           </div>
