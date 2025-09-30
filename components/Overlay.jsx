@@ -85,9 +85,9 @@ export default function Overlay() {
               className="pointer-events-none text-center"
             >
               <h1 className="text-white text-2xl sm:text-3xl md:text-5xl font-bold drop-shadow-[0_4px_20px_rgba(0,255,255,0.35)]">
-                Hi, I'm Aryan – Computer Science Student
+                Hi, I'm Aryan - Computer Science Student
               </h1>
-              <p className="text-cyan-200 mt-2 sm:mt-3 opacity-90 text-sm sm:text-base">Aspiring DevSecOps Engineer</p>
+              <p className="text-cyan-200 mt-2 sm:mt-3 opacity-90 text-sm sm:text-base">DevSecOps Enthusiast</p>
             </motion.div>
           )}
           {section === 'about' && (
