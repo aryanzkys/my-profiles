@@ -340,10 +340,17 @@ function AdminInner() {
   const getDriveId = (url) => {
     if (!url) return null;
     const m = url.match(/\/d\/([A-Za-z0-9_-]+)/) || url.match(/[?&]id=([A-Za-z0-9_-]+)/);
-    return m ? m[1] : null;
+    if (!m) return null;
+    // Only allow valid Google Drive ID: 10-100 chars, alphanum, dash, underscore
+    const id = m[1];
+    if (/^[A-Za-z0-9_-]{10,100}$/.test(id)) {
+      return id;
+    }
+    return null;
   };
   const getDrivePreviewUrl = (url) => {
     const id = getDriveId(url);
+    // Only allow canonical Google Drive preview URLs
     return id ? `https://drive.google.com/file/d/${id}/preview` : null;
   };
 
@@ -849,7 +856,7 @@ function AdminInner() {
                             const item = (data[selected.year]||[])[selected.idx] || {};
                             const url = item.cert;
                             const preview = getDrivePreviewUrl(url);
-                            return preview ? (
+                            return preview && preview.startsWith('https://drive.google.com/file/d/') && preview.endsWith('/preview') ? (
                               <div className="aspect-video rounded-md overflow-hidden border border-white/10">
                                 <iframe src={preview} className="w-full h-full" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture" />
                               </div>
