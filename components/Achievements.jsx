@@ -23,6 +23,10 @@ const itemVariants = {
 };
 
 // Convert a variety of Google Drive share links to a preview-friendly URL
+const ALLOWED_DRIVE_HOSTNAMES = [
+  'drive.google.com',
+  'docs.google.com' // Add more if needed for preview support
+];
 function toDrivePreviewUrl(url) {
   if (!url) return '';
   try {
@@ -34,7 +38,7 @@ function toDrivePreviewUrl(url) {
     let id = '';
     const pathParts = u.pathname.split('/').filter(Boolean);
     const i = pathParts.indexOf('d');
-    if (u.hostname.includes('drive.google.com') && i !== -1 && pathParts[i + 1]) {
+    if (ALLOWED_DRIVE_HOSTNAMES.includes(u.hostname) && i !== -1 && pathParts[i + 1]) {
       id = pathParts[i + 1];
     }
     if (!id) {
