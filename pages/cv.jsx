@@ -107,50 +107,80 @@ export default function CvShowcasePage() {
         <meta name="robots" content="index,follow" />
       </Head>
 
-      {!showContent && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-neutral-950/95 backdrop-blur-lg">
-          <motion.div
-            className="relative flex h-56 w-56 flex-col items-center justify-center gap-6 rounded-full border border-neutral-800/80 bg-neutral-900/80 p-10 text-center shadow-[0_0_80px_rgba(14,165,233,0.35)]"
-            initial={{ opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
-            role="status"
-            aria-live="polite"
-          >
-            <motion.div
-              className="relative h-32 w-32"
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 4, ease: 'linear' }}
-            >
-              <div className="absolute inset-0 rounded-full border-4 border-dashed border-cyan-400/50" />
-              <motion.div
-                className="absolute inset-2 rounded-full border border-neutral-700/70"
-                animate={{ rotate: -360 }}
-                transition={{ repeat: Infinity, duration: 6, ease: 'linear' }}
-              />
-              <motion.div
-                className="absolute left-1/2 top-0 h-3 w-3 -translate-x-1/2 rounded-full bg-cyan-400 shadow-[0_0_16px_rgba(34,211,238,0.8)]"
-                animate={{ y: [0, 8, 0] }}
-                transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
-              />
-            </motion.div>
-            <div className="space-y-1">
-              <p className="text-xs uppercase tracking-[0.45em] text-cyan-300/90">Initializing CV matrix</p>
-              <p className="text-sm text-neutral-200">Synchronizing robotic nodes…</p>
-            </div>
-            <motion.div
-              key={timeLeft}
-              className="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-800/80 text-lg font-semibold text-cyan-300"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-            >
-              {timeLeft}
-            </motion.div>
-            <p className="text-[11px] uppercase tracking-[0.35em] text-neutral-500">seconds</p>
-          </motion.div>
-        </div>
-      )}
+{!showContent && (
+  <div className="absolute inset-0 z-30 flex items-center justify-center bg-gradient-to-b from-neutral-950 via-neutral-900/95 to-neutral-950 backdrop-blur-xl">
+    <motion.div
+      className="relative flex h-64 w-64 flex-col items-center justify-center gap-7 rounded-full border border-cyan-400/20 bg-neutral-900/70 p-10 text-center shadow-[0_0_100px_rgba(34,211,238,0.25)]"
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.8, ease: 'easeOut' }}
+      role="status"
+      aria-live="polite"
+    >
+      {/* Outer rotating ring */}
+      <motion.div
+        className="relative h-40 w-40"
+        animate={{ rotate: 360 }}
+        transition={{ repeat: Infinity, duration: 6, ease: 'linear' }}
+      >
+        <div className="absolute inset-0 rounded-full border-[3px] border-dashed border-cyan-400/40" />
+        <motion.div
+          className="absolute inset-3 rounded-full border border-cyan-500/30"
+          animate={{ rotate: -360 }}
+          transition={{ repeat: Infinity, duration: 9, ease: 'linear' }}
+        />
+        <motion.div
+          className="absolute left-1/2 top-0 h-3 w-3 -translate-x-1/2 rounded-full bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.9)]"
+          animate={{ y: [0, 10, 0] }}
+          transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
+        />
+      </motion.div>
+
+      {/* Animated text */}
+      <motion.div
+        className="space-y-1"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+      >
+        <p className="text-[11px] uppercase tracking-[0.4em] text-cyan-300/90">
+          Initializing CV Matrix
+        </p>
+        <p className="text-sm text-neutral-200/90">
+          Synchronizing intelligent nodes…
+        </p>
+      </motion.div>
+
+      {/* Countdown block */}
+      <motion.div
+        key={timeLeft}
+        className="flex h-12 w-12 items-center justify-center rounded-xl bg-neutral-800/80 text-xl font-semibold text-cyan-300 shadow-inner shadow-cyan-500/20"
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+      >
+        {timeLeft}
+      </motion.div>
+
+      <motion.p
+        className="text-[11px] uppercase tracking-[0.35em] text-neutral-500"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
+        seconds
+      </motion.p>
+
+      {/* Subtle pulsing glow */}
+      <motion.div
+        className="absolute inset-0 rounded-full bg-cyan-400/5 blur-3xl"
+        animate={{ opacity: [0.1, 0.3, 0.1], scale: [1, 1.05, 1] }}
+        transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+      />
+    </motion.div>
+  </div>
+)}
+
 
       <div
         className={`relative mx-auto flex min-h-screen max-w-6xl flex-col gap-10 px-6 py-16 transition-opacity duration-500 ${
