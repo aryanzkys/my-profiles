@@ -1,6 +1,6 @@
 {
   "meta": {
-    "last_generated": "2025-09-19T16:52:26.199Z"
+    "last_generated": "2025-10-11T15:31:28.152Z"
   },
   "patches": [
     {
@@ -938,6 +938,364 @@
           "path": "pages/AI.jsx",
           "status": "M",
           "route": "/AI"
+        }
+      ]
+    },
+    {
+      "number": 53,
+      "commit": "3eaca8c8f61c59e0cf813831ac10fe0a43a79b12",
+      "date": "2025-09-19T16:53:35.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "fix(admin): ensure owner email is env-configurable + short-circuit authority/banned checks for owner",
+      "routes": [
+        "/admin"
+      ],
+      "changed": [
+        {
+          "path": "pages/admin.jsx",
+          "status": "M",
+          "route": "/admin"
+        }
+      ]
+    },
+    {
+      "number": 54,
+      "commit": "ed041f27d23ea16a04a1256cc6febf3a9d67b5e4",
+      "date": "2025-09-19T17:24:28.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "feat(admin): announcement preview and published timestamp",
+      "routes": [
+        "/admin"
+      ],
+      "changed": [
+        {
+          "path": "pages/admin.jsx",
+          "status": "M",
+          "route": "/admin"
+        }
+      ]
+    },
+    {
+      "number": 55,
+      "commit": "a4e1a68f170039f059c6efdd4f338af9608e1c83",
+      "date": "2025-09-19T17:27:23.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "feat(admin): add mobile preview toggle for announcements",
+      "routes": [
+        "/admin"
+      ],
+      "changed": [
+        {
+          "path": "pages/admin.jsx",
+          "status": "M",
+          "route": "/admin"
+        }
+      ]
+    },
+    {
+      "number": 56,
+      "commit": "4976a1cf39c95493697975dcb7dba42510b1306d",
+      "date": "2025-09-19T17:33:51.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "fix(admin): disable auto reload shortcuts while typing in Announcement editor",
+      "routes": [
+        "/admin"
+      ],
+      "changed": [
+        {
+          "path": "pages/admin.jsx",
+          "status": "M",
+          "route": "/admin"
+        }
+      ]
+    },
+    {
+      "number": 57,
+      "commit": "24b02e1e2ba4e9e4b5de6d2cfba0243ca8f83a2b",
+      "date": "2025-09-20T16:37:45.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "feat(announcement): target (main|ai|both), gated popup by route, admin target selector + live status; storage fallback",
+      "routes": [
+        "/admin"
+      ],
+      "changed": [
+        {
+          "path": "pages/admin.jsx",
+          "status": "M",
+          "route": "/admin"
+        }
+      ]
+    },
+    {
+      "number": 58,
+      "commit": "2898ade7dcd0a80ec5de40d6fc5b3c75e817670b",
+      "date": "2025-09-20T16:53:24.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "feat(announcements): Supabase schema (table/index/RLS), refined live-status per-target, and admin filters + pagination; push",
+      "routes": [
+        "/admin"
+      ],
+      "changed": [
+        {
+          "path": "pages/admin.jsx",
+          "status": "M",
+          "route": "/admin"
+        }
+      ]
+    },
+    {
+      "number": 59,
+      "commit": "ac70f42e49b995913feb46d6bfdc92deccca66f0",
+      "date": "2025-09-20T17:04:47.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "fix(announcements): list uses Supabase Storage fallback and refresh after save for immediate visibility",
+      "routes": [
+        "/admin"
+      ],
+      "changed": [
+        {
+          "path": "pages/admin.jsx",
+          "status": "M",
+          "route": "/admin"
+        }
+      ]
+    },
+    {
+      "number": 60,
+      "commit": "bc0c0e5ae3d97c6b73ba11863592641b164bc4e6",
+      "date": "2025-09-23T09:19:28.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "seo: add robots.txt and sitemap.xml; update AI page meta; add GSC verification meta to home",
+      "routes": [
+        "/AI",
+        "/"
+      ],
+      "changed": [
+        {
+          "path": "pages/AI.jsx",
+          "status": "M",
+          "route": "/AI"
+        },
+        {
+          "path": "pages/index.jsx",
+          "status": "M",
+          "route": "/"
+        }
+      ]
+    },
+    {
+      "number": 61,
+      "commit": "022a198331448306a2133e52751ef27647167320",
+      "date": "2025-09-23T09:25:50.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "opo ae",
+      "routes": [
+        "/"
+      ],
+      "changed": [
+        {
+          "path": "pages/index.jsx",
+          "status": "M",
+          "route": "/"
+        }
+      ]
+    },
+    {
+      "number": 62,
+      "commit": "210ce3f490feb95d0460eab562c466a826a23940",
+      "date": "2025-09-23T10:17:24.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "ui(ai): neon RGB title with cursor-proximity glow and interactive hover effects",
+      "routes": [
+        "/AI"
+      ],
+      "changed": [
+        {
+          "path": "pages/AI.jsx",
+          "status": "M",
+          "route": "/AI"
+        }
+      ]
+    },
+    {
+      "number": 63,
+      "commit": "b34a2c7872f11d006dfbc2c6547dd3e959b89937",
+      "date": "2025-09-26T15:17:18.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "feat(sign-me): add user upload page for PDF signature requests and admin dashboard; integrate Supabase client",
+      "routes": [
+        "/admin/sign-requests",
+        "/sign-me"
+      ],
+      "changed": [
+        {
+          "path": "pages/admin/sign-requests.jsx",
+          "status": "A",
+          "route": "/admin/sign-requests"
+        },
+        {
+          "path": "pages/sign-me.jsx",
+          "status": "A",
+          "route": "/sign-me"
+        }
+      ]
+    },
+    {
+      "number": 64,
+      "commit": "184cfa70d784ec8c2e97770f1ff2576d6d4a4175",
+      "date": "2025-09-26T15:22:50.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "feat(admin): sign-requests dashboard with status actions, pdf-lib signing, Supabase upload, and simple admin gate",
+      "routes": [
+        "/admin/sign-requests"
+      ],
+      "changed": [
+        {
+          "path": "pages/admin/sign-requests.jsx",
+          "status": "M",
+          "route": "/admin/sign-requests"
+        }
+      ]
+    },
+    {
+      "number": 65,
+      "commit": "fd4052488e404c83686ea746ae950bd0f87e5b48",
+      "date": "2025-09-26T15:40:24.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "fix(sign-me): handle missing bucket/table gracefully; use configurable bucket; add migration for sign_requests table",
+      "routes": [
+        "/admin/sign-requests",
+        "/sign-me"
+      ],
+      "changed": [
+        {
+          "path": "pages/admin/sign-requests.jsx",
+          "status": "M",
+          "route": "/admin/sign-requests"
+        },
+        {
+          "path": "pages/sign-me.jsx",
+          "status": "M",
+          "route": "/sign-me"
+        }
+      ]
+    },
+    {
+      "number": 66,
+      "commit": "9a7cf4a7ed795c52990d20864118be253e307bba",
+      "date": "2025-09-26T16:10:02.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "feat(admin): editable signature layout (page/anchor/offset/scale) + use layout when signing; add DB columns migration",
+      "routes": [
+        "/admin/sign-requests"
+      ],
+      "changed": [
+        {
+          "path": "pages/admin/sign-requests.jsx",
+          "status": "M",
+          "route": "/admin/sign-requests"
+        }
+      ]
+    },
+    {
+      "number": 67,
+      "commit": "86d81de55da43baea93ae7c9a3aba40c1b140e34",
+      "date": "2025-09-26T16:15:30.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "feat(admin): interactive PDF preview with drag-and-drop signature box using pdfjs-dist; wire to layout fields",
+      "routes": [
+        "/admin/sign-requests"
+      ],
+      "changed": [
+        {
+          "path": "pages/admin/sign-requests.jsx",
+          "status": "M",
+          "route": "/admin/sign-requests"
+        }
+      ]
+    },
+    {
+      "number": 68,
+      "commit": "ef9ee2b660060de5785d15d1e696d329e369cac2",
+      "date": "2025-09-26T16:32:35.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "feat(admin): full-screen multi-page SignatureEditor with drag-and-drop; wired to Layout button and DB fields",
+      "routes": [
+        "/admin/sign-requests"
+      ],
+      "changed": [
+        {
+          "path": "pages/admin/sign-requests.jsx",
+          "status": "M",
+          "route": "/admin/sign-requests"
+        }
+      ]
+    },
+    {
+      "number": 69,
+      "commit": "66196ba87bc3bae37456a413db0c5102fdcb2fe1",
+      "date": "2025-09-26T16:46:26.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "chore(admin): simplify UI by removing inline SignaturePreview; rely solely on full-screen SignatureEditor",
+      "routes": [
+        "/admin/sign-requests"
+      ],
+      "changed": [
+        {
+          "path": "pages/admin/sign-requests.jsx",
+          "status": "M",
+          "route": "/admin/sign-requests"
+        }
+      ]
+    },
+    {
+      "number": 70,
+      "commit": "b39a520598fc3b3009685a2703285a0dffae3cb0",
+      "date": "2025-10-04T11:41:00.000Z",
+      "author": "Aryan Zaky Prayogo <prayogoaryan63@gmail.com>",
+      "message": "Potential fix for code scanning alert no. 3: DOM text reinterpreted as HTML",
+      "routes": [
+        "/admin"
+      ],
+      "changed": [
+        {
+          "path": "pages/admin.jsx",
+          "status": "M",
+          "route": "/admin"
+        }
+      ]
+    },
+    {
+      "number": 71,
+      "commit": "39c3d7494310e4a92e7944c45de7ddcc285cb579",
+      "date": "2025-10-11T11:55:27.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "Add CV generator page and update dependencies",
+      "routes": [
+        "/cv"
+      ],
+      "changed": [
+        {
+          "path": "pages/cv.jsx",
+          "status": "M",
+          "route": "/cv"
+        }
+      ]
+    },
+    {
+      "number": 72,
+      "commit": "5fce8ab7a65151bb8faedbfba99ec332273ce1fc",
+      "date": "2025-10-11T15:25:36.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "Add CV generator page and update dependencies",
+      "routes": [
+        "/cv"
+      ],
+      "changed": [
+        {
+          "path": "pages/cv.jsx",
+          "status": "M",
+          "route": "/cv"
         }
       ]
     }
