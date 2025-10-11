@@ -1,0 +1,105 @@
+{
+  "basics": {
+    "name": "Aryan Zaky Prayogo",
+    "headline": "Aspiring DevSecOps Engineer & Community Advocate",
+    "location": {
+      "city": "Malang",
+      "country": "Indonesia"
+    },
+    "email": "prayogoaryan63@gmail.com",
+    "phone": "+62 857-9043-9401",
+    "website": "https://aryanstack.netlify.app",
+    "github": "https://github.com/aryanzkys",
+    "linkedin": "https://linkedin.com/in/aryanzkys",
+    "summary": "I blend DevSecOps fundamentals with youth empowerment initiatives — building reliable systems, leading tech-for-good programs, and communicating complex ideas with clarity."
+  },
+  "education": [
+    {
+      "institution": "SMK Telkom Malang",
+      "location": "Malang, Indonesia",
+      "degree": "Network Engineering",
+      "period": "2022 – Present",
+      "highlights": [
+        "Head of IT Infrastructure for student tech club, managed campus-wide network modernization",
+        "Built automated device monitoring dashboards and streamlined onboarding documentation"
+      ]
+    }
+  ],
+  "experience": [
+    {
+      "title": "DevOps & Security Intern",
+      "company": "Independent / Community Projects",
+      "location": "Remote",
+      "period": "2023 – Present",
+      "achievements": [
+        "Containerized micro-app deployments on Netlify and Vercel with automated QA previews",
+        "Built CI/CD workflows with GitHub Actions, integrating dependency audits and visual regression tests",
+        "Co-led cybersecurity literacy workshops reaching 120+ students across East Java"
+      ]
+    },
+    {
+      "title": "Project Lead",
+      "company": "Gen-YAWS (Youth Awareness of Stunting)",
+      "location": "Malang, Indonesia",
+      "period": "2023",
+      "achievements": [
+        "Designed tech-enabled nutrition literacy program with peer mentors and microlearning modules",
+        "Coordinated stakeholders across schools, community health centers, and student volunteers",
+        "Published actionable research insights presented at local government innovation forum"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "AryanStack Portfolio",
+      "description": "Personal site featuring AI assistant, Spotify integration, and dynamic CV builder. Built using Next.js, Tailwind, and Netlify Functions.",
+      "link": "https://aryanstack.netlify.app"
+    },
+    {
+      "name": "Mini Game Arcade",
+      "description": "Bundle of web mini-games (Chess, Flappy Bird) with local persistence, polished UI, and multiplayer-ready architecture.",
+      "link": "https://github.com/aryanzkys"
+    }
+  ],
+  "skills": {
+    "technical": [
+      "DevSecOps basics",
+      "CI/CD automation",
+      "Cloud fundamentals",
+      "JavaScript / TypeScript",
+      "React & Next.js",
+      "Node.js",
+      "Tailwind CSS",
+      "Framer Motion",
+      "API design & OAuth (PKCE)"
+    ],
+    "tools": [
+      "Git & GitHub",
+      "Netlify",
+      "Vercel",
+      "Docker",
+      "Postman",
+      "Supabase"
+    ],
+    "interests": [
+      "Cybersecurity",
+      "Youth empowerment",
+      "Community health literacy",
+      "Ethical technology"
+    ]
+  },
+  "awards": [
+    {
+      "title": "Top 5 Finalist",
+      "issuer": "Telkom Student Innovation Challenge",
+      "year": "2024",
+      "details": "Recognized for prototyping community-driven incident reporting platform with automated triage."
+    },
+    {
+      "title": "Best Speaker",
+      "issuer": "Young Innovators Summit",
+      "year": "2023",
+      "details": "Delivered keynote on ethical AI and grassroots digital literacy initiatives."
+    }
+  ]
+}

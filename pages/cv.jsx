@@ -1,187 +1,177 @@
 import Head from 'next/head';
-import { useEffect } from 'react';
-import about from '../data/about.json';
-import contact from '../data/contact.json';
-import education from '../data/education.json';
-import organizations from '../data/organizations.json';
-import achievements from '../data/achievements.json';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { TemplateClassic, TemplateMinimal, TemplateModern } from '../src/components/templates';
+import profile from '../src/data/profile.json';
 
-export default function CVPage() {
+const templateOptions = [
+  {
+    id: 'classic',
+    name: 'Classic',
+    description: 'Chronological layout inspired by Reactive Resume classic template.',
+    component: TemplateClassic,
+    accent: 'from-amber-500/80 to-yellow-400/40'
+  },
+  {
+    id: 'modern',
+    name: 'Modern',
+    description: 'Bold sidebar treatment with dark mode aesthetics.',
+    component: TemplateModern,
+    accent: 'from-cyan-500/80 to-blue-500/30'
+  },
+  {
+    id: 'minimal',
+    name: 'Minimal',
+    description: 'Typography-first layout with generous white space.',
+    component: TemplateMinimal,
+    accent: 'from-violet-500/80 to-purple-400/30'
+  }
+];
+
+const motionVariants = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -16 }
+};
+
+export default function CvPage() {
+  const [selectedTemplate, setSelectedTemplate] = useState('classic');
+  const [isClient, setIsClient] = useState(false);
+  const previewRef = useRef(null);
+
   useEffect(() => {
-    const onKey = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
-        // let browser handle
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    setIsClient(true);
   }, []);
 
-  const printPDF = () => { try { window.print(); } catch {} };
+  const activeTemplate = useMemo(
+    () => templateOptions.find((tmpl) => tmpl.id === selectedTemplate) ?? templateOptions[0],
+    [selectedTemplate]
+  );
 
-  const name = (about?.name || '');
-  const headline = (about?.headline || '');
-  const location = 'Malang, Indonesia';
-  const email = contact?.email || 'prayogoaryan63@gmail.com';
-  const github = contact?.github || 'https://github.com/aryanzkys';
-  const linkedin = contact?.linkedin || '';
-  const instagram = contact?.instagram || '';
+  const TemplateComponent = activeTemplate.component;
 
-  const years = Object.keys(achievements||{}).sort((a,b)=>Number(b)-Number(a));
-  const achievementsList = years.flatMap((y) => {
-    const items = achievements[y] || [];
-    return [{ year: y, header: true }, ...items.map((it) => (typeof it === 'string' ? { text: it } : it))];
-  });
+  const downloadPdf = async () => {
+    if (!isClient || !previewRef.current) return;
+    const html2pdfModule = await import('html2pdf.js');
+    const html2pdf = html2pdfModule.default;
+    const filenameBase = (profile?.basics?.name || 'Curriculum Vitae').replace(/\s+/g, '_');
+    const options = {
+      margin: 0,
+      filename: `${filenameBase}_CV.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    await html2pdf()
+      .set(options)
+      .from(previewRef.current)
+      .save();
+  };
 
   return (
-    <main className="min-h-screen bg-white text-black">
+    <main className="min-h-screen bg-neutral-950 text-neutral-100">
       <Head>
-        <title>{name ? `${name} — Curriculum Vitae` : 'Curriculum Vitae'}</title>
+        <title>{profile?.basics?.name ? `${profile.basics.name} — CV` : 'Curriculum Vitae'}</title>
+        <meta name="description" content="Interactive curriculum vitae with Reactive Resume templates." />
         <meta name="robots" content="index,follow" />
-        <meta name="description" content={`Curriculum Vitae of ${name || 'profile'}`} />
       </Head>
 
-      {/* Toolbar (hidden in print) */}
-      <div className="sticky top-0 z-10 print:hidden bg-white/90 border-b border-neutral-200">
-        <div className="mx-auto max-w-4xl px-4 py-2 flex items-center justify-between">
-          <h1 className="text-sm font-semibold text-neutral-700">Curriculum Vitae (Harvard bullet format)</h1>
-          <div className="flex items-center gap-2">
-            <a href="#cv" className="text-sm text-blue-600 hover:underline">Jump to CV</a>
-            <button onClick={printPDF} className="text-sm px-3 py-1.5 rounded-md border border-neutral-300 hover:bg-neutral-50">Download PDF</button>
-          </div>
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 md:py-16">
+        <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+          <aside className="bg-neutral-900/70 border border-neutral-800/80 rounded-3xl px-6 py-8 h-fit sticky top-8 self-start">
+            <div className="mb-8 space-y-2">
+              <motion.h1
+                className="text-lg font-semibold tracking-tight"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.05 }}
+              >
+                Aryan’s Curriculum Vitae
+              </motion.h1>
+              <motion.p
+                className="text-sm text-neutral-400"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.1 }}
+              >
+                Pick a Reactive Resume-inspired template, preview live, then export the design to PDF.
+              </motion.p>
+            </div>
+
+            <ul className="space-y-4">
+              {templateOptions.map((template) => {
+                const isActive = template.id === selectedTemplate;
+                return (
+                  <motion.li key={template.id} layoutId={`template-${template.id}`}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTemplate(template.id)}
+                      className={`group relative w-full overflow-hidden rounded-2xl border px-5 py-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 ${
+                        isActive
+                          ? 'border-neutral-100/60 ring-1 ring-neutral-100/40'
+                          : 'border-neutral-800 hover:border-neutral-600'
+                      }`}
+                    >
+                      <span className={`absolute inset-0 bg-gradient-to-br opacity-0 transition group-hover:opacity-80 ${template.accent}`} />
+                      {isActive && (
+                        <motion.span
+                          layoutId="active-glow"
+                          className={`absolute inset-0 bg-gradient-to-br ${template.accent} opacity-60`}
+                        />
+                      )}
+                      <div className="relative space-y-1">
+                        <h2 className="text-sm font-semibold">{template.name}</h2>
+                        <p className="text-xs text-neutral-300">{template.description}</p>
+                      </div>
+                    </button>
+                  </motion.li>
+                );
+              })}
+            </ul>
+
+            <motion.button
+              type="button"
+              onClick={downloadPdf}
+              className="mt-8 w-full rounded-xl bg-neutral-100 text-neutral-950 py-3 text-sm font-semibold transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 disabled:opacity-60"
+              whileTap={{ scale: 0.98 }}
+              disabled={!isClient}
+            >
+              Download PDF (A4)
+            </motion.button>
+          </aside>
+
+          <section className="bg-neutral-900/70 border border-neutral-800/80 rounded-3xl overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-800/80">
+              <div>
+                <h2 className="text-base font-semibold text-neutral-100">{activeTemplate.name} template</h2>
+                <p className="text-sm text-neutral-400">Live preview powered by Reactive Resume-inspired layouts.</p>
+              </div>
+              <motion.span
+                className="inline-flex h-2 w-2 rounded-full bg-emerald-400"
+                animate={{ opacity: [0.3, 1, 0.3] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+              />
+            </div>
+
+            <div className="relative bg-neutral-950 flex justify-center items-start px-2 sm:px-6 py-8 overflow-auto">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={selectedTemplate}
+                  variants={motionVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  className="w-full flex justify-center"
+                >
+                  <TemplateComponent profile={profile} ref={previewRef} />
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </section>
         </div>
       </div>
-
-      {/* CV Sheet */}
-      <div id="cv" className="mx-auto my-6 max-w-4xl bg-white text-[12px] leading-[1.35] print:my-0">
-        {/* Header */}
-        <section className="text-center">
-          <h2 className="text-[22px] font-bold tracking-tight">{name?.toUpperCase?.() || 'YOUR NAME'}</h2>
-          <div className="mt-1 text-[12px]">
-            {headline ? `${headline} • ` : ''}{location} • Email: {email}
-            {github ? ` • GitHub: ${github.replace(/^https?:\/\//,'')}` : ''}
-            {linkedin ? ` • LinkedIn: ${linkedin.replace(/^https?:\/\//,'')}` : ''}
-            {instagram ? ` • Instagram: ${instagram.replace(/^https?:\/\//,'')}` : ''}
-          </div>
-        </section>
-
-        {/* Education */}
-        <section className="mt-4 break-before-auto">
-          <h3 className="font-bold uppercase tracking-wide text-[12px] border-b border-neutral-300">Education</h3>
-          <div className="mt-1 space-y-2">
-            {(education||[]).map((e) => (
-              <div key={`${e.title}-${e.period}`}>
-                <div className="flex items-baseline justify-between">
-                  <div className="font-semibold">{e.title}{e.subtitle ? ` — ${e.subtitle}` : ''}</div>
-                  <div className="text-[12px] text-neutral-700">{e.period}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Leadership & Activities (from Organizations) */}
-        <section className="mt-5 break-before-auto">
-          <h3 className="font-bold uppercase tracking-wide text-[12px] border-b border-neutral-300">Leadership & Activities</h3>
-          <div className="mt-1 space-y-2">
-            {(organizations||[]).map((o, idx) => (
-              <div key={`${o.org}-${o.period}-${idx}`}>
-                <div className="flex items-baseline justify-between">
-                  <div className="font-semibold">{o.org}{o.role ? ` — ${o.role}` : ''}</div>
-                  <div className="text-[12px] text-neutral-700">{o.period}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Projects (static highlights) */}
-        <section className="mt-5 break-before-auto">
-          <h3 className="font-bold uppercase tracking-wide text-[12px] border-b border-neutral-300">Projects</h3>
-          <ul className="list-disc ml-6 mt-1">
-            <li>Portfolio site with AI Assistant and Spotify integration — Next.js, Tailwind, Framer Motion, Netlify Functions.</li>
-            <li>Mini Games: Chess and Flappy Bird with local persistence and responsive UI.</li>
-          </ul>
-        </section>
-
-        {/* Achievements — complete list by year */}
-        <section className="mt-5 break-before-page">
-          <h3 className="font-bold uppercase tracking-wide text-[12px] border-b border-neutral-300">Achievements</h3>
-          <div className="mt-1">
-            {years.map((y) => {
-              const list = achievements[y] || [];
-              return (
-                <div key={y} className="mt-2">
-                  <div className="font-semibold text-[12px]">{y}</div>
-                  <ul className="list-disc ml-6 mt-1">
-                    {list.map((raw, i) => {
-                      const item = typeof raw === 'string' ? { text: raw } : raw;
-                      const label = item.text || '';
-                      return <li key={`${y}-${i}`}>{label}</li>;
-                    })}
-                  </ul>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Skills & Interests */}
-        <section className="mt-5 break-before-auto">
-          <h3 className="font-bold uppercase tracking-wide text-[12px] border-b border-neutral-300">Skills & Interests</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
-            <div>
-              <div className="font-semibold mt-1">Technical</div>
-              <ul className="list-disc ml-6 mt-1">
-                <li>DevSecOps fundamentals; CI/CD; automation; cloud basics</li>
-                <li>JavaScript/TypeScript, Node.js; React, Next.js, Tailwind CSS</li>
-                <li>APIs & OAuth (PKCE); Netlify/Next serverless</li>
-                <li>Framer Motion; UI/UX writing</li>
-              </ul>
-            </div>
-            <div>
-              <div className="font-semibold mt-1">Interests</div>
-              <ul className="list-disc ml-6 mt-1">
-                <li>Cybersecurity, software engineering, youth empowerment</li>
-                <li>Community health literacy, ethical technology</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        {/* Contact */}
-        <section className="mt-5 break-before-auto">
-          <h3 className="font-bold uppercase tracking-wide text-[12px] border-b border-neutral-300">Contact</h3>
-          <ul className="list-disc ml-6 mt-1">
-            {contact?.email && <li>Email: {contact.email}</li>}
-            {contact?.github && <li>GitHub: {contact.github}</li>}
-            {contact?.linkedin && <li>LinkedIn: {contact.linkedin}</li>}
-            {contact?.instagram && <li>Instagram: {contact.instagram}</li>}
-          </ul>
-        </section>
-
-        {/* Publications */}
-        <section className="mt-5 break-before-auto">
-          <h3 className="font-bold uppercase tracking-wide text-[12px] border-b border-neutral-300">Publications</h3>
-          <ul className="list-disc ml-6 mt-1">
-            <li>“Gen-YAWS (Youth Awareness of Stunting)” — tech-enabled, peer-led nutrition literacy and community action.</li>
-          </ul>
-        </section>
-
-        <div className="mt-4 text-[11px] text-neutral-600">
-          References available upon request. Latest updates at aryanstack.netlify.app.
-        </div>
-      </div>
-
-      {/* Print styles */}
-      <style jsx global>{`
-        @media print {
-          .print\\:hidden { display: none !important; }
-          @page { size: A4; margin: 0.6in; }
-          html, body { background: #fff; }
-          .break-before-page { break-before: page; }
-        }
-      `}</style>
     </main>
   );
 }
