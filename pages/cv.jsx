@@ -108,75 +108,73 @@ export default function CvShowcasePage() {
       </Head>
 
 {!showContent && (
-  <div className="absolute inset-0 z-30 flex items-center justify-center bg-gradient-to-b from-neutral-950 via-neutral-900/95 to-neutral-950 backdrop-blur-xl">
+  <div className="absolute inset-0 z-30 flex items-center justify-center bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 backdrop-blur-2xl">
     <motion.div
-      className="relative flex h-64 w-64 flex-col items-center justify-center gap-7 rounded-full border border-cyan-400/20 bg-neutral-900/70 p-10 text-center shadow-[0_0_100px_rgba(34,211,238,0.25)]"
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.8, ease: 'easeOut' }}
+      className="relative flex flex-col items-center justify-center gap-6 rounded-3xl border border-cyan-400/20 bg-neutral-900/80 px-10 py-12 shadow-[0_0_100px_rgba(34,211,238,0.25)]"
+      initial={{ opacity: 0, scale: 0.92, y: 20 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: 'easeOut' }}
       role="status"
       aria-live="polite"
     >
-      {/* Outer rotating ring */}
+      {/* Rotating Core */}
       <motion.div
         className="relative h-40 w-40"
         animate={{ rotate: 360 }}
-        transition={{ repeat: Infinity, duration: 6, ease: 'linear' }}
+        transition={{ repeat: Infinity, duration: 10, ease: 'linear' }}
       >
-        <div className="absolute inset-0 rounded-full border-[3px] border-dashed border-cyan-400/40" />
+        <div className="absolute inset-0 rounded-full border-[3px] border-dashed border-cyan-400/40 blur-[1px]" />
         <motion.div
-          className="absolute inset-3 rounded-full border border-cyan-500/30"
+          className="absolute inset-3 rounded-full border border-neutral-700/70"
           animate={{ rotate: -360 }}
-          transition={{ repeat: Infinity, duration: 9, ease: 'linear' }}
+          transition={{ repeat: Infinity, duration: 8, ease: 'linear' }}
         />
         <motion.div
-          className="absolute left-1/2 top-0 h-3 w-3 -translate-x-1/2 rounded-full bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.9)]"
+          className="absolute left-1/2 top-0 h-3 w-3 -translate-x-1/2 rounded-full bg-cyan-400 shadow-[0_0_25px_rgba(34,211,238,0.8)]"
           animate={{ y: [0, 10, 0] }}
           transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
         />
+        <motion.div
+          className="absolute left-1/2 bottom-0 h-2 w-2 -translate-x-1/2 rounded-full bg-cyan-300/70 shadow-[0_0_15px_rgba(34,211,238,0.6)]"
+          animate={{ scale: [1, 1.4, 1] }}
+          transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}
+        />
       </motion.div>
 
-      {/* Animated text */}
-      <motion.div
-        className="space-y-1"
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-      >
-        <p className="text-[11px] uppercase tracking-[0.4em] text-cyan-300/90">
-          Initializing CV Matrix
-        </p>
-        <p className="text-sm text-neutral-200/90">
-          Synchronizing intelligent nodes…
-        </p>
-      </motion.div>
+      {/* Loading Text */}
+      <div className="space-y-2 text-center">
+        <p className="text-xs uppercase tracking-[0.45em] text-cyan-300/80">Initializing CV Matrix</p>
+        <motion.p
+          className="text-sm text-neutral-200"
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ repeat: Infinity, duration: 2 }}
+        >
+          Calibrating data nodes & aligning layout vectors…
+        </motion.p>
+      </div>
 
-      {/* Countdown block */}
+      {/* Countdown */}
       <motion.div
         key={timeLeft}
-        className="flex h-12 w-12 items-center justify-center rounded-xl bg-neutral-800/80 text-xl font-semibold text-cyan-300 shadow-inner shadow-cyan-500/20"
+        className="flex h-12 w-12 items-center justify-center rounded-xl bg-neutral-800/80 text-xl font-bold text-cyan-300 shadow-[0_0_30px_rgba(34,211,238,0.3)]"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 18 }}
       >
         {timeLeft}
       </motion.div>
+      <p className="text-[11px] uppercase tracking-[0.35em] text-neutral-500">seconds</p>
 
-      <motion.p
-        className="text-[11px] uppercase tracking-[0.35em] text-neutral-500"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.5 }}
-      >
-        seconds
-      </motion.p>
-
-      {/* Subtle pulsing glow */}
+      {/* Progress Line */}
       <motion.div
-        className="absolute inset-0 rounded-full bg-cyan-400/5 blur-3xl"
-        animate={{ opacity: [0.1, 0.3, 0.1], scale: [1, 1.05, 1] }}
-        transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-      />
+        className="absolute bottom-4 left-1/2 h-[2px] w-40 -translate-x-1/2 overflow-hidden rounded-full bg-neutral-800/80"
+      >
+        <motion.div
+          className="h-full w-full bg-gradient-to-r from-cyan-400 via-sky-400 to-cyan-300"
+          animate={{ x: ['-100%', '100%'] }}
+          transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+        />
+      </motion.div>
     </motion.div>
   </div>
 )}
