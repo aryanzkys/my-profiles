@@ -1,105 +1,227 @@
 {
   "basics": {
     "name": "Aryan Zaky Prayogo",
-    "headline": "Aspiring DevSecOps Engineer & Community Advocate",
+    "label": "Computer Science Student at Universitas Brawijaya",
+    "email": "prayogoaryan63@gmail.com",
+    "phone": "+6285645544508",
     "location": {
       "city": "Malang",
+      "region": "East Java",
       "country": "Indonesia"
     },
-    "email": "prayogoaryan63@gmail.com",
-    "phone": "+62 857-9043-9401",
-    "website": "https://aryanstack.netlify.app",
-    "github": "https://github.com/aryanzkys",
-    "linkedin": "https://linkedin.com/in/aryanzkys",
-    "summary": "I blend DevSecOps fundamentals with youth empowerment initiatives — building reliable systems, leading tech-for-good programs, and communicating complex ideas with clarity."
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "aryan-zaky-prayogo-a24164365",
+        "url": "https://linkedin.com/in/aryan-zaky-prayogo-a24164365/"
+      }
+    ],
+    "summary": "Highly motivated and accomplished student with a strong academic background in STEM fields, now pursuing a Bachelor's degree in Computer Science at Universitas Brawijaya. Demonstrated leadership in various organizations and a proven track record of national and international competition success. Passionate about technology, science, and community empowerment.",
+    "dob": "2007-08-25",
+    "gender": "Male"
   },
+
   "education": [
     {
-      "institution": "SMK Telkom Malang",
-      "location": "Malang, Indonesia",
-      "degree": "Network Engineering",
-      "period": "2022 – Present",
-      "highlights": [
-        "Head of IT Infrastructure for student tech club, managed campus-wide network modernization",
-        "Built automated device monitoring dashboards and streamlined onboarding documentation"
-      ]
-    }
-  ],
-  "experience": [
-    {
-      "title": "DevOps & Security Intern",
-      "company": "Independent / Community Projects",
-      "location": "Remote",
-      "period": "2023 – Present",
-      "achievements": [
-        "Containerized micro-app deployments on Netlify and Vercel with automated QA previews",
-        "Built CI/CD workflows with GitHub Actions, integrating dependency audits and visual regression tests",
-        "Co-led cybersecurity literacy workshops reaching 120+ students across East Java"
-      ]
+      "institution": "Universitas Brawijaya",
+      "area": "Informatics Engineering",
+      "studyType": "Bachelor of Computer Science",
+      "startDate": "2025-07",
+      "endDate": "2029-07",
+      "score": "",
+      "summary": "Expected graduation in July 2029."
     },
     {
-      "title": "Project Lead",
-      "company": "Gen-YAWS (Youth Awareness of Stunting)",
-      "location": "Malang, Indonesia",
-      "period": "2023",
-      "achievements": [
-        "Designed tech-enabled nutrition literacy program with peer mentors and microlearning modules",
-        "Coordinated stakeholders across schools, community health centers, and student volunteers",
-        "Published actionable research insights presented at local government innovation forum"
-      ]
-    }
-  ],
-  "projects": [
-    {
-      "name": "AryanStack Portfolio",
-      "description": "Personal site featuring AI assistant, Spotify integration, and dynamic CV builder. Built using Next.js, Tailwind, and Netlify Functions.",
-      "link": "https://aryanstack.netlify.app"
+      "institution": "SMA Negeri 1 Singosari",
+      "area": "Mathematics and Natural Sciences (MIPA)",
+      "studyType": "High School",
+      "startDate": "2022",
+      "endDate": "2025",
+      "score": "93.260"
     },
     {
-      "name": "Mini Game Arcade",
-      "description": "Bundle of web mini-games (Chess, Flappy Bird) with local persistence, polished UI, and multiplayer-ready architecture.",
-      "link": "https://github.com/aryanzkys"
+      "institution": "SMP Negeri 5 Mojokerto",
+      "area": "General Education",
+      "studyType": "Junior High School",
+      "startDate": "2019",
+      "endDate": "2022",
+      "score": "85.570"
     }
   ],
-  "skills": {
-    "technical": [
-      "DevSecOps basics",
-      "CI/CD automation",
-      "Cloud fundamentals",
-      "JavaScript / TypeScript",
-      "React & Next.js",
-      "Node.js",
-      "Tailwind CSS",
-      "Framer Motion",
-      "API design & OAuth (PKCE)"
-    ],
-    "tools": [
-      "Git & GitHub",
-      "Netlify",
-      "Vercel",
-      "Docker",
-      "Postman",
-      "Supabase"
-    ],
-    "interests": [
-      "Cybersecurity",
-      "Youth empowerment",
-      "Community health literacy",
-      "Ethical technology"
-    ]
-  },
+
+  "work": [
+    {
+      "position": "Chairman",
+      "organization": "Olympiad Club SMA Negeri 1 Singosari",
+      "startDate": "2023",
+      "endDate": "2024",
+      "summary": "Led and coordinated academic and science-focused activities for the club. Fostered an environment for intellectual growth and competition preparation."
+    },
+    {
+      "position": "Secretary",
+      "organization": "Desamind Chapter Malang",
+      "startDate": "2023",
+      "endDate": "2024",
+      "summary": "Managed administrative tasks and supported program coordination for youth empowerment initiatives in rural development."
+    },
+    {
+      "position": "Secretary",
+      "organization": "English Club SMA Negeri 1 Singosari",
+      "startDate": "2023",
+      "endDate": "2024",
+      "summary": "Organized activities to enhance English proficiency and communication skills among members."
+    },
+    {
+      "position": "Coordinator of Section (Community Welfare)",
+      "organization": "Badan Dakwah Islam (BDI) SMA Negeri 1 Singosari",
+      "startDate": "2023",
+      "endDate": "2024",
+      "summary": "Coordinated initiatives focused on community welfare within the school's Islamic outreach body."
+    },
+    {
+      "position": "Coordinator of Section (Community Affairs)",
+      "organization": "Badan Dakwah Islam (BDI) SMA Negeri 1 Singosari",
+      "startDate": "2022",
+      "endDate": "2023",
+      "summary": "Managed and oversaw community-related activities for the Islamic outreach body."
+    },
+    {
+      "position": "Active Member",
+      "organization": "ASEAN Youth Organization (AYO)",
+      "startDate": "2023",
+      "endDate": "Present",
+      "summary": "Participated in youth empowerment and regional diplomacy programs across ASEAN."
+    },
+    {
+      "position": "Active Member",
+      "organization": "Loss and Damage Youth Coalition (LDYC)",
+      "startDate": "2024",
+      "endDate": "Present",
+      "summary": "Engaged in advocacy and capacity building for climate change mitigation and adaptation."
+    },
+    {
+      "position": "Active Member",
+      "organization": "The SDG7 Youth Constituency (SDG7 YC)",
+      "startDate": "2023",
+      "endDate": "Present",
+      "summary": "Contributed to initiatives advocating clean energy and sustainable development."
+    },
+    {
+      "position": "Active Member",
+      "organization": "Youth Rangers Indonesia (YRI)",
+      "startDate": "2023",
+      "endDate": "Present",
+      "summary": "Participated in programs fostering youth potential and collaborative social projects."
+    },
+    {
+      "position": "Nutrition Ambassador",
+      "organization": "Nutrition Goes To School (NGTS) SMA Negeri 1 Singosari",
+      "startDate": "2023",
+      "endDate": "2024",
+      "summary": "Educated peers on health and nutrition topics relevant to adolescents."
+    },
+    {
+      "position": "Member",
+      "organization": "Biology Science Club (BSC) SMA Negeri 1 Singosari",
+      "startDate": "2023",
+      "endDate": "2024",
+      "summary": "Engaged in activities to enhance knowledge and skills in biology."
+    },
+    {
+      "position": "Member",
+      "organization": "Student Police (Polsis) SMA Negeri 1 Singosari",
+      "startDate": "2022",
+      "endDate": "2024",
+      "summary": "Assisted in maintaining order and discipline within the school environment."
+    },
+    {
+      "position": "Member",
+      "organization": "Robotic Club SMP Negeri 5 Mojokerto",
+      "startDate": "2021",
+      "endDate": "2022",
+      "summary": "Participated in robotics projects and developed skills in technology and engineering."
+    },
+    {
+      "position": "Member",
+      "organization": "OSIS SMP Negeri 5 Mojokerto",
+      "startDate": "2020",
+      "endDate": "2021",
+      "summary": "Contributed to student organization activities and school programs."
+    },
+    {
+      "position": "Member",
+      "organization": "Palang Merah Remaja (PMR) SMP Negeri 5 Mojokerto",
+      "startDate": "2020",
+      "endDate": "2021",
+      "summary": "Engaged in first aid and humanitarian activities."
+    }
+  ],
+
   "awards": [
+    { "title": "1st Place - National English Language Olympiad", "date": "2023", "awarder": "Quartal Indonesia", "summary": "Kompetisi Olimpiade Ilmu Sosial Nasional – Quartal (National Level)" },
+    { "title": "1st Place - National Biology Olympiad", "date": "2024", "awarder": "Lembaga Bina Prestasi Nusantara", "summary": "Cendekia Natural Science Competition (National Level)" },
+    { "title": "1st Place - INDONESIAN MEDICAL OLYMPIAD #2", "date": "2024", "awarder": "Global Youth and Peace Educational Movement", "summary": "National Biology Olympiad (National Level)" },
+    { "title": "1st Place - NATIONAL ACCOUNTING AND MATHLISH OLYMPIAD #2", "date": "2023", "awarder": "Global Youth And Peace Education Movement", "summary": "National Physics Olympiad (Gold Medal)" },
+    { "title": "1st Place - National Indonesian Language Olympiad", "date": "2023", "awarder": "Universitas Negeri Surabaya", "summary": "Olimpiade Bahasa dan Orientasi Ruang Pemuda Indonesia (National Level)" },
+    { "title": "Top 50 - Canadian Team Mathematics Contest", "date": "2024", "awarder": "University of Waterloo", "summary": "International Mathematics Competition" },
+    { "title": "2nd Place - National MIPA Olympiad", "date": "2024", "awarder": "Universitas Jenderal Achmad Yani", "summary": "FTTI UNJAYA Championship (National Level)" },
+    { "title": "2nd Place - Young Entrepreneurship Competition", "date": "2024", "awarder": "Universitas Brawijaya", "summary": "National Entrepreneurship Competition" },
+    { "title": "3rd Place - Poisson Statistics Competition", "date": "2024", "awarder": "Politeknik Statistika STIS", "summary": "National Statistics Competition" },
+    { "title": "3rd Place - Social-Science Air-LANGGA Competition", "date": "2024", "awarder": "Universitas Airlangga", "summary": "National Physics Competition" },
+    { "title": "Semifinalist (Rank 7 National) - Industrial Engineering Games", "date": "2025", "awarder": "Institut Teknologi Sepuluh Nopember", "summary": "Competed in Mathematics, Physics, English, and Engineering subjects." },
+    { "title": "Finalist (Top 10) - National Scientific Writing Competition", "date": "2024", "awarder": "Universitas Brawijaya", "summary": "Faculty of Medicine - Medical Field (LKTI SMA)" }
+  ],
+
+  "publications": [
     {
-      "title": "Top 5 Finalist",
-      "issuer": "Telkom Student Innovation Challenge",
-      "year": "2024",
-      "details": "Recognized for prototyping community-driven incident reporting platform with automated triage."
+      "title": "Biogas, Sustainable Alternative Energy for Environmental Resilience in School Canteens",
+      "publisher": "Universitas 17 Agustus 1945 Surabaya",
+      "date": "2024",
+      "summary": "Scientific paper on sustainability and renewable energy."
     },
     {
-      "title": "Best Speaker",
-      "issuer": "Young Innovators Summit",
-      "year": "2023",
-      "details": "Delivered keynote on ethical AI and grassroots digital literacy initiatives."
+      "title": "GEN-YAWS: Youth Awareness of Stunting",
+      "publisher": "Universitas Brawijaya",
+      "date": "2024",
+      "summary": "Scientific work on youth empowerment to achieve zero new stunting in East Java."
+    },
+    {
+      "title": "The Role of the Younger Generation in Environmental Diplomacy",
+      "publisher": "Ministry of Environment and Forestry",
+      "date": "2024",
+      "summary": "Environmental diplomacy paper promoting intergenerational justice."
     }
+  ],
+
+  "languages": [
+    { "language": "English", "fluency": "Advanced (TOEFL ITP 610)" },
+    { "language": "Indonesian", "fluency": "Native (UKBI 747 – Istimewa)" }
+  ],
+
+  "skills": [
+    "Academic Research",
+    "Scientific Writing",
+    "Public Speaking",
+    "Leadership",
+    "Teamwork",
+    "Problem Solving",
+    "Critical Thinking",
+    "Data Analysis",
+    "Project Management",
+    "Community Engagement",
+    "Environmental Advocacy",
+    "Robotics",
+    "Microsoft Office Suite",
+    "English Language",
+    "Indonesian Language",
+    "Mathematics",
+    "Physics",
+    "Biology",
+    "Statistics",
+    "Economics (Basic)",
+    "Programming (Beginner)",
+    "Algorithms (Beginner)",
+    "Data Structures (Beginner)",
+    "Software Development (Beginner)"
   ]
 }
