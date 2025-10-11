@@ -58,7 +58,7 @@ export default function CvRedirectPage() {
           <div className="border-b border-neutral-800/70 px-6 py-4">
             <div className="flex items-center gap-2 text-sm text-neutral-400">
               <span className="inline-flex h-2.5 w-2.5 animate-pulse rounded-full bg-emerald-400" aria-hidden />
-              Preparing your CV preview
+              Preparing my CV preview
             </div>
           </div>
           <div className="space-y-6 px-6 pb-8 pt-7 text-center">
@@ -69,7 +69,7 @@ export default function CvRedirectPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15, duration: 0.5 }}
               >
-                Redirecting to Aryan’s Reactive Resume
+                Redirecting to Aryan’s CV…
               </motion.h1>
               <motion.p
                 className="text-sm leading-relaxed text-neutral-400"
@@ -77,8 +77,7 @@ export default function CvRedirectPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25, duration: 0.5 }}
               >
-                You&apos;ll land on the latest version of my CV in just a moment. Feel free to explore the preview while we
-                finalize the redirect.
+                You&apos;ll land on the latest version of my CV in just a moment.
               </motion.p>
             </div>
             <div>
