@@ -15,7 +15,7 @@ const tabs = [
 const stats = [
   { label: 'Last Update', value: 'October 2025' },
   { label: 'Pages', value: '1' },
-  { label: 'Format', value: 'PDF A4' }
+  { label: 'Format', value: 'PDF' }
 ];
 
 export default function CvShowcasePage() {
@@ -193,7 +193,7 @@ export default function CvShowcasePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
           >
-            Preview & download Aryan’s latest CV without leaving the site
+            Aryan’s latest CV
           </motion.h1>
           <motion.p
             className="mx-auto max-w-3xl text-sm leading-relaxed text-neutral-400 sm:text-base"
@@ -201,8 +201,8 @@ export default function CvShowcasePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: 'easeOut', delay: 0.18 }}
           >
-            Tailored for recruiters, collaborators, and community partners. The embedded view mirrors the downloadable
-            PDF—both updated whenever I refresh my profile throughput.
+            Tailored for recruiters, collaborators, and community partners. 
+            This live view mirrors the downloadable CV and refreshes every time I update my portfolio.
           </motion.p>
         </header>
 
@@ -217,7 +217,7 @@ export default function CvShowcasePage() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-[0.35em] text-neutral-500">Smart download</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-neutral-50">Save Aryan_Zaky_Prayogo_CV.pdf</h2>
+                  <h2 className="mt-1 text-2xl font-semibold text-neutral-50">Save My CV</h2>
                   <p className="mt-2 text-sm text-neutral-400">
                     Direct Google Drive download, signed and optimized for ATS parsing.
                   </p>
@@ -277,15 +277,14 @@ export default function CvShowcasePage() {
             transition={{ duration: 0.6, ease: 'easeOut', delay: 0.35 }}
           >
             <div className="rounded-3xl border border-neutral-800/60 bg-neutral-900/70 p-6 backdrop-blur-xl shadow-xl">
-              <p className="text-xs uppercase tracking-[0.35em] text-neutral-500">Snapshot</p>
-              <h3 className="mt-3 text-lg font-semibold text-neutral-50">Why collaborators love this CV</h3>
-              <ul className="mt-4 space-y-3 text-sm text-neutral-300">
-                <li>• Links to live deployments, AI experiments, and community case studies.</li>
-                <li>• Highlights measurable impact alongside technical mastery.</li>
-                <li>• Designed for readability across desktop, tablet, and print.</li>
+            <p className="text-xs uppercase tracking-[0.35em] text-neutral-500">Snapshot</p>
+            <h3 className="mt-3 text-lg font-semibold text-neutral-50">Why this CV represents me</h3>
+            <ul className="mt-4 space-y-3 text-sm text-neutral-300">
+              <li>• Reflects my growth from Olympiad achiever to aspiring DevSecOps engineer.</li>
+              <li>• Combines technical, leadership, and community-driven experience.</li>
+              <li>• Designed to stay professional across digital and printed formats.</li>
               </ul>
-            </div>
-
+</div>
             <div className="rounded-3xl border border-neutral-800/60 bg-neutral-900/70 p-6 backdrop-blur-xl shadow-xl">
               <p className="text-xs uppercase tracking-[0.35em] text-neutral-500">Need a different format?</p>
               <p className="mt-3 text-sm text-neutral-300">
