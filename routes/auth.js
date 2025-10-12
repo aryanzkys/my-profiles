@@ -57,7 +57,14 @@ router.post('/request-reset', requestResetLimiter, async (req, res, next) => {
       await mailer.sendPasswordResetEmail({ email: normalizedEmail, token: resetToken });
     } catch (mailErr) {
       console.error('Gagal mengirim email reset password:', mailErr);
-      return res.status(500).json({ message: 'Gagal mengirim email reset password.' });
+      const reason = mailErr?.response?.toString()
+        || mailErr?.responseCode
+        || mailErr?.code
+        || mailErr?.message
+        || 'Periksa konfigurasi SMTP Anda.';
+      return res.status(502).json({
+        message: `Gagal mengirim email reset password. (${reason})`,
+      });
     }
 
   return res.json({ message: 'Instruksi reset password berhasil dikirim. Silakan cek inbox Anda.' });
