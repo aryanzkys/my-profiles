@@ -6,19 +6,19 @@ import ParticleField from '../components/ParticleField';
 import ShutdownOverlay from '../components/ShutdownOverlay';
 import aiPrivacy from '../data/ai_privacy.json';
 
-const ROLLING_PHRASES = [
+const PHRASES = [
   "Yo, it's Your Royal AI Advisor, innit 👑🤖",
   "Fam, let's cook up some mad schemes 💡✨",
-  "Bestie, spill the tea—I'm here for it ☕👂",
-  "Need that inspo? Say less, love 💫",
+  "Bestie, spill the tea, I'm here for it ☕👂",
+  "Need that inspo? Say less, buddy 💫",
   "Lowkey ready to vibe on your next move 🚀",
-  "No cap, I got your back fr fr 🫶",
+  "No cap, I got your back fr fr",
   "Living that royal coding life, mate 💻👑",
   "Straight fire ideas? Let's make it slap 🔥",
   "Rizz up your projects, I'm here to help 💥",
   "Bet, let's get this bread together 🍞✨",
   "Main character energy activated 🌟",
-  "Slay the day, your majesty 💅👑"
+  "Slay the day, Your Majesty👑"
 ];
 
 
@@ -38,7 +38,8 @@ export default function AIPage() {
   const [isMobile, setIsMobile] = useState(false);
   const headerRef = useRef(null);
   const [phraseIndex, setPhraseIndex] = useState(0);
-  const [rollingPaused, setRollingPaused] = useState(false);
+  const [displayedText, setDisplayedText] = useState('');
+  const [isTyping, setIsTyping] = useState(true);
   const [consentLoaded, setConsentLoaded] = useState(false);
   const [consented, setConsented] = useState(false);
   const [agree, setAgree] = useState(false);
@@ -155,11 +156,15 @@ export default function AIPage() {
   };
 
   const advancePhrase = useCallback(() => {
-    setPhraseIndex((prev) => (prev + 1) % ROLLING_PHRASES.length);
+    setPhraseIndex((prev) => (prev + 1) % PHRASES.length);
+    setDisplayedText('');
+    setIsTyping(true);
   }, []);
 
   const retreatPhrase = useCallback(() => {
-    setPhraseIndex((prev) => (prev - 1 + ROLLING_PHRASES.length) % ROLLING_PHRASES.length);
+    setPhraseIndex((prev) => (prev - 1 + PHRASES.length) % PHRASES.length);
+    setDisplayedText('');
+    setIsTyping(true);
   }, []);
 
   const handleKeyDown = useCallback((event) => {
@@ -175,17 +180,28 @@ export default function AIPage() {
     }
   }, [advancePhrase, retreatPhrase]);
 
+  // Typewriter effect
   useEffect(() => {
-    if (rollingPaused) return;
-    const id = window.setInterval(() => {
-      setPhraseIndex((prev) => (prev + 1) % ROLLING_PHRASES.length);
-    }, 5000);
-    return () => window.clearInterval(id);
-  }, [rollingPaused]);
+    const currentPhrase = PHRASES[phraseIndex];
+    if (displayedText.length < currentPhrase.length) {
+      const timeout = setTimeout(() => {
+        setDisplayedText(currentPhrase.slice(0, displayedText.length + 1));
+      }, 50); // Typing speed
+      return () => clearTimeout(timeout);
+    } else {
+      setIsTyping(false);
+      // Auto-advance to next phrase after completion
+      const advanceTimeout = setTimeout(() => {
+        advancePhrase();
+      }, 3000); // Wait 3s before next phrase
+      return () => clearTimeout(advanceTimeout);
+    }
+  }, [displayedText, phraseIndex, advancePhrase]);
 
-  const radius = isMobile 
-    ? Math.min(120, 20 + ROLLING_PHRASES.length * 12) 
-    : Math.min(200, 30 + ROLLING_PHRASES.length * 18);
+  useEffect(() => {
+    setDisplayedText('');
+    setIsTyping(true);
+  }, [phraseIndex]);
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-[#0a1628] via-[#1a2a4e] to-[#0f1b3a] text-slate-100">
@@ -287,60 +303,34 @@ export default function AIPage() {
                 </span>
                 
                 <div className="space-y-4">
-                  <h1 className="sr-only">{ROLLING_PHRASES[phraseIndex]}</h1>
+                  <h1 className="sr-only">{PHRASES[phraseIndex]}</h1>
                   
-                  {/* Enhanced 3D Carousel with Royal Styling */}
+                  {/* Royal Typewriter Effect */}
                   <div
-                    className="hero-roller royal-theme"
+                    className="royal-typewriter-container"
                     role="button"
                     tabIndex={0}
-                    aria-label={`${ROLLING_PHRASES[phraseIndex]} - tap to shuffle`}
-                    onMouseEnter={() => setRollingPaused(true)}
-                    onMouseLeave={() => setRollingPaused(false)}
-                    onFocus={() => setRollingPaused(true)}
-                    onBlur={() => setRollingPaused(false)}
+                    aria-label={`${PHRASES[phraseIndex]} - tap to shuffle`}
                     onClick={advancePhrase}
                     onKeyDown={handleKeyDown}
                   >
-                    {/* Royal Avatar with 3D animation */}
-                    <div className="hero-roller__avatar royal-avatar" aria-hidden="true">
-                      <span />
-                      <span />
-                      <motion.div
-                        className="absolute inset-0 flex items-center justify-center text-3xl"
-                        animate={{
-                          scale: [1, 1.05, 1],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut",
-                        }}
-                      >
-                        🤖
-                      </motion.div>
-                    </div>
-                    
-                    <div
-                      className="hero-roller__scene"
-                      style={{
-                        '--active-index': `${phraseIndex}`,
-                        '--card-count': `${ROLLING_PHRASES.length}`,
-                        '--radius': `${radius}px`
-                      }}
+                    <motion.div
+                      className="royal-typewriter-text"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.3 }}
                     >
-                      {ROLLING_PHRASES.map((phrase, idx) => (
-                        <span
-                          key={phrase}
-                          className={`roller-card royal-card ${idx === phraseIndex ? 'is-active' : ''}`}
-                          style={{ '--i': idx }}
-                          aria-hidden={idx !== phraseIndex}
+                      {displayedText}
+                      {isTyping && (
+                        <motion.span
+                          className="royal-typewriter-cursor"
+                          animate={{ opacity: [1, 0, 1] }}
+                          transition={{ duration: 0.8, repeat: Infinity }}
                         >
-                          {phrase}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="hero-roller__glow royal-glow" aria-hidden="true" />
+                          |
+                        </motion.span>
+                      )}
+                    </motion.div>
                   </div>
                   
                   <p className="max-w-xl text-sm leading-7 text-blue-100 md:text-base font-medium">
@@ -568,105 +558,47 @@ export default function AIPage() {
       </div>
 
       <style jsx>{`
-        .hero-roller.royal-theme {
+        .royal-typewriter-container {
           position: relative;
           display: flex;
           align-items: center;
-          gap: clamp(1rem, 3vw, 1.8rem);
-          border-radius: 999px;
-          padding: clamp(0.75rem, 1.6vw, 1.1rem) clamp(1rem, 2.5vw, 1.6rem);
+          justify-content: flex-start;
+          min-height: clamp(80px, 12vw, 120px);
+          border-radius: 24px;
+          padding: clamp(1.2rem, 2.5vw, 2rem) clamp(1.5rem, 3vw, 2.5rem);
           background: linear-gradient(135deg, rgba(65, 105, 225, 0.25), rgba(138, 43, 226, 0.2));
           border: 2px solid rgba(255, 215, 0, 0.3);
           box-shadow: 0 25px 60px -35px rgba(65, 105, 225, 0.5), 0 0 40px rgba(255, 215, 0, 0.15);
           cursor: pointer;
-          perspective: 1400px;
-          transition: border-color 180ms ease, box-shadow 220ms ease, transform 220ms ease;
+          transition: all 0.3s ease;
         }
-        .hero-roller.royal-theme:focus-visible {
-          outline: none;
-          border-color: rgba(255, 215, 0, 0.7);
-          box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.2), 0 30px 70px -40px rgba(255, 215, 0, 0.55);
-        }
-        .hero-roller.royal-theme:hover {
-          transform: translateY(-3px) scale(1.01);
+        
+        .royal-typewriter-container:hover {
+          transform: translateY(-3px);
           box-shadow: 0 36px 90px -40px rgba(65, 105, 225, 0.6), 0 0 50px rgba(255, 215, 0, 0.25);
           border-color: rgba(255, 215, 0, 0.5);
         }
         
-        .hero-roller__avatar.royal-avatar {
-          position: relative;
-          width: clamp(56px, 8vw, 72px);
-          height: clamp(56px, 8vw, 72px);
-          border-radius: 28px;
-          background: radial-gradient(circle at 30% 30%, rgba(255, 215, 0, 0.6), rgba(65, 105, 225, 0.4));
-          overflow: hidden;
-          box-shadow: inset 0 0 30px rgba(65, 105, 225, 0.4), 0 18px 45px -24px rgba(255, 215, 0, 0.5);
-          border: 2px solid rgba(255, 215, 0, 0.3);
-        }
-        .hero-roller__avatar.royal-avatar span {
-          position: absolute;
-          inset: -20%;
-          background: conic-gradient(from 0deg, rgba(255, 215, 0, 0.6), rgba(65, 105, 225, 0.0) 45%, rgba(138, 43, 226, 0.4) 75%, rgba(255, 215, 0, 0.7));
-          animation: royalOrbit 12s linear infinite;
-        }
-        .hero-roller__avatar.royal-avatar span:nth-child(2) {
-          animation-duration: 18s;
-          mix-blend-mode: screen;
-          opacity: 0.8;
-        }
-        @keyframes royalOrbit {
-          0% {
-            transform: rotate(0deg) scale(1);
-          }
-          50% {
-            transform: rotate(180deg) scale(1.03);
-          }
-          100% {
-            transform: rotate(360deg) scale(1);
-          }
+        .royal-typewriter-container:focus-visible {
+          outline: none;
+          border-color: rgba(255, 215, 0, 0.7);
+          box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.2), 0 30px 70px -40px rgba(255, 215, 0, 0.55);
         }
         
-        .hero-roller__scene {
-          position: relative;
-          width: clamp(220px, 50vw, 520px);
-          height: clamp(64px, 7vw, 84px);
-          transform-style: preserve-3d;
-          transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
-          transform-origin: center center;
-        }
-        
-        .roller-card.royal-card {
-          position: absolute;
-          inset: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0 clamp(1rem, 3vw, 1.6rem);
-          font-size: clamp(1.6rem, 4vw, 2.8rem);
+        .royal-typewriter-text {
+          font-size: clamp(1.8rem, 4.5vw, 3.2rem);
           font-weight: 700;
-          color: rgba(255, 255, 255, 0.9);
-          border-radius: clamp(30px, 6vw, 42px);
-          background: linear-gradient(135deg, rgba(65, 105, 225, 0.3), rgba(138, 43, 226, 0.25));
-          border: 2px solid rgba(255, 215, 0, 0.25);
-          box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5), inset 0 0 30px rgba(255, 215, 0, 0.1);
-          transform: rotateX(calc(var(--i) * (360deg / var(--card-count)))) translateZ(var(--radius));
-          backface-visibility: hidden;
-        }
-        .roller-card.royal-card.is-active {
-          color: rgba(255, 255, 255, 1);
-          border-color: rgba(255, 215, 0, 0.8);
-          box-shadow: inset 0 0 40px rgba(255, 215, 0, 0.3), 0 32px 80px -38px rgba(255, 215, 0, 0.6);
-          background: linear-gradient(135deg, rgba(65, 105, 225, 0.5), rgba(138, 43, 226, 0.4));
+          color: rgba(255, 255, 255, 0.95);
+          line-height: 1.3;
+          letter-spacing: -0.02em;
+          text-shadow: 0 2px 20px rgba(255, 215, 0, 0.3);
         }
         
-        .hero-roller__glow.royal-glow {
-          position: absolute;
-          inset: 8%;
-          border-radius: inherit;
-          pointer-events: none;
-          background: radial-gradient(circle at 60% 40%, rgba(255, 215, 0, 0.25), transparent 65%);
-          mix-blend-mode: screen;
-          opacity: 0.85;
+        .royal-typewriter-cursor {
+          display: inline-block;
+          margin-left: 4px;
+          color: rgba(255, 215, 0, 0.9);
+          font-weight: 400;
         }
         
         .royal-bullet {
@@ -750,14 +682,13 @@ export default function AIPage() {
         }
         
         @media (max-width: 768px) {
-          .hero-roller.royal-theme {
-            flex-direction: column;
-            gap: 1rem;
-            padding: 1rem;
+          .royal-typewriter-container {
+            padding: 1.2rem;
+            min-height: 90px;
           }
-          .hero-roller__scene {
-            width: 100%;
-            max-width: 280px;
+          
+          .royal-typewriter-text {
+            font-size: clamp(1.4rem, 5vw, 2rem);
           }
         }
       `}</style>
