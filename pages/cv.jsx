@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 const CV_VIEW_URL = 'https://drive.google.com/file/d/1c7KeejQq-sDxC1FbnEUGiKUEkHDn2iOf/preview';
 const CV_DOWNLOAD_URL = 'https://drive.google.com/uc?export=download&id=1c7KeejQq-sDxC1FbnEUGiKUEkHDn2iOf';
-const LOADING_DURATION = 5;
+const LOADING_DURATION = 3;
 
 const tabs = [
   { id: 'overview', label: 'Overview' },
@@ -48,7 +48,7 @@ export default function CvShowcasePage() {
 
     // Validate email
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setEmailStatus({ message: 'Masukkan alamat email yang valid', isError: true });
+      setEmailStatus({ message: 'Please enter a valid email address', isError: true });
       return;
     }
 
@@ -64,17 +64,17 @@ export default function CvShowcasePage() {
       const data = await response.json();
 
       if (response.ok) {
-        setEmailStatus({ message: data.message || 'CV berhasil dikirim ke email Anda!', isError: false });
+        setEmailStatus({ message: data.message || 'My CV has been successfully sent to your email!', isError: false });
         setEmail('');
         setTimeout(() => {
           setShowEmailModal(false);
           setEmailStatus({ message: '', isError: false });
         }, 3000);
       } else {
-        setEmailStatus({ message: data.error || 'Gagal mengirim email', isError: true });
+        setEmailStatus({ message: data.error || 'Failed to send to your inbox, try again!', isError: true });
       }
     } catch (error) {
-      setEmailStatus({ message: 'Terjadi kesalahan. Silakan coba lagi.', isError: true });
+      setEmailStatus({ message: 'An error has occurred. Please try again.', isError: true });
     } finally {
       setIsSending(false);
     }
@@ -142,7 +142,7 @@ export default function CvShowcasePage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-neutral-950 text-neutral-100">
       <Head>
-        <title>Aryan’s CV - Interactive Preview & Download</title>
+        <title>Aryan’s CV</title>
         <meta
           name="description"
           content="Preview or download Aryan Zaky Prayogo's latest CV directly from the portfolio."
@@ -407,7 +407,7 @@ export default function CvShowcasePage() {
                 <p className="text-xs uppercase tracking-[0.35em] text-emerald-400">Send to Email</p>
                 <h3 className="mt-2 text-xl font-semibold text-neutral-50">Get CV in Your Inbox</h3>
                 <p className="mt-2 text-sm text-neutral-400">
-                  Masukkan alamat email Anda dan kami akan mengirimkan link download CV langsung ke inbox Anda.
+                  Enter your email address and we will send a CV download link directly to your inbox.
                 </p>
               </div>
 
