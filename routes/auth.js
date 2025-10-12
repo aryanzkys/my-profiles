@@ -6,11 +6,47 @@ const passwordStore = require('../utils/passwordStore');
 
 const router = express.Router();
 
+function resolveClientIp(req) {
+  const headerKeys = [
+    'x-nf-client-connection-ip',
+    'x-real-ip',
+    'cf-connecting-ip',
+    'x-client-ip',
+    'x-forwarded-for',
+    'forwarded',
+    'x-forwarded',
+  ];
+
+  for (const key of headerKeys) {
+    const raw = req.headers?.[key];
+    if (!raw) continue;
+    const first = Array.isArray(raw) ? raw[0] : raw.split(',')[0];
+    if (first && typeof first === 'string') {
+      let trimmed = first.trim();
+      if (/^for=/i.test(trimmed)) {
+        trimmed = trimmed.slice(4);
+      }
+      trimmed = trimmed.replace(/^"|"$/g, '');
+      if (trimmed.length) return trimmed;
+    }
+  }
+
+  if (Array.isArray(req.ips) && req.ips.length) return req.ips[0];
+  if (req.ip) return req.ip;
+
+  const fallbackIp = req.socket?.remoteAddress
+    || req.connection?.remoteAddress
+    || req.headers?.['client-ip']
+    || 'unknown';
+  return typeof fallbackIp === 'string' ? fallbackIp : 'unknown';
+}
+
 const requestResetLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
+  windowMs: 15 * 60 * 1000,
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: resolveClientIp,
   message: {
     message: 'Terlalu banyak permintaan reset. Silakan coba lagi nanti.',
   },

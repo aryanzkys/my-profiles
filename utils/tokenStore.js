@@ -39,19 +39,46 @@ async function restDeleteByEmail(email) {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
   const url = `${SUPABASE_URL}/rest/v1/admin_password_reset_tokens?email=eq.${encodeURIComponent(email)}`;
   try {
-    await fetch(url, {
+    const res = await fetch(url, {
       method: 'DELETE',
       headers: { ...supabaseHeaders, Prefer: 'return=minimal' },
     });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      console.error('Gagal menghapus token lama via REST:', res.status, text);
+    }
   } catch (err) {
     console.error('Gagal menghapus token lama via REST:', err?.message || err);
   }
 }
 
+async function restReplaceToken(record) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return false;
+  const filters = `?email=eq.${encodeURIComponent(record.email)}&used=is.false`;
+  const url = `${SUPABASE_URL}/rest/v1/admin_password_reset_tokens${filters}`;
+  const payload = {
+    token: record.token,
+    expires_at: record.expires_at,
+    used: false,
+    created_at: record.created_at,
+    used_at: null,
+  };
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: { ...supabaseHeaders, Prefer: 'return=minimal' },
+    body: JSON.stringify(payload),
+  });
+  if (res.ok) return true;
+  const text = await res.text().catch(() => '');
+  if (res.status === 404) return false;
+  if (res.status === 409 && /admin_password_reset_tokens_email_active_idx/i.test(text)) return false;
+  throw new Error(`Supabase REST replace token gagal (${res.status}${text ? `: ${text}` : ''})`);
+}
+
 async function restUpsertToken(record) {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return false;
   const url = `${SUPABASE_URL}/rest/v1/admin_password_reset_tokens`;
-  const res = await fetch(url, {
+  const res = await fetch(`${url}?on_conflict=token`, {
     method: 'POST',
     headers: { ...supabaseHeaders, Prefer: 'resolution=merge-duplicates' },
     body: JSON.stringify(record),
@@ -59,7 +86,11 @@ async function restUpsertToken(record) {
   if (res.ok) return true;
   const text = await res.text().catch(() => '');
   if (res.status === 404 && /Could not find the table/i.test(text)) return false;
-  throw new Error(`Supabase REST upsert token gagal (${res.status})`);
+  if (res.status === 409) {
+    const replaced = await restReplaceToken(record);
+    if (replaced) return true;
+  }
+  throw new Error(`Supabase REST upsert token gagal (${res.status}${text ? `: ${text}` : ''})`);
 }
 
 async function restFetchToken(token) {
