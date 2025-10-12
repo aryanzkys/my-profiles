@@ -1,4 +1,4 @@
-# My Profiles — 3D Portfolio + Admin Platform (Next.js/Tailwind/Framer/Spline)
+# My Profiles - 3D Portfolio + Admin Platform (Next.js/Tailwind/Framer/Spline)
 
 Interactive 3D portfolio with an Owner-grade Admin platform: authority management, presence, audit/login logs, and maintenance mode. Ships static (Next.js export) and supports serverless APIs with Supabase-first persistence and robust fallbacks. Containerized and published to GitHub Packages (GHCR) with automated Releases on tags.
 
