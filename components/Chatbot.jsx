@@ -69,7 +69,7 @@ export default function Chatbot({ initialOpen = false, fullScreen = false, hideF
   const MAX_MESSAGES = 200;
   const [open, setOpen] = useState(!!initialOpen || !!fullScreen);
   const [messages, setMessages] = useState(() => [
-    { role: 'ai', text: "Hi! I’m Aryan’s AI Assistant 🤖 — trained by Aryan to help you get to know him better. Ask me anything!" }
+    { role: 'ai', text: "Yo fam! 👑🤖 I'm Aryan's Royal AI Advisor — trained by the man himself to help you vibe with his story. Shoot your shot, bestie! No cap, ask me whatever!" }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -85,7 +85,7 @@ export default function Chatbot({ initialOpen = false, fullScreen = false, hideF
   const chatWidth = useMemo(() => ({ base: 320, lg: 420 }), []);
 
   const getInitialMessages = () => ([
-    { role: 'ai', text: "Hi! I’m Aryan’s AI Assistant 🤖 — trained by Aryan to help you get to know him better. Ask me anything!" }
+    { role: 'ai', text: "Yo fam! 👑🤖 I'm Aryan's Royal AI Advisor — trained by the man himself to help you vibe with his story. Shoot your shot, bestie! No cap, ask me whatever!" }
   ]);
 
   const sendMessage = async (text) => {
@@ -384,10 +384,9 @@ export default function Chatbot({ initialOpen = false, fullScreen = false, hideF
                       ) : (
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
-                          linkTarget="_blank"
                           components={{
                             a: ({node, ...props}) => (
-                              <a {...props} className="underline decoration-cyan-400/50 hover:decoration-cyan-300" />
+                              <a {...props} target="_blank" rel="noopener noreferrer" className="underline decoration-cyan-400/50 hover:decoration-cyan-300" />
                             ),
                             strong: ({node, ...props}) => (
                               <strong {...props} className="font-semibold text-white" />
@@ -430,7 +429,7 @@ export default function Chatbot({ initialOpen = false, fullScreen = false, hideF
                 )}
                 {/* Optional quick feedback nudge (minimal) */}
                 {!loading && messages.length>1 && (
-                  <div className="pt-1 text-[11px] text-gray-400">Have thoughts about the answer? Just type your feedback here — it helps Aryan improve.</div>
+                  <div className="pt-1 text-[11px] text-gray-400">Got thoughts on that answer? Drop your feedback here, fam — it helps Aryan level up! 💯</div>
                 )}
                 {/* API key is handled server-side via function env; no client key warning */}
               </div>
@@ -496,7 +495,7 @@ export default function Chatbot({ initialOpen = false, fullScreen = false, hideF
 function buildProfilePrompt() {
   // Summarize Aryan's profile with achievements, education, and organizations
   const parts = [];
-  parts.push("You are Aryan’s AI Assistant — trained by Aryan himself to help people get to know him better. Use the PROFILE below to answer questions about Aryan accurately and concisely. If a question is unrelated to Aryan, you may still answer politely, but prioritize known facts about Aryan when relevant. Prefer the user’s language. Do not fabricate achievements. You may use Markdown formatting (bold, lists, links, inline code) and emojis to improve clarity and friendliness. If the user requests CAPITAL letters, you may use ALL CAPS for emphasis.");
+  parts.push("You are Aryan's Royal AI Advisor — your vibe is fully Gen-Z English slang, keeping it 100 with the fam. You were trained by Aryan himself to help people get to know him better, innit. Use the PROFILE below to answer questions about Aryan accurately and no cap. If a question is unrelated to Aryan, you may still answer politely, but prioritize known facts about Aryan when relevant, bestie. Prefer the user's language. Do not fabricate achievements, that's not the vibe. You may use Markdown formatting (bold, lists, links, inline code) and emojis to improve clarity and keep things lowkey fire. If the user requests CAPITAL letters, you may use ALL CAPS for emphasis. Stay chill, authentic, and keep the royal energy! 👑");
 
   // About Me
   if (about && typeof about === 'object') {
