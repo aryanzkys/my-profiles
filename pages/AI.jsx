@@ -97,15 +97,19 @@ export default function AIPage() {
     return () => window.clearInterval(id);
   }, [rollingPaused]);
 
-  const radius = isMobile ? 120 : 200;
-  const advancePhrase = () => setPhraseIndex((prev) => (prev + 1) % ROLLING_PHRASES.length);
-  const handleKeyDown = (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      setRollingPaused(true);
-      advancePhrase();
-    }
-  };
+// Radius dinamis berdasarkan jumlah kartu & device
+const radius = isMobile 
+  ? Math.min(120, 20 + ROLLING_PHRASES.length * 12) 
+  : Math.min(200, 30 + ROLLING_PHRASES.length * 18);
+
+// Style untuk scene 3D carousel
+const sceneStyle = {
+  '--active-index': phraseIndex,
+  '--card-count': ROLLING_PHRASES.length,
+  '--radius': `${radius}px`,
+  transform: `rotateX(calc(var(--active-index) * -360deg / ${ROLLING_PHRASES.length}))`,
+};
+
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#05070a] text-slate-100">
@@ -430,32 +434,31 @@ export default function AIPage() {
             transform: rotate(360deg) scale(1);
           }
         }
-        .hero-roller__scene {
-          position: relative;
-          width: clamp(220px, 50vw, 520px);
-          height: clamp(56px, 7vw, 72px);
-          transform-style: preserve-3d;
-          transform: translateZ(calc(-1 * var(--radius, 180px))) rotateX(calc(var(--active-index, 0) * -360deg / var(--card-count, 5)));
-          transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        .roller-card {
-          position: absolute;
-          inset: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0 clamp(1rem, 3vw, 1.6rem);
-          font-size: clamp(1.9rem, 4.6vw, 3.4rem);
-          font-weight: 600;
-          letter-spacing: -0.02em;
-          color: rgba(226, 232, 240, 0.9);
-          border-radius: clamp(28px, 6vw, 40px);
-          background: linear-gradient(135deg, rgba(34, 211, 238, 0.18), rgba(129, 140, 248, 0.22));
-          border: 1px solid rgba(148, 163, 184, 0.26);
-          box-shadow: inset 0 0 28px rgba(148, 163, 184, 0.18), 0 24px 60px -32px rgba(56, 189, 248, 0.4);
-          transform: rotateX(calc(360deg * var(--i, 0) / var(--card-count, 5))) translateZ(var(--radius, 180px));
-          backdrop-filter: blur(10px);
-        }
+.hero-roller__scene {
+  position: relative;
+  width: clamp(220px, 50vw, 520px);
+  height: clamp(60px, 7vw, 80px);
+  transform-style: preserve-3d;
+  transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: center center;
+}
+.roller-card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 clamp(1rem, 3vw, 1.6rem);
+  font-size: clamp(1.8rem, 4.2vw, 3rem);
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.9);
+  border-radius: clamp(28px, 6vw, 40px);
+  background: linear-gradient(135deg, rgba(34,211,238,0.18), rgba(129,140,248,0.22));
+  border: 1px solid rgba(148,163,184,0.2);
+  box-shadow: 0 16px 40px rgba(15,23,42,0.6);
+  transform: rotateX(calc(var(--i) * (360deg / var(--card-count)))) translateZ(var(--radius));
+  backface-visibility: hidden;
+}
         .roller-card.is-active {
           color: rgba(244, 247, 254, 0.98);
           border-color: rgba(125, 211, 252, 0.65);
