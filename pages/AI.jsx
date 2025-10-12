@@ -6,19 +6,19 @@ import ParticleField from '../components/ParticleField';
 import ShutdownOverlay from '../components/ShutdownOverlay';
 import aiPrivacy from '../data/ai_privacy.json';
 
-const ROLLING_PHRASES = [
+const PHRASES = [
   "Yo, it's Your Royal AI Advisor, innit 👑🤖",
   "Fam, let's cook up some mad schemes 💡✨",
-  "Bestie, spill the tea—I'm here for it ☕👂",
-  "Need that inspo? Say less, love 💫",
+  "Bestie, spill the tea, I'm here for it ☕👂",
+  "Need that inspo? Say less, buddy 💫",
   "Lowkey ready to vibe on your next move 🚀",
-  "No cap, I got your back fr fr 🫶",
+  "No cap, I got your back fr fr",
   "Living that royal coding life, mate 💻👑",
   "Straight fire ideas? Let's make it slap 🔥",
   "Rizz up your projects, I'm here to help 💥",
   "Bet, let's get this bread together 🍞✨",
   "Main character energy activated 🌟",
-  "Slay the day, your majesty 💅👑"
+  "Slay the day, Your Majesty👑"
 ];
 
 
@@ -38,7 +38,8 @@ export default function AIPage() {
   const [isMobile, setIsMobile] = useState(false);
   const headerRef = useRef(null);
   const [phraseIndex, setPhraseIndex] = useState(0);
-  const [rollingPaused, setRollingPaused] = useState(false);
+  const [displayedText, setDisplayedText] = useState('');
+  const [isTyping, setIsTyping] = useState(true);
   const [consentLoaded, setConsentLoaded] = useState(false);
   const [consented, setConsented] = useState(false);
   const [agree, setAgree] = useState(false);
@@ -155,11 +156,15 @@ export default function AIPage() {
   };
 
   const advancePhrase = useCallback(() => {
-    setPhraseIndex((prev) => (prev + 1) % ROLLING_PHRASES.length);
+    setPhraseIndex((prev) => (prev + 1) % PHRASES.length);
+    setDisplayedText('');
+    setIsTyping(true);
   }, []);
 
   const retreatPhrase = useCallback(() => {
-    setPhraseIndex((prev) => (prev - 1 + ROLLING_PHRASES.length) % ROLLING_PHRASES.length);
+    setPhraseIndex((prev) => (prev - 1 + PHRASES.length) % PHRASES.length);
+    setDisplayedText('');
+    setIsTyping(true);
   }, []);
 
   const handleKeyDown = useCallback((event) => {
@@ -175,17 +180,28 @@ export default function AIPage() {
     }
   }, [advancePhrase, retreatPhrase]);
 
+  // Typewriter effect
   useEffect(() => {
-    if (rollingPaused) return;
-    const id = window.setInterval(() => {
-      setPhraseIndex((prev) => (prev + 1) % ROLLING_PHRASES.length);
-    }, 5000);
-    return () => window.clearInterval(id);
-  }, [rollingPaused]);
+    const currentPhrase = PHRASES[phraseIndex];
+    if (displayedText.length < currentPhrase.length) {
+      const timeout = setTimeout(() => {
+        setDisplayedText(currentPhrase.slice(0, displayedText.length + 1));
+      }, 50); // Typing speed
+      return () => clearTimeout(timeout);
+    } else {
+      setIsTyping(false);
+      // Auto-advance to next phrase after completion
+      const advanceTimeout = setTimeout(() => {
+        advancePhrase();
+      }, 3000); // Wait 3s before next phrase
+      return () => clearTimeout(advanceTimeout);
+    }
+  }, [displayedText, phraseIndex, advancePhrase]);
 
-  const radius = isMobile 
-    ? Math.min(120, 20 + ROLLING_PHRASES.length * 12) 
-    : Math.min(200, 30 + ROLLING_PHRASES.length * 18);
+  useEffect(() => {
+    setDisplayedText('');
+    setIsTyping(true);
+  }, [phraseIndex]);
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-[#0a1628] via-[#1a2a4e] to-[#0f1b3a] text-slate-100">
@@ -195,6 +211,9 @@ export default function AIPage() {
         <meta name="description" content="Chat with Aryan's Royal AI Assistant - your personal guide to everything Aryan, served with that UK royal flair!" />
         <meta name="keywords" content="AI, chatbot, Royal AI, AryanStack, Aryan AI Assistant, Aryan Zaky Prayogo, Royal Blue Medieval" />
         <link rel="canonical" href="https://aryanstack.netlify.app/ai" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
       </Head>
 
       {/* Royal background effects */}
@@ -287,60 +306,56 @@ export default function AIPage() {
                 </span>
                 
                 <div className="space-y-4">
-                  <h1 className="sr-only">{ROLLING_PHRASES[phraseIndex]}</h1>
+                  <h1 className="sr-only">{PHRASES[phraseIndex]}</h1>
                   
-                  {/* Enhanced 3D Carousel with Royal Styling */}
+                  {/* Royal Typewriter Effect */}
                   <div
-                    className="hero-roller royal-theme"
+                    className="royal-typewriter-container"
                     role="button"
                     tabIndex={0}
-                    aria-label={`${ROLLING_PHRASES[phraseIndex]} - tap to shuffle`}
-                    onMouseEnter={() => setRollingPaused(true)}
-                    onMouseLeave={() => setRollingPaused(false)}
-                    onFocus={() => setRollingPaused(true)}
-                    onBlur={() => setRollingPaused(false)}
+                    aria-label={`${PHRASES[phraseIndex]} - tap to shuffle`}
                     onClick={advancePhrase}
                     onKeyDown={handleKeyDown}
                   >
-                    {/* Royal Avatar with 3D animation */}
-                    <div className="hero-roller__avatar royal-avatar" aria-hidden="true">
-                      <span />
-                      <span />
-                      <motion.div
-                        className="absolute inset-0 flex items-center justify-center text-3xl"
-                        animate={{
-                          scale: [1, 1.05, 1],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut",
-                        }}
-                      >
-                        🤖
-                      </motion.div>
-                    </div>
-                    
-                    <div
-                      className="hero-roller__scene"
+                    <motion.div
+                      className="royal-typewriter-text"
                       style={{
-                        '--active-index': `${phraseIndex}`,
-                        '--card-count': `${ROLLING_PHRASES.length}`,
-                        '--radius': `${radius}px`
+                        fontFamily: "'Cinzel', 'Times New Roman', Georgia, serif",
+                        fontSize: "40px",
+                        fontWeight: 900,
+                        color: "#FFD700",
+                        lineHeight: 1.2,
+                        letterSpacing: "0.03em",
+                        textTransform: "uppercase",
+                        position: "relative",
+                        zIndex: 1,
+                        wordWrap: "break-word",
+                        overflowWrap: "break-word",
+                        maxWidth: "100%"
                       }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.3 }}
                     >
-                      {ROLLING_PHRASES.map((phrase, idx) => (
-                        <span
-                          key={phrase}
-                          className={`roller-card royal-card ${idx === phraseIndex ? 'is-active' : ''}`}
-                          style={{ '--i': idx }}
-                          aria-hidden={idx !== phraseIndex}
+                      {displayedText}
+                      {isTyping && (
+                        <motion.span
+                          className="royal-typewriter-cursor"
+                          style={{
+                            display: "inline-block",
+                            marginLeft: "8px",
+                            fontFamily: "'Cinzel', 'Times New Roman', Georgia, serif",
+                            fontSize: "40px",
+                            fontWeight: 900,
+                            color: "#FFD700"
+                          }}
+                          animate={{ opacity: [1, 0, 1] }}
+                          transition={{ duration: 0.8, repeat: Infinity }}
                         >
-                          {phrase}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="hero-roller__glow royal-glow" aria-hidden="true" />
+                          |
+                        </motion.span>
+                      )}
+                    </motion.div>
                   </div>
                   
                   <p className="max-w-xl text-sm leading-7 text-blue-100 md:text-base font-medium">
@@ -567,106 +582,178 @@ export default function AIPage() {
         </main>
       </div>
 
-      <style jsx>{`
-        .hero-roller.royal-theme {
-          position: relative;
-          display: flex;
-          align-items: center;
-          gap: clamp(1rem, 3vw, 1.8rem);
-          border-radius: 999px;
-          padding: clamp(0.75rem, 1.6vw, 1.1rem) clamp(1rem, 2.5vw, 1.6rem);
-          background: linear-gradient(135deg, rgba(65, 105, 225, 0.25), rgba(138, 43, 226, 0.2));
-          border: 2px solid rgba(255, 215, 0, 0.3);
-          box-shadow: 0 25px 60px -35px rgba(65, 105, 225, 0.5), 0 0 40px rgba(255, 215, 0, 0.15);
-          cursor: pointer;
-          perspective: 1400px;
-          transition: border-color 180ms ease, box-shadow 220ms ease, transform 220ms ease;
-        }
-        .hero-roller.royal-theme:focus-visible {
-          outline: none;
-          border-color: rgba(255, 215, 0, 0.7);
-          box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.2), 0 30px 70px -40px rgba(255, 215, 0, 0.55);
-        }
-        .hero-roller.royal-theme:hover {
-          transform: translateY(-3px) scale(1.01);
-          box-shadow: 0 36px 90px -40px rgba(65, 105, 225, 0.6), 0 0 50px rgba(255, 215, 0, 0.25);
-          border-color: rgba(255, 215, 0, 0.5);
-        }
-        
-        .hero-roller__avatar.royal-avatar {
-          position: relative;
-          width: clamp(56px, 8vw, 72px);
-          height: clamp(56px, 8vw, 72px);
-          border-radius: 28px;
-          background: radial-gradient(circle at 30% 30%, rgba(255, 215, 0, 0.6), rgba(65, 105, 225, 0.4));
-          overflow: hidden;
-          box-shadow: inset 0 0 30px rgba(65, 105, 225, 0.4), 0 18px 45px -24px rgba(255, 215, 0, 0.5);
-          border: 2px solid rgba(255, 215, 0, 0.3);
-        }
-        .hero-roller__avatar.royal-avatar span {
-          position: absolute;
-          inset: -20%;
-          background: conic-gradient(from 0deg, rgba(255, 215, 0, 0.6), rgba(65, 105, 225, 0.0) 45%, rgba(138, 43, 226, 0.4) 75%, rgba(255, 215, 0, 0.7));
-          animation: royalOrbit 12s linear infinite;
-        }
-        .hero-roller__avatar.royal-avatar span:nth-child(2) {
-          animation-duration: 18s;
-          mix-blend-mode: screen;
-          opacity: 0.8;
-        }
-        @keyframes royalOrbit {
+      <style jsx global>{`
+        @keyframes royal-shine {
           0% {
-            transform: rotate(0deg) scale(1);
-          }
-          50% {
-            transform: rotate(180deg) scale(1.03);
+            background-position: -200% center;
           }
           100% {
-            transform: rotate(360deg) scale(1);
+            background-position: 200% center;
           }
         }
         
-        .hero-roller__scene {
-          position: relative;
-          width: clamp(220px, 50vw, 520px);
-          height: clamp(64px, 7vw, 84px);
-          transform-style: preserve-3d;
-          transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
-          transform-origin: center center;
+        @keyframes royal-glow-pulse {
+          0%, 100% {
+            text-shadow: 
+              0 0 20px rgba(255, 215, 0, 0.9),
+              0 0 40px rgba(255, 215, 0, 0.7),
+              0 0 60px rgba(255, 215, 0, 0.5),
+              0 0 80px rgba(255, 215, 0, 0.3),
+              0 4px 8px rgba(0, 0, 0, 0.6),
+              2px 2px 4px rgba(0, 0, 0, 0.8);
+          }
+          50% {
+            text-shadow: 
+              0 0 30px rgba(255, 215, 0, 1),
+              0 0 50px rgba(255, 215, 0, 0.9),
+              0 0 70px rgba(255, 215, 0, 0.7),
+              0 0 90px rgba(255, 215, 0, 0.5),
+              0 0 110px rgba(255, 215, 0, 0.3),
+              0 4px 8px rgba(0, 0, 0, 0.6),
+              2px 2px 4px rgba(0, 0, 0, 0.8);
+          }
         }
         
-        .roller-card.royal-card {
-          position: absolute;
-          inset: 0;
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-100%) rotate(45deg);
+          }
+          100% {
+            transform: translateX(100%) rotate(45deg);
+          }
+        }
+        
+        @keyframes borderGlow {
+          0%, 100% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+        }
+        
+        .royal-typewriter-container {
+          position: relative;
           display: flex;
           align-items: center;
-          justify-content: center;
-          padding: 0 clamp(1rem, 3vw, 1.6rem);
-          font-size: clamp(1.6rem, 4vw, 2.8rem);
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.9);
-          border-radius: clamp(30px, 6vw, 42px);
-          background: linear-gradient(135deg, rgba(65, 105, 225, 0.3), rgba(138, 43, 226, 0.25));
-          border: 2px solid rgba(255, 215, 0, 0.25);
-          box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5), inset 0 0 30px rgba(255, 215, 0, 0.1);
-          transform: rotateX(calc(var(--i) * (360deg / var(--card-count)))) translateZ(var(--radius));
-          backface-visibility: hidden;
-        }
-        .roller-card.royal-card.is-active {
-          color: rgba(255, 255, 255, 1);
-          border-color: rgba(255, 215, 0, 0.8);
-          box-shadow: inset 0 0 40px rgba(255, 215, 0, 0.3), 0 32px 80px -38px rgba(255, 215, 0, 0.6);
-          background: linear-gradient(135deg, rgba(65, 105, 225, 0.5), rgba(138, 43, 226, 0.4));
+          justify-content: flex-start;
+          height: 156px;
+          border-radius: 28px;
+          padding: clamp(1.5rem, 3vw, 2rem) clamp(2rem, 4vw, 2.5rem);
+          background: linear-gradient(135deg, rgba(65, 105, 225, 0.35), rgba(138, 43, 226, 0.3));
+          border: 3px solid rgba(255, 215, 0, 0.5);
+          box-shadow: 
+            0 25px 60px -35px rgba(65, 105, 225, 0.6), 
+            0 0 50px rgba(255, 215, 0, 0.25),
+            inset 0 0 60px rgba(255, 215, 0, 0.1);
+          cursor: pointer;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          overflow: hidden;
         }
         
-        .hero-roller__glow.royal-glow {
+        .royal-typewriter-container::before {
+          content: '';
           position: absolute;
-          inset: 8%;
-          border-radius: inherit;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 215, 0, 0.2),
+            transparent
+          );
+          animation: shimmer 3s infinite;
           pointer-events: none;
-          background: radial-gradient(circle at 60% 40%, rgba(255, 215, 0, 0.25), transparent 65%);
-          mix-blend-mode: screen;
-          opacity: 0.85;
+        }
+        
+        .royal-typewriter-container::after {
+          content: '';
+          position: absolute;
+          inset: -3px;
+          border-radius: 28px;
+          background: linear-gradient(
+            45deg,
+            rgba(255, 215, 0, 0.8),
+            rgba(218, 165, 32, 0.6),
+            rgba(255, 215, 0, 0.8),
+            rgba(218, 165, 32, 0.6),
+            rgba(255, 215, 0, 0.8)
+          );
+          background-size: 200% 100%;
+          animation: borderGlow 3s linear infinite;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.4s ease;
+          z-index: -1;
+        }
+        
+        .royal-typewriter-container:hover {
+          transform: translateY(-4px) scale(1.01);
+          box-shadow: 
+            0 36px 90px -40px rgba(65, 105, 225, 0.7), 
+            0 0 70px rgba(255, 215, 0, 0.4),
+            inset 0 0 80px rgba(255, 215, 0, 0.15);
+          border-color: rgba(255, 215, 0, 0.8);
+        }
+        
+        .royal-typewriter-container:hover::after {
+          opacity: 1;
+        }
+        
+        .royal-typewriter-container:focus-visible {
+          outline: none;
+          border-color: rgba(255, 215, 0, 0.9);
+          box-shadow: 
+            0 0 0 6px rgba(255, 215, 0, 0.3), 
+            0 30px 70px -40px rgba(255, 215, 0, 0.65),
+            inset 0 0 100px rgba(255, 215, 0, 0.2);
+        }
+        
+        .royal-typewriter-text {
+          font-family: 'Cinzel', 'Times New Roman', Georgia, serif;
+          font-size: clamp(3rem, 7.5vw, 5.5rem);
+          font-weight: 900;
+          color: #FFD700;
+          line-height: 1.2;
+          letter-spacing: 0.03em;
+          text-shadow: 
+            0 0 20px rgba(255, 215, 0, 0.9),
+            0 0 40px rgba(255, 215, 0, 0.7),
+            0 0 60px rgba(255, 215, 0, 0.5),
+            0 0 80px rgba(255, 215, 0, 0.3),
+            0 4px 8px rgba(0, 0, 0, 0.6),
+            2px 2px 4px rgba(0, 0, 0, 0.8);
+          animation: royal-glow-pulse 3s ease-in-out infinite;
+          position: relative;
+          z-index: 1;
+          text-transform: uppercase;
+        }
+        
+        .royal-typewriter-container:hover .royal-typewriter-text {
+          animation: royal-glow-pulse 1.5s ease-in-out infinite;
+          text-shadow: 
+            0 0 30px rgba(255, 215, 0, 1),
+            0 0 50px rgba(255, 215, 0, 0.9),
+            0 0 70px rgba(255, 215, 0, 0.7),
+            0 0 90px rgba(255, 215, 0, 0.5),
+            0 4px 8px rgba(0, 0, 0, 0.6),
+            2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+        
+        .royal-typewriter-cursor {
+          display: inline-block;
+          margin-left: 8px;
+          font-family: 'Cinzel', 'Times New Roman', Georgia, serif;
+          font-size: clamp(3rem, 7.5vw, 5.5rem);
+          font-weight: 900;
+          color: #FFD700;
+          text-shadow: 
+            0 0 20px rgba(255, 215, 0, 1),
+            0 0 30px rgba(255, 215, 0, 0.8),
+            0 0 40px rgba(255, 215, 0, 0.6),
+            0 4px 8px rgba(0, 0, 0, 0.6);
         }
         
         .royal-bullet {
@@ -750,14 +837,9 @@ export default function AIPage() {
         }
         
         @media (max-width: 768px) {
-          .hero-roller.royal-theme {
-            flex-direction: column;
-            gap: 1rem;
-            padding: 1rem;
-          }
-          .hero-roller__scene {
-            width: 100%;
-            max-width: 280px;
+          .royal-typewriter-container {
+            padding: 1.5rem;
+            height: 140px;
           }
         }
       `}</style>
