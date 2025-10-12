@@ -19,6 +19,7 @@ export default function LoginForm() {
   const [resetBusy, setResetBusy] = useState(false);
   const [resetSuccess, setResetSuccess] = useState('');
   const [resetError, setResetError] = useState('');
+  const [resetSuggestSignup, setResetSuggestSignup] = useState(false);
 
   // Real-time validation
   useEffect(() => {
@@ -33,6 +34,7 @@ export default function LoginForm() {
       setResetEmail(email || '');
       setResetSuccess('');
       setResetError('');
+      setResetSuggestSignup(false);
     }
   }, [resetOpen, email]);
 
@@ -65,12 +67,16 @@ export default function LoginForm() {
     setResetBusy(true);
     setResetSuccess('');
     setResetError('');
+    setResetSuggestSignup(false);
     try {
       const result = await requestPasswordReset(resetEmail);
       if (result.ok) {
         setResetSuccess(result.data?.message || 'Jika email terdaftar, silakan cek inbox Anda untuk tautan reset.');
       } else {
         const message = result.data?.message || 'Gagal memproses permintaan reset password.';
+        if (result.status === 404) {
+          setResetSuggestSignup(true);
+        }
         setResetError(message);
       }
     } catch (err) {
@@ -214,6 +220,20 @@ export default function LoginForm() {
                   </div>
                   {resetError && <div className="text-xs text-red-300">{resetError}</div>}
                   {resetSuccess && <div className="text-xs text-emerald-300">{resetSuccess}</div>}
+                  {resetSuggestSignup && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode('signup');
+                        setEmail(resetEmail);
+                        setResetOpen(false);
+                      }}
+                      className="text-xs text-cyan-200 underline decoration-dotted hover:text-cyan-100"
+                      disabled={resetBusy}
+                    >
+                      Buat akun sekarang
+                    </button>
+                  )}
                   <div className="grid gap-2 sm:grid-cols-2">
                     <button
                       type="submit"

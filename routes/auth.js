@@ -17,11 +17,6 @@ const requestResetLimiter = rateLimit({
   },
 });
 
-// Helper untuk membungkus respons agar konsisten (tidak bocorkan informasi email)
-const genericResetResponse = {
-  message: 'Jika email terdaftar, instruksi reset password telah dikirim. Periksa inbox Anda.',
-};
-
 // Endpoint POST /auth/request-reset
 router.post('/request-reset', requestResetLimiter, async (req, res, next) => {
   try {
@@ -42,12 +37,11 @@ router.post('/request-reset', requestResetLimiter, async (req, res, next) => {
       exists = await passwordStore.emailExists(normalizedEmail);
     } catch (checkErr) {
       console.error('Gagal mengecek keberadaan email admin:', checkErr?.message || checkErr);
+      return res.status(500).json({ message: 'Gagal memproses permintaan reset password.' });
     }
 
     if (!exists) {
-      // Tunda sedikit agar waktu respons konsisten, mengurangi peluang timing attack
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      return res.json(genericResetResponse);
+      return res.status(404).json({ message: 'Email belum terdaftar. Silakan sign up terlebih dahulu.' });
     }
 
     let resetToken;
@@ -65,7 +59,7 @@ router.post('/request-reset', requestResetLimiter, async (req, res, next) => {
       return res.status(500).json({ message: 'Gagal mengirim email reset password.' });
     }
 
-    return res.json(genericResetResponse);
+  return res.json({ message: 'Instruksi reset password berhasil dikirim. Silakan cek inbox Anda.' });
   } catch (err) {
     return next(err);
   }
