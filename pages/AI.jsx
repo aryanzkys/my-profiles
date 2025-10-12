@@ -46,38 +46,35 @@ export default function AIPage() {
     const rect = el.getBoundingClientRect();
     const px = (e.clientX - rect.left) / rect.width; // 0..1
     const py = (e.clientY - rect.top) / rect.height; // 0..1
-    const ry = (px - 0.5) * (isMobile ? 4 : 10); // rotateY (reduced on mobile)
-    const rx = -(py - 0.5) * (isMobile ? 3 : 6); // rotateX (reduced on mobile)
+    const ry = (px - 0.5) * (isMobile ? 3 : 8); // rotateY (reduced on mobile)
+    const rx = -(py - 0.5) * (isMobile ? 2 : 5); // rotateX (reduced on mobile)
     setTilt({ rx, ry });
   };
   const resetTilt = () => setTilt({ rx: 0, ry: 0 });
 
-  // Interactive RGB title: track mouse X to gently move gradient
+  // Hero headline accent follows pointer to keep layout calm but interactive
   const handleHeaderMove = (e) => {
     const el = headerRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    const px = (e.clientX - rect.left) / rect.width; // 0..1
-    const py = (e.clientY - rect.top) / rect.height; // 0..1
-    // Horizontal gradient tracking
+    const px = (e.clientX - rect.left) / rect.width;
+    const py = (e.clientY - rect.top) / rect.height;
     el.style.setProperty('--mx', `${Math.max(0, Math.min(100, px * 100))}%`);
-    // Proximity glow center (follows cursor)
     el.style.setProperty('--px', `${(px * 100).toFixed(2)}%`);
     el.style.setProperty('--py', `${(py * 100).toFixed(2)}%`);
-    // Increase glow when pointer is inside header
     el.style.setProperty('--glow', '1');
   };
   const resetHeaderMove = () => {
     const el = headerRef.current;
     if (!el) return;
-    el.style.setProperty('--mx', '50%');
-    el.style.setProperty('--px', '50%');
-    el.style.setProperty('--py', '50%');
+    el.style.setProperty('--mx', '48%');
+    el.style.setProperty('--px', '52%');
+    el.style.setProperty('--py', '48%');
     el.style.setProperty('--glow', '0');
   };
 
   return (
-  <div className="min-h-screen relative overflow-hidden bg-[#05070a] text-gray-100">
+    <div className="min-h-screen relative overflow-hidden bg-[#05070a] text-slate-100">
       <Head>
         <title>Aryan’s AI Assistant</title>
         <meta name="robots" content="index,follow" />
@@ -87,187 +84,264 @@ export default function AIPage() {
         <link rel="canonical" href="https://aryanstack.netlify.app/ai" />
       </Head>
 
-      {/* Global background accents: grid, glows, and orbs */}
       <div className="pointer-events-none absolute inset-0">
-        {/* soft top glow */}
-        <div className="absolute -top-24 right-[-10%] h-[60vh] w-[60vh] rounded-full blur-[110px]" style={{ background: 'radial-gradient(50% 50% at 50% 50%, rgba(34,211,238,0.22) 0%, rgba(0,0,0,0) 70%)' }} />
-        {/* bottom-left glow */}
-        <div className="absolute bottom-[-20%] left-[-10%] h-[70vh] w-[70vh] rounded-full blur-[120px]" style={{ background: 'radial-gradient(50% 50% at 50% 50%, rgba(59,130,246,0.18) 0%, rgba(0,0,0,0) 70%)' }} />
-        {/* subtle grid overlay */}
-        <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
-    {/* ambient particles */}
-    <ParticleField />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(56,189,248,0.14),transparent_55%),radial-gradient(circle_at_80%_10%,rgba(59,130,246,0.12),transparent_55%),radial-gradient(circle_at_50%_80%,rgba(165,180,252,0.1),transparent_60%)]" />
+        <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'linear-gradient(rgba(148,163,184,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.15) 1px, transparent 1px)', backgroundSize: '42px 42px' }} />
+        <ParticleField className="opacity-[0.08]" />
       </div>
 
-  <header className="relative overflow-hidden" ref={headerRef} onMouseMove={handleHeaderMove} onMouseLeave={resetHeaderMove} onMouseEnter={() => { const el = headerRef.current; if (el) el.style.setProperty('--glow', '1'); }}>
-        {/* hero gradient cone */}
-        <div className="absolute inset-0 opacity-30" style={{ background: 'radial-gradient(60% 40% at 70% 0%, rgba(34,211,238,0.25), transparent 70%)' }} />
-        {/* parallax orbs */}
-        <motion.div initial={{ y: -8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8, ease: 'easeOut' }} className="absolute -top-10 left-5 h-20 w-20 rounded-full bg-cyan-400/10 blur-2xl" />
-        <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.9, delay: 0.05, ease: 'easeOut' }} className="absolute top-10 right-10 h-28 w-28 rounded-full bg-blue-500/10 blur-3xl" />
-        <div className="container mx-auto px-4 py-8 md:py-12">
-          <motion.h1
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45 }}
-            className="text-3xl md:text-4xl font-semibold leading-[1.2] md:leading-[1.2] flex items-center gap-3"
-          >
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Coat_of_arms_of_the_United_Kingdom_%282022%2C_variant_2%29.svg/2241px-Coat_of_arms_of_the_United_Kingdom_%282022%2C_variant_2%29.svg.png"
-              alt="British coat of arms"
-              className="h-8 w-8 md:h-10 md:w-10 object-contain select-none pointer-events-none drop-shadow-[0_0_14px_rgba(34,211,238,0.22)] self-center align-middle"
-              loading="eager"
-              decoding="async"
-            />
-            <span className="title-rgb self-center">Aryan’s AI Assistant</span>
-          </motion.h1>
-          <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05 }} className="mt-2 text-[13px] md:text-base text-gray-300 max-w-[720px]">
-            Your intelligent gateway to explore Aryan’s journey and insights. Engage freely with the AI Assistant for an immersive and refined experience.
-          </motion.p>
-          {/* accent underline */}
-          <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.6, delay: 0.15, ease: 'easeOut' }} className="mt-4 h-[2px] w-32 origin-left bg-gradient-to-r from-cyan-400/80 via-sky-400/70 to-blue-400/60 shadow-[0_0_18px_rgba(34,211,238,0.35)]" />
-        </div>
-      </header>
+      <div className="relative z-10 flex min-h-screen flex-col">
+        <header
+          ref={headerRef}
+          onMouseMove={handleHeaderMove}
+          onMouseLeave={resetHeaderMove}
+          onMouseEnter={() => {
+            const el = headerRef.current;
+            if (el) el.style.setProperty('--glow', '1');
+          }}
+          className="w-full border-b border-white/5 backdrop-blur-sm"
+        >
+          <div className="container mx-auto px-4 py-10 md:py-16">
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className="flex flex-col gap-10 md:flex-row md:items-end"
+            >
+              <div className="flex-1 space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-400 to-indigo-500 shadow-[0_6px_24px_rgba(59,130,246,0.25)]" />
+                  <span className="text-xs uppercase tracking-[0.32em] text-slate-300/80">Virtual Dialogue</span>
+                </div>
+                <div className="space-y-4">
+                  <h1 className="title-rgb text-3xl leading-tight sm:text-4xl md:text-5xl">Aryan’s AI Assistant</h1>
+                  <p className="max-w-xl text-sm leading-7 text-slate-300 md:text-base">
+                    Discover Aryan’s story, projects, and daily notes through a conversational surface that stays private, purposeful, and available any time you need clarity.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                  <span className="chip">Secure & Local-first</span>
+                  <span className="chip">Context aware</span>
+                  <span className="chip">Spotify enrichment</span>
+                </div>
+              </div>
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.1, ease: 'easeOut' }}
+                className="w-full max-w-sm rounded-2xl border border-white/5 bg-white/3 px-6 py-5 backdrop-blur-md"
+              >
+                <h2 className="text-sm font-semibold text-slate-200">How the assistant helps</h2>
+                <ul className="mt-4 space-y-3 text-xs text-slate-300">
+                  <li className="flex gap-3">
+                    <span className="bullet" />
+                    <span>Ask about Aryan’s skills, experiences, and learning journey.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="bullet" />
+                    <span>Preview curated playlists for the current focus and energy.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="bullet" />
+                    <span>Receive thoughtful answers with clear privacy boundaries.</span>
+                  </li>
+                </ul>
+              </motion.div>
+            </motion.div>
+          </div>
+        </header>
 
-      <main className="container mx-auto px-3 md:px-4 pb-24">
-        {/* Chat section with subtle 3D tilt interaction */}
-        <div className="relative mt-2 md:mt-4">
-          <div className="grid place-items-center">
+        <main className="container mx-auto flex w-full flex-1 flex-col px-4 pb-20 pt-8 md:px-6">
+          <section className="relative isolate">
+            <div className="absolute -inset-x-4 -top-8 bottom-0 rounded-[40px] bg-gradient-to-br from-white/4 via-white/2 to-transparent blur-[100px]" />
             <motion.div
               ref={cardRef}
               onMouseMove={handleTilt}
               onMouseLeave={resetTilt}
-              style={{ transform: `perspective(1100px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)` }}
-              className="w-full max-w-[1080px] px-0.5 md:px-1 transition-transform duration-150 will-change-transform"
+              style={{ transform: `perspective(1200px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)` }}
+              className="relative rounded-3xl border border-white/8 bg-[#080d13]/80 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.9)] backdrop-blur-xl transition-transform duration-200"
             >
-              <Chatbot initialOpen={true} fullScreen={true} hideFab={true} />
+              <div className="absolute inset-x-6 top-6 mx-auto h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+              <div className="rounded-3xl p-2 md:p-3">
+                <Chatbot initialOpen fullScreen hideFab />
+              </div>
             </motion.div>
-          </div>
-          {/* Decorative corner sparks */}
-          <div className="pointer-events-none">
-            <div className="absolute -z-[1] -top-6 left-2 md:left-6 h-12 md:h-16 w-12 md:w-16 rounded-full blur-3xl bg-cyan-500/20" />
-            <div className="absolute -z-[1] -bottom-10 right-4 md:right-10 h-16 md:h-20 w-16 md:w-20 rounded-full blur-3xl bg-blue-500/20" />
-          </div>
-        </div>
+          </section>
 
-        {/* Inline Spotify section under chat */}
-        <div className="mt-4 md:mt-6">
-          <div className="relative">
-            {/* local particles behind Spotify */}
-            <ParticleField className="opacity-[0.2]" />
-            <SpotifySection />
-          </div>
-        </div>
-        {/* Full-screen consent modal overlay */}
-        <AnimatePresence>
-          {consentLoaded && !consented && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm"
-              aria-modal="true"
-              role="dialog"
-            >
-              {/* glow background accents */}
-              <div className="absolute -top-32 right-[-10%] h-[60vh] w-[60vh] rounded-full blur-[110px] opacity-40" style={{ background: 'radial-gradient(50% 50% at 50% 50%, rgba(34,211,238,0.22) 0%, rgba(0,0,0,0) 70%)' }} />
-              <div className="absolute bottom-[-20%] left-[-10%] h-[70vh] w-[70vh] rounded-full blur-[120px] opacity-40" style={{ background: 'radial-gradient(50% 50% at 50% 50%, rgba(59,130,246,0.18) 0%, rgba(0,0,0,0) 70%)' }} />
+          <section className="relative mt-10 md:mt-14">
+            <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_380px]">
               <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 10, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 260, damping: 24 }}
-                className="relative mx-4 w-full max-w-lg rounded-2xl border border-white/15 bg-[#0a0f14]/95 shadow-[0_0_40px_rgba(34,211,238,0.25)]"
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-80px' }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+                className="rounded-3xl border border-white/6 bg-[#070b10]/80 px-6 py-8 backdrop-blur-xl"
               >
-                <div className="px-5 py-4 border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent flex items-center gap-3">
-                  <h2 className="text-lg md:text-xl font-semibold text-cyan-300">Before you use Aryan’s AI Assistant</h2>
-                </div>
-                <div className="px-5 py-4 space-y-3 text-sm text-gray-200">
-                  <p className="text-gray-300">To continue, please review and agree to the AI Privacy Policy. This explains what data may be used and how you can control it.</p>
-                  <ul className="list-disc pl-5 text-gray-300 text-[13px] space-y-1">
-                    <li>Chat history is stored locally in your browser and can be cleared anytime.</li>
-                    <li>Spotify (if connected) stores tokens only in your browser.</li>
-                    <li>Basic usage may be measured to improve the experience.</li>
-                  </ul>
-                  <a href="/ai-privacy" target="_blank" rel="noreferrer" className="inline-flex items-center text-cyan-300 underline decoration-cyan-400/40 hover:text-cyan-200">Read the AI Privacy Policy</a>
-                  <label className="mt-2 flex items-start gap-2 text-[13px]">
-                    <input type="checkbox" checked={agree} onChange={e=>setAgree(e.target.checked)} className="mt-[3px] h-4 w-4 rounded border-white/20 bg-white/5" />
-                    <span>I have read and agree to the AI Privacy Policy.</span>
-                  </label>
-                </div>
-                <div className="px-5 py-4 border-t border-white/10 flex items-center gap-2 justify-end">
-                  <a href="/" className="text-xs px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-gray-200 hover:bg-white/10">Decline</a>
-                  <button
-                    disabled={!agree}
-                    onClick={() => {
-                      try {
-                        const version = aiPrivacy?.last_updated || 'v1';
-                        const payload = { version, accepted: true, ts: new Date().toISOString() };
-                        window.localStorage.setItem('aryan-ai-privacy-consent', JSON.stringify(payload));
-                      } catch {}
-                      setConsented(true);
-                    }}
-                    className={`text-xs px-3 py-1.5 rounded-lg border ${agree ? 'border-cyan-400/30 bg-cyan-500/20 text-cyan-200 hover:shadow-[0_0_14px_rgba(34,211,238,0.35)]' : 'border-white/10 bg-white/5 text-gray-400 cursor-not-allowed'}`}
-                  >
-                    Accept & Continue
-                  </button>
+                <h3 className="text-base font-semibold text-slate-200">Designed for calm focus</h3>
+                <p className="mt-3 text-sm leading-7 text-slate-400">
+                  Conversations stay centred within a distraction-free surface. Toggle full-screen mode inside the assistant whenever you want to immerse deeply.
+                </p>
+                <dl className="mt-6 grid gap-4 text-xs text-slate-300 md:grid-cols-3">
+                  <div>
+                    <dt className="font-medium text-slate-200">Privacy first</dt>
+                    <dd className="mt-1 leading-6">Local storage consent with a transparent policy.</dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-slate-200">Live context</dt>
+                    <dd className="mt-1 leading-6">Keeps track of Aryan’s latest releases and updates.</dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-slate-200">Responsive</dt>
+                    <dd className="mt-1 leading-6">Smooth on any device with refined motion cues.</dd>
+                  </div>
+                </dl>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-80px' }}
+                transition={{ duration: 0.4, delay: 0.05, ease: 'easeOut' }}
+                className="relative rounded-3xl border border-white/6 bg-gradient-to-br from-white/6 via-white/2 to-transparent p-[1px]"
+              >
+                <div className="rounded-[22px] bg-[#070b10]/85 p-5 backdrop-blur-xl">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-slate-200">Playlist companion</h3>
+                    <span className="text-[10px] uppercase tracking-[0.24em] text-slate-400">Live</span>
+                  </div>
+                  <p className="mt-3 text-xs leading-6 text-slate-400">
+                    Pair the conversation with ambient tracks curated by Aryan to match the vibe of the current session.
+                  </p>
+                  <div className="mt-5 overflow-hidden rounded-2xl border border-white/5 bg-[#080d13]/90">
+                    <SpotifySection />
+                  </div>
                 </div>
               </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
-      {/* Elegant shining RGB title styles */}
+            </div>
+          </section>
+
+          <AnimatePresence>
+            {consentLoaded && !consented && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+                aria-modal="true"
+                role="dialog"
+              >
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 12, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+                  className="relative mx-5 w-full max-w-lg rounded-3xl border border-white/12 bg-[#05070a]/95 shadow-[0_30px_80px_-30px_rgba(15,23,42,0.95)] backdrop-blur-xl"
+                >
+                  <div className="flex items-center justify-between gap-3 border-b border-white/10 px-6 py-5">
+                    <h2 className="text-base font-semibold text-slate-100">Before you start</h2>
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-slate-400">Privacy</span>
+                  </div>
+                  <div className="px-6 py-5 text-sm text-slate-300">
+                    <p className="leading-6 text-slate-300">
+                      Review and accept the AI Privacy Policy to enable the assistant. It outlines what is stored locally and how to revoke access.
+                    </p>
+                    <ul className="mt-4 space-y-2 text-xs text-slate-400">
+                      <li className="flex gap-2">
+                        <span className="bullet" />
+                        <span>Chat history lives in your browser and is fully disposable.</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="bullet" />
+                        <span>Spotify connection is local-only and optional.</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="bullet" />
+                        <span>Light usage analytics improve model quality over time.</span>
+                      </li>
+                    </ul>
+                    <a
+                      href="/ai-privacy"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-4 inline-flex items-center gap-2 text-xs font-medium text-cyan-300 hover:text-cyan-200"
+                    >
+                      Read the AI Privacy Policy
+                    </a>
+                    <label className="mt-5 flex items-start gap-3 text-xs text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={agree}
+                        onChange={(event) => setAgree(event.target.checked)}
+                        className="mt-[2px] h-4 w-4 rounded border-white/20 bg-white/5"
+                      />
+                      <span>I understand and agree to the AI Privacy Policy.</span>
+                    </label>
+                  </div>
+                  <div className="flex items-center justify-end gap-3 border-t border-white/10 px-6 py-4">
+                    <a
+                      href="/"
+                      className="rounded-full border border-white/10 px-4 py-2 text-xs text-slate-300 transition hover:bg-white/5"
+                    >
+                      Decline
+                    </a>
+                    <button
+                      disabled={!agree}
+                      onClick={() => {
+                        try {
+                          const version = aiPrivacy?.last_updated || 'v1';
+                          const payload = { version, accepted: true, ts: new Date().toISOString() };
+                          window.localStorage.setItem('aryan-ai-privacy-consent', JSON.stringify(payload));
+                        } catch {}
+                        setConsented(true);
+                      }}
+                      className={`rounded-full border px-5 py-2 text-xs font-medium transition ${agree ? 'border-cyan-400/40 bg-cyan-500/20 text-cyan-200 hover:shadow-[0_0_16px_rgba(34,211,238,0.32)]' : 'border-white/10 bg-white/5 text-slate-500 cursor-not-allowed'}`}
+                    >
+                      Accept & Continue
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
+      </div>
+
       <style jsx>{`
+        .chip {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 999px;
+          padding: 0.45rem 0.9rem;
+          background: rgba(148, 163, 184, 0.08);
+          border: 1px solid rgba(148, 163, 184, 0.18);
+        }
+        .bullet {
+          margin-top: 0.4rem;
+          height: 6px;
+          width: 6px;
+          border-radius: 999px;
+          background: linear-gradient(135deg, rgba(34, 211, 238, 0.9), rgba(99, 102, 241, 0.9));
+          flex-shrink: 0;
+        }
         .title-rgb {
-          display: inline-block;
           position: relative;
-          top: -1px; /* nudge up to avoid visual sinking of descenders */
-          line-height: 1.25;
-          vertical-align: middle;
-          white-space: nowrap;
-          /* Layers: 1) Cursor-follow glow; 2) base RGB gradient; 3) subtle moving sheen */
+          display: inline-block;
+          letter-spacing: -0.01em;
           background-image:
-            radial-gradient(160px 160px at var(--px, 50%) var(--py, 50%),
-              rgba(34,211,238, calc(0.28 + 0.32 * var(--glow, 0))) 0%,
-              rgba(96,165,250, calc(0.22 + 0.28 * var(--glow, 0))) 45%,
-              rgba(167,139,250, calc(0.18 + 0.22 * var(--glow, 0))) 65%,
-              transparent 72%),
-            linear-gradient(90deg,
-              rgba(34,211,238,0.98) 0%,
-              rgba(96,165,250,0.98) 35%,
-              rgba(167,139,250,0.98) 65%,
-              rgba(34,211,238,0.98) 100%),
-            linear-gradient(115deg,
-              rgba(255,255,255,0) 0%,
-              rgba(255,255,255,0) 40%,
-              rgba(255,255,255,0.55) 50%,
-              rgba(255,255,255,0) 60%,
-              rgba(255,255,255,0) 100%);
-          background-size: cover, 200% 100%, 200% 100%;
-          background-position: 50% 50%, var(--mx, 50%) 50%, -200% 50%;
-          -webkit-background-clip: text;
+            radial-gradient(220px 220px at var(--px, 52%) var(--py, 48%), rgba(34, 211, 238, 0.3), transparent 70%),
+            linear-gradient(90deg, rgba(56, 189, 248, 0.95), rgba(96, 165, 250, 0.95), rgba(129, 140, 248, 0.95));
+          background-size: 120% 120%, 200% 200%;
+          background-position: 50% 50%, var(--mx, 48%) 50%;
           background-clip: text;
           color: transparent;
-          transition: background-position 120ms ease-out, text-shadow 180ms ease, transform 160ms ease, letter-spacing 160ms ease;
-          /* Periodic sheen sweep across the text */
-          animation: titleSheen 9s ease-in-out infinite 1.2s;
-          /* Multi-layer neon glow (futuristic/robotic) */
-          text-shadow:
-            0 0 calc(6px + 10px * var(--glow, 0)) rgba(34,211,238, 0.35),
-            0 0 calc(14px + 14px * var(--glow, 0)) rgba(96,165,250, 0.28),
-            0 0 calc(28px + 20px * var(--glow, 0)) rgba(167,139,250, 0.22);
+          -webkit-background-clip: text;
+          transition: background-position 160ms ease, text-shadow 160ms ease, transform 120ms ease;
+          text-shadow: 0 18px 40px rgba(15, 23, 42, 0.4);
         }
-        @keyframes titleSheen {
-          0%   { background-position: var(--mx, 50%) 50%, -200% 50%; }
-          45%  { background-position: var(--mx, 50%) 50%, 120% 50%; }
-          50%  { background-position: var(--mx, 50%) 50%, 140% 50%; }
-          100% { background-position: var(--mx, 50%) 50%, -200% 50%; }
-        }
-        /* Subtle emphasis on hover/focus within header */
-        header:hover .title-rgb, header:focus-within .title-rgb {
-          transform: translateZ(0) scale(1.02);
-          letter-spacing: 0.2px;
+        header:hover .title-rgb,
+        header:focus-within .title-rgb {
+          transform: translateY(-2px);
+          text-shadow: 0 20px 50px rgba(15, 23, 42, 0.45);
         }
       `}</style>
     </div>
