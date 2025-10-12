@@ -39,6 +39,8 @@ See `.env.example` for the full list. Common ones:
 - Optional direct Postgres: SUPABASE_DB_URL or discrete PG vars
 - reCAPTCHA v3 (optional): NEXT_PUBLIC_RECAPTCHA_SITE_KEY_V3, RECAPTCHA_SECRET_KEY, RECAPTCHA_SCORE_THRESHOLD
 - Presence refresh (optional): NEXT_PUBLIC_PRESENCE_REFRESH_MS (default 60000)
+- Password reset (server-side): SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, optional SMTP_FROM, PASSWORD_SALT_ROUNDS
+- Password reset routing: NEXT_PUBLIC_PASSWORD_RESET_FUNCTION (default `auth-service`), NEXT_PUBLIC_PASSWORD_RESET_BASE_URL (custom domain opsional), NEXT_PUBLIC_PASSWORD_RESET_PORT (dev proxy)
 
 ## Run locally
 
@@ -68,7 +70,16 @@ If deploying to username.github.io/repo:
 - Netlify Functions under `/.netlify/functions/*` (see `netlify/` + `netlify.toml`).
 - Supabase-first tables (with Storage and FS fallbacks). Typical tables:
 	- admin_authorities, admin_audit, admin_presence, admin_logins
+	- admin_credentials, admin_password_reset_tokens (untuk fitur lupa password)
 - Achievements data remains supported via REST-first + storage fallback.
+
+### Password reset flow
+
+- Endpoint server: `POST /.netlify/functions/auth-service/auth/request-reset` dan `POST /.netlify/functions/auth-service/auth/reset`.
+- Token dibuat dengan masa berlaku 30 menit dan disimpan di Supabase (REST/Storage) dengan fallback filesystem.
+- Email dikirim menggunakan SMTP (lihat variabel lingkungan baru di atas).
+- Halaman front-end `pages/reset-password.jsx` menerima token & email dari tautan email.
+- Jalankan migrasi Supabase baru (`supabase/migrations/20251012_admin_password_reset.sql`) agar tabel `admin_credentials` dan `admin_password_reset_tokens` tersedia sebelum produksi.
 
 ## Security & Policies
 

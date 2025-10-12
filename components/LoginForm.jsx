@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from './AuthProvider';
 import { useRouter } from 'next/router';
+import { requestPasswordReset } from '../lib/passwordResetClient';
 
 export default function LoginForm() {
   const { signInWithGoogle, emailLogin, emailSignup, themeDark, setThemeDark, loading, user, initError } = useAuth();
@@ -13,6 +14,11 @@ export default function LoginForm() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
   const [errors, setErrors] = useState({ email: '', password: '' });
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetBusy, setResetBusy] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState('');
+  const [resetError, setResetError] = useState('');
 
   // Real-time validation
   useEffect(() => {
@@ -22,7 +28,16 @@ export default function LoginForm() {
     setErrors(e);
   }, [email, password]);
 
+  useEffect(() => {
+    if (resetOpen) {
+      setResetEmail(email || '');
+      setResetSuccess('');
+      setResetError('');
+    }
+  }, [resetOpen, email]);
+
   const canSubmit = useMemo(() => !errors.email && !errors.password && email && password, [errors, email, password]);
+  const resetEmailValid = useMemo(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail || ''), [resetEmail]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -42,6 +57,27 @@ export default function LoginForm() {
   const onGoogle = async () => {
     setBusy(true); setMsg('');
     try { await signInWithGoogle(); } catch (err) { const code = err?.code ? ` (${err.code})` : ''; setMsg((err?.message || 'Gagal login Google') + code); } finally { setBusy(false); }
+  };
+
+  const onResetSubmit = async (e) => {
+    e.preventDefault();
+    if (!resetEmailValid || resetBusy) return;
+    setResetBusy(true);
+    setResetSuccess('');
+    setResetError('');
+    try {
+      const result = await requestPasswordReset(resetEmail);
+      if (result.ok) {
+        setResetSuccess(result.data?.message || 'Jika email terdaftar, silakan cek inbox Anda untuk tautan reset.');
+      } else {
+        const message = result.data?.message || 'Gagal memproses permintaan reset password.';
+        setResetError(message);
+      }
+    } catch (err) {
+      setResetError(err?.message || 'Gagal memproses permintaan reset password.');
+    } finally {
+      setResetBusy(false);
+    }
   };
 
   // Redirect when authenticated
@@ -100,7 +136,14 @@ export default function LoginForm() {
       <input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} className="w-full bg-white/60 border border-black/10 rounded-md px-3 py-2 outline-none focus:ring-1 focus:ring-cyan-400 dark:bg-black/40 dark:border-white/10" placeholder="you@example.com" />
             {errors.email && <div className="text-xs text-red-300 mt-1">{errors.email}</div>}
 
-      <label className="block text-xs text-gray-600 dark:text-gray-300 mt-3 mb-1">Password</label>
+      <div className="mt-3 mb-1 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
+        <span>Password</span>
+        <button
+          type="button"
+          onClick={() => setResetOpen(true)}
+          className="text-cyan-600 hover:text-cyan-500 dark:text-cyan-300 dark:hover:text-cyan-200 underline decoration-dotted"
+        >Lupa password?</button>
+      </div>
       <input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} className="w-full bg-white/60 border border-black/10 rounded-md px-3 py-2 outline-none focus:ring-1 focus:ring-cyan-400 dark:bg-black/40 dark:border-white/10" placeholder="••••••••" />
             {errors.password && <div className="text-xs text-red-300 mt-1">{errors.password}</div>}
 
@@ -134,6 +177,61 @@ export default function LoginForm() {
                   <div className="absolute inset-0 rounded-full border-t-2 border-cyan-300 animate-spin" />
                 </div>
                 <div className="mt-3 text-cyan-200">Authorizing<span className="animate-pulse">…</span></div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Dialog lupa password */}
+        <AnimatePresence>
+          {resetOpen && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 grid place-items-center">
+              <div
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                onClick={() => { if (!resetBusy) setResetOpen(false); }}
+              />
+              <motion.div
+                initial={{ scale: 0.9, y: 12 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="relative z-10 w-[min(420px,92vw)] rounded-2xl border border-cyan-400/40 bg-black/80 p-6 text-gray-100"
+              >
+                <h2 className="text-lg font-semibold text-cyan-200 mb-2">Lupa Password Admin</h2>
+                <p className="text-xs text-gray-300 mb-4">
+                  Masukkan email admin yang terdaftar. Jika valid, sistem akan mengirimkan instruksi reset password yang berlaku selama 30 menit.
+                </p>
+                <form onSubmit={onResetSubmit} className="space-y-3">
+                  <div>
+                    <label className="block text-xs text-gray-300 mb-1">Email Admin</label>
+                    <input
+                      type="email"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      className="w-full rounded-md border border-cyan-500/40 bg-black/40 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-cyan-400"
+                      placeholder="admin@example.com"
+                      disabled={resetBusy}
+                    />
+                  </div>
+                  {resetError && <div className="text-xs text-red-300">{resetError}</div>}
+                  {resetSuccess && <div className="text-xs text-emerald-300">{resetSuccess}</div>}
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <button
+                      type="submit"
+                      disabled={!resetEmailValid || resetBusy}
+                      className="rounded-md border border-cyan-400/40 bg-cyan-500/20 px-3 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/30 disabled:opacity-60"
+                    >
+                      {resetBusy ? 'Mengirim…' : 'Kirim Link Reset'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { if (!resetBusy) setResetOpen(false); }}
+                      className="rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-gray-200 hover:bg-white/10"
+                      disabled={resetBusy}
+                    >
+                      Batal
+                    </button>
+                  </div>
+                </form>
               </motion.div>
             </motion.div>
           )}
