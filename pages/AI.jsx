@@ -5,6 +5,20 @@ import { useEffect, useRef, useState } from 'react';
 import ParticleField from '../components/ParticleField';
 import aiPrivacy from '../data/ai_privacy.json';
 
+const ROLLING_PHRASES = [
+  "Yo, it’s Aryan’s AI Assistant homie 🤖",
+  "Let’s brainstorm & flex ideas 💡",
+  "Got brainwaves? Spill ’em, I’m all ears 👂",
+  "Need inspo? Say less, fam ✨",
+  "Drop the next build, I’m ready to ride 🚀",
+  "Chill, I got your back on this 🫶",
+  "Hackin’ vibes & coding dreams 💻💫",
+  "Spill tea or code, I vibe with both ☕💻",
+  "Ideas on deck? Let’s make ’em pop 💥",
+  "Just say it, I’ll riff it out 🎵"
+];
+
+
 const Chatbot = dynamic(() => import('../components/Chatbot'), { ssr: false });
 const SpotifySection = dynamic(() => import('../components/SpotifySection'), { ssr: false });
 
@@ -13,6 +27,8 @@ export default function AIPage() {
   const cardRef = useRef(null);
   const [isMobile, setIsMobile] = useState(false);
   const headerRef = useRef(null);
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const [rollingPaused, setRollingPaused] = useState(false);
   // Consent gating
   const [consentLoaded, setConsentLoaded] = useState(false);
   const [consented, setConsented] = useState(false);
@@ -73,6 +89,24 @@ export default function AIPage() {
     el.style.setProperty('--glow', '0');
   };
 
+  useEffect(() => {
+    if (rollingPaused) return;
+    const id = window.setInterval(() => {
+      setPhraseIndex((prev) => (prev + 1) % ROLLING_PHRASES.length);
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, [rollingPaused]);
+
+  const radius = isMobile ? 120 : 200;
+  const advancePhrase = () => setPhraseIndex((prev) => (prev + 1) % ROLLING_PHRASES.length);
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      setRollingPaused(true);
+      advancePhrase();
+    }
+  };
+
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#05070a] text-slate-100">
       <Head>
@@ -109,9 +143,46 @@ export default function AIPage() {
               className="grid gap-12 md:grid-cols-[minmax(0,1fr)_360px] md:items-end"
             >
               <div className="space-y-6">
-                <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.28em] text-slate-300">AI hangout</span>
+                <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.28em] text-slate-300">AI Assistant</span>
                 <div className="space-y-4">
-                  <h1 className="title-rgb text-3xl leading-tight sm:text-4xl md:text-[2.9rem]">Kick back with Aryan’s AI Assistant</h1>
+                  <h1 className="sr-only">{ROLLING_PHRASES[phraseIndex]}</h1>
+                  <div
+                    className="hero-roller"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${ROLLING_PHRASES[phraseIndex]} - tap to shuffle tagline`}
+                    onMouseEnter={() => setRollingPaused(true)}
+                    onMouseLeave={() => setRollingPaused(false)}
+                    onFocus={() => setRollingPaused(true)}
+                    onBlur={() => setRollingPaused(false)}
+                    onClick={advancePhrase}
+                    onKeyDown={handleKeyDown}
+                  >
+                    <div className="hero-roller__avatar" aria-hidden="true">
+                      <span />
+                      <span />
+                    </div>
+                    <div
+                      className="hero-roller__scene"
+                      style={{
+                        '--active-index': `${phraseIndex}`,
+                        '--card-count': `${ROLLING_PHRASES.length}`,
+                        '--radius': `${radius}px`
+                      }}
+                    >
+                      {ROLLING_PHRASES.map((phrase, idx) => (
+                        <span
+                          key={phrase}
+                          className={`roller-card ${idx === phraseIndex ? 'is-active' : ''}`}
+                          style={{ '--i': idx }}
+                          aria-hidden={idx !== phraseIndex}
+                        >
+                          {phrase}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="hero-roller__glow" aria-hidden="true" />
+                  </div>
                   <p className="max-w-xl text-sm leading-7 text-slate-300 md:text-base">
                     Catch the latest on what Aryan’s building, how he’s vibing, and the stories behind it all. Ask anything, stay curious, keep it easy.
                   </p>
@@ -139,11 +210,11 @@ export default function AIPage() {
               >
                 <h2 className="text-sm font-semibold text-slate-100">Jump into the chat</h2>
                 <p className="mt-3 text-xs leading-6 text-slate-300">
-                  Say hi, ask for inspo, or drop what you’re working on—this assistant keeps it casual and on point.
+                  Say hi, ask for inspo, or drop what you’re working on and this assistant keeps it casual and on point.
                 </p>
                 <div className="mt-6 space-y-3 text-xs text-slate-200">
                   <div className="mini-pill">“What’s Aryan hyped about this week?”</div>
-                  <div className="mini-pill">“Need a playlist for deep focus—hook me up.”</div>
+                  <div className="mini-pill">“Need a playlist for deep focus? Let’s hook me up.”</div>
                   <div className="mini-pill">“Tell me about the wildest project you’ve shipped.”</div>
                 </div>
               </motion.div>
@@ -246,11 +317,11 @@ export default function AIPage() {
                     <ul className="mt-4 space-y-2 text-xs text-slate-400">
                       <li className="flex gap-2">
                         <span className="bullet" />
-                        <span>This convo stays with you—bounce anytime and it’s gone.</span>
+                        <span>This convo stays with you even if you bounce anytime and it’s gone.</span>
                       </li>
                       <li className="flex gap-2">
                         <span className="bullet" />
-                        <span>Spotify add-on is totally optional—connect only if you’re feeling it.</span>
+                        <span>Spotify add-on is totally optional. You can disconnect only if you’re feeling it.</span>
                       </li>
                       <li className="flex gap-2">
                         <span className="bullet" />
@@ -305,6 +376,100 @@ export default function AIPage() {
       </div>
 
       <style jsx>{`
+        .hero-roller {
+          position: relative;
+          display: flex;
+          align-items: center;
+          gap: clamp(1rem, 3vw, 1.8rem);
+          border-radius: 999px;
+          padding: clamp(0.75rem, 1.6vw, 1.1rem) clamp(1rem, 2.5vw, 1.6rem);
+          background: linear-gradient(135deg, rgba(8, 16, 24, 0.78), rgba(15, 23, 42, 0.55));
+          border: 1px solid rgba(148, 163, 184, 0.18);
+          box-shadow: 0 25px 60px -35px rgba(15, 23, 42, 0.9);
+          cursor: pointer;
+          perspective: 1400px;
+          transition: border-color 180ms ease, box-shadow 220ms ease, transform 220ms ease;
+        }
+        .hero-roller:focus-visible {
+          outline: none;
+          border-color: rgba(125, 211, 252, 0.6);
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 30px 70px -40px rgba(59, 130, 246, 0.55);
+        }
+        .hero-roller:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 36px 90px -40px rgba(59, 130, 246, 0.45);
+        }
+        .hero-roller__avatar {
+          position: relative;
+          width: clamp(52px, 8vw, 68px);
+          height: clamp(52px, 8vw, 68px);
+          border-radius: 24px;
+          background: radial-gradient(circle at 30% 30%, rgba(94, 234, 212, 0.95), rgba(14, 165, 233, 0.35));
+          overflow: hidden;
+          box-shadow: inset 0 0 24px rgba(15, 23, 42, 0.35), 0 18px 45px -24px rgba(94, 234, 212, 0.45);
+        }
+        .hero-roller__avatar span {
+          position: absolute;
+          inset: -20%;
+          background: conic-gradient(from 0deg, rgba(236, 254, 255, 0.45), rgba(56, 189, 248, 0.0) 45%, rgba(165, 180, 252, 0.35) 75%, rgba(236, 254, 255, 0.5));
+          animation: avatarOrbit 10s linear infinite;
+        }
+        .hero-roller__avatar span:nth-child(2) {
+          animation-duration: 16s;
+          mix-blend-mode: screen;
+          opacity: 0.7;
+        }
+        @keyframes avatarOrbit {
+          0% {
+            transform: rotate(0deg) scale(1);
+          }
+          50% {
+            transform: rotate(180deg) scale(1.02);
+          }
+          100% {
+            transform: rotate(360deg) scale(1);
+          }
+        }
+        .hero-roller__scene {
+          position: relative;
+          width: clamp(220px, 50vw, 520px);
+          height: clamp(56px, 7vw, 72px);
+          transform-style: preserve-3d;
+          transform: translateZ(calc(-1 * var(--radius, 180px))) rotateX(calc(var(--active-index, 0) * -360deg / var(--card-count, 5)));
+          transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .roller-card {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 clamp(1rem, 3vw, 1.6rem);
+          font-size: clamp(1.9rem, 4.6vw, 3.4rem);
+          font-weight: 600;
+          letter-spacing: -0.02em;
+          color: rgba(226, 232, 240, 0.9);
+          border-radius: clamp(28px, 6vw, 40px);
+          background: linear-gradient(135deg, rgba(34, 211, 238, 0.18), rgba(129, 140, 248, 0.22));
+          border: 1px solid rgba(148, 163, 184, 0.26);
+          box-shadow: inset 0 0 28px rgba(148, 163, 184, 0.18), 0 24px 60px -32px rgba(56, 189, 248, 0.4);
+          transform: rotateX(calc(360deg * var(--i, 0) / var(--card-count, 5))) translateZ(var(--radius, 180px));
+          backdrop-filter: blur(10px);
+        }
+        .roller-card.is-active {
+          color: rgba(244, 247, 254, 0.98);
+          border-color: rgba(125, 211, 252, 0.65);
+          box-shadow: inset 0 0 32px rgba(56, 189, 248, 0.25), 0 32px 80px -38px rgba(56, 189, 248, 0.55);
+        }
+        .hero-roller__glow {
+          position: absolute;
+          inset: 8%;
+          border-radius: inherit;
+          pointer-events: none;
+          background: radial-gradient(circle at 60% 40%, rgba(165, 180, 252, 0.32), transparent 65%);
+          mix-blend-mode: screen;
+          opacity: 0.75;
+        }
         .bullet {
           margin-top: 0.4rem;
           height: 6px;
@@ -354,26 +519,6 @@ export default function AIPage() {
           font-size: 0.8rem;
           line-height: 1.6;
           color: rgba(148, 163, 184, 0.82);
-        }
-        .title-rgb {
-          position: relative;
-          display: inline-block;
-          letter-spacing: -0.01em;
-          background-image:
-            radial-gradient(220px 220px at var(--px, 52%) var(--py, 48%), rgba(34, 211, 238, 0.3), transparent 70%),
-            linear-gradient(90deg, rgba(56, 189, 248, 0.95), rgba(96, 165, 250, 0.95), rgba(129, 140, 248, 0.95));
-          background-size: 120% 120%, 200% 200%;
-          background-position: 50% 50%, var(--mx, 48%) 50%;
-          background-clip: text;
-          color: transparent;
-          -webkit-background-clip: text;
-          transition: background-position 160ms ease, text-shadow 160ms ease, transform 120ms ease;
-          text-shadow: 0 18px 40px rgba(15, 23, 42, 0.4);
-        }
-        header:hover .title-rgb,
-        header:focus-within .title-rgb {
-          transform: translateY(-2px);
-          text-shadow: 0 20px 50px rgba(15, 23, 42, 0.45);
         }
       `}</style>
     </div>
