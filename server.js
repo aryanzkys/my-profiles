@@ -31,8 +31,15 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 const serverless = require('serverless-http');
 
+let netlifyBasePath = '';
+if (process.env.NETLIFY === 'true' || process.env.AWS_LAMBDA_FUNCTION_VERSION || process.env.LAMBDA_TASK_ROOT) {
+  // Netlify Functions mengakses endpoint melalui /.netlify/functions/<nama-fungsi>/...
+  const fnName = process.env.NETLIFY_FUNCTION_NAME || 'auth-service';
+  netlifyBasePath = `/.netlify/functions/${fnName}`;
+}
+
 // Selalu ekspor handler agar dapat dipakai oleh Netlify Functions atau platform serverless lain
-module.exports.handler = serverless(app);
+module.exports.handler = serverless(app, netlifyBasePath ? { basePath: netlifyBasePath } : {});
 
 if (process.env.NETLIFY === 'true' || process.env.AWS_LAMBDA_FUNCTION_VERSION || process.env.LAMBDA_TASK_ROOT) {
   // Lingkungan serverless tidak perlu mendengarkan port lokal
