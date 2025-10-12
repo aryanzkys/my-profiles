@@ -211,6 +211,9 @@ export default function AIPage() {
         <meta name="description" content="Chat with Aryan's Royal AI Assistant - your personal guide to everything Aryan, served with that UK royal flair!" />
         <meta name="keywords" content="AI, chatbot, Royal AI, AryanStack, Aryan AI Assistant, Aryan Zaky Prayogo, Royal Blue Medieval" />
         <link rel="canonical" href="https://aryanstack.netlify.app/ai" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
       </Head>
 
       {/* Royal background effects */}
@@ -558,47 +561,164 @@ export default function AIPage() {
       </div>
 
       <style jsx>{`
+        @keyframes royal-shine {
+          0% {
+            background-position: -200% center;
+          }
+          100% {
+            background-position: 200% center;
+          }
+        }
+        
+        @keyframes royal-glow-pulse {
+          0%, 100% {
+            text-shadow: 
+              0 0 10px rgba(255, 215, 0, 0.6),
+              0 0 20px rgba(255, 215, 0, 0.4),
+              0 0 30px rgba(255, 215, 0, 0.3),
+              0 0 40px rgba(255, 215, 0, 0.2),
+              0 2px 4px rgba(0, 0, 0, 0.5);
+          }
+          50% {
+            text-shadow: 
+              0 0 20px rgba(255, 215, 0, 0.9),
+              0 0 30px rgba(255, 215, 0, 0.7),
+              0 0 40px rgba(255, 215, 0, 0.5),
+              0 0 50px rgba(255, 215, 0, 0.4),
+              0 0 60px rgba(255, 215, 0, 0.3),
+              0 2px 4px rgba(0, 0, 0, 0.5);
+          }
+        }
+        
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-100%) rotate(45deg);
+          }
+          100% {
+            transform: translateX(100%) rotate(45deg);
+          }
+        }
+        
         .royal-typewriter-container {
           position: relative;
           display: flex;
           align-items: center;
           justify-content: flex-start;
-          min-height: clamp(80px, 12vw, 120px);
-          border-radius: 24px;
-          padding: clamp(1.2rem, 2.5vw, 2rem) clamp(1.5rem, 3vw, 2.5rem);
-          background: linear-gradient(135deg, rgba(65, 105, 225, 0.25), rgba(138, 43, 226, 0.2));
-          border: 2px solid rgba(255, 215, 0, 0.3);
-          box-shadow: 0 25px 60px -35px rgba(65, 105, 225, 0.5), 0 0 40px rgba(255, 215, 0, 0.15);
+          min-height: clamp(120px, 18vw, 180px);
+          border-radius: 28px;
+          padding: clamp(1.8rem, 3.5vw, 3rem) clamp(2rem, 4vw, 3.5rem);
+          background: linear-gradient(135deg, rgba(65, 105, 225, 0.35), rgba(138, 43, 226, 0.3));
+          border: 3px solid rgba(255, 215, 0, 0.5);
+          box-shadow: 
+            0 25px 60px -35px rgba(65, 105, 225, 0.6), 
+            0 0 50px rgba(255, 215, 0, 0.25),
+            inset 0 0 60px rgba(255, 215, 0, 0.1);
           cursor: pointer;
-          transition: all 0.3s ease;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          overflow: hidden;
+        }
+        
+        .royal-typewriter-container::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 215, 0, 0.2),
+            transparent
+          );
+          animation: shimmer 3s infinite;
+          pointer-events: none;
+        }
+        
+        .royal-typewriter-container::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: 28px;
+          padding: 3px;
+          background: linear-gradient(
+            45deg,
+            rgba(255, 215, 0, 0.6),
+            rgba(218, 165, 32, 0.4),
+            rgba(255, 215, 0, 0.6)
+          );
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.4s ease;
         }
         
         .royal-typewriter-container:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 36px 90px -40px rgba(65, 105, 225, 0.6), 0 0 50px rgba(255, 215, 0, 0.25);
-          border-color: rgba(255, 215, 0, 0.5);
+          transform: translateY(-4px) scale(1.01);
+          box-shadow: 
+            0 36px 90px -40px rgba(65, 105, 225, 0.7), 
+            0 0 70px rgba(255, 215, 0, 0.4),
+            inset 0 0 80px rgba(255, 215, 0, 0.15);
+          border-color: rgba(255, 215, 0, 0.8);
+        }
+        
+        .royal-typewriter-container:hover::after {
+          opacity: 1;
         }
         
         .royal-typewriter-container:focus-visible {
           outline: none;
-          border-color: rgba(255, 215, 0, 0.7);
-          box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.2), 0 30px 70px -40px rgba(255, 215, 0, 0.55);
+          border-color: rgba(255, 215, 0, 0.9);
+          box-shadow: 
+            0 0 0 6px rgba(255, 215, 0, 0.3), 
+            0 30px 70px -40px rgba(255, 215, 0, 0.65),
+            inset 0 0 100px rgba(255, 215, 0, 0.2);
         }
         
         .royal-typewriter-text {
-          font-size: clamp(1.8rem, 4.5vw, 3.2rem);
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.95);
-          line-height: 1.3;
-          letter-spacing: -0.02em;
-          text-shadow: 0 2px 20px rgba(255, 215, 0, 0.3);
+          font-family: 'Cinzel', serif;
+          font-size: clamp(2.5rem, 6vw, 4.5rem);
+          font-weight: 800;
+          color: rgba(255, 255, 255, 0.98);
+          line-height: 1.25;
+          letter-spacing: 0.02em;
+          background: linear-gradient(
+            135deg,
+            rgba(255, 215, 0, 1) 0%,
+            rgba(255, 235, 170, 1) 25%,
+            rgba(255, 215, 0, 1) 50%,
+            rgba(255, 235, 170, 1) 75%,
+            rgba(255, 215, 0, 1) 100%
+          );
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: royal-shine 4s linear infinite, royal-glow-pulse 3s ease-in-out infinite;
+          position: relative;
+          z-index: 1;
+          text-transform: uppercase;
+          filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+        }
+        
+        .royal-typewriter-container:hover .royal-typewriter-text {
+          animation: royal-shine 2s linear infinite, royal-glow-pulse 1.5s ease-in-out infinite;
         }
         
         .royal-typewriter-cursor {
           display: inline-block;
-          margin-left: 4px;
-          color: rgba(255, 215, 0, 0.9);
-          font-weight: 400;
+          margin-left: 8px;
+          font-family: 'Cinzel', serif;
+          font-size: clamp(2.5rem, 6vw, 4.5rem);
+          font-weight: 800;
+          color: rgba(255, 215, 0, 1);
+          text-shadow: 
+            0 0 15px rgba(255, 215, 0, 0.8),
+            0 0 25px rgba(255, 215, 0, 0.6),
+            0 0 35px rgba(255, 215, 0, 0.4);
+          filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
         }
         
         .royal-bullet {
@@ -683,12 +803,16 @@ export default function AIPage() {
         
         @media (max-width: 768px) {
           .royal-typewriter-container {
-            padding: 1.2rem;
-            min-height: 90px;
+            padding: 1.5rem 1.2rem;
+            min-height: 110px;
           }
           
           .royal-typewriter-text {
-            font-size: clamp(1.4rem, 5vw, 2rem);
+            font-size: clamp(1.8rem, 6vw, 2.8rem);
+          }
+          
+          .royal-typewriter-cursor {
+            font-size: clamp(1.8rem, 6vw, 2.8rem);
           }
         }
       `}</style>
