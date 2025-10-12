@@ -328,7 +328,10 @@ export default function AIPage() {
                         letterSpacing: "0.03em",
                         textTransform: "uppercase",
                         position: "relative",
-                        zIndex: 1
+                        zIndex: 1,
+                        wordWrap: "break-word",
+                        overflowWrap: "break-word",
+                        maxWidth: "100%"
                       }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -634,7 +637,7 @@ export default function AIPage() {
           display: flex;
           align-items: center;
           justify-content: flex-start;
-          min-height: 100px;
+          height: 156px;
           border-radius: 28px;
           padding: clamp(1.5rem, 3vw, 2rem) clamp(2rem, 4vw, 2.5rem);
           background: linear-gradient(135deg, rgba(65, 105, 225, 0.35), rgba(138, 43, 226, 0.3));
@@ -836,7 +839,7 @@ export default function AIPage() {
         @media (max-width: 768px) {
           .royal-typewriter-container {
             padding: 1.5rem;
-            min-height: 90px;
+            height: 140px;
           }
         }
       `}</style>
