@@ -321,7 +321,7 @@ export default function AIPage() {
                       className="royal-typewriter-text"
                       style={{
                         fontFamily: "'Cinzel', 'Times New Roman', Georgia, serif",
-                        fontSize: "clamp(3rem, 7.5vw, 5.5rem)",
+                        fontSize: "40px",
                         fontWeight: 900,
                         color: "#FFD700",
                         lineHeight: 1.2,
@@ -342,7 +342,7 @@ export default function AIPage() {
                             display: "inline-block",
                             marginLeft: "8px",
                             fontFamily: "'Cinzel', 'Times New Roman', Georgia, serif",
-                            fontSize: "clamp(3rem, 7.5vw, 5.5rem)",
+                            fontSize: "40px",
                             fontWeight: 900,
                             color: "#FFD700"
                           }}
@@ -620,14 +620,23 @@ export default function AIPage() {
           }
         }
         
+        @keyframes borderGlow {
+          0%, 100% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+        }
+        
         .royal-typewriter-container {
           position: relative;
           display: flex;
           align-items: center;
           justify-content: flex-start;
-          min-height: clamp(150px, 20vw, 220px);
+          min-height: 100px;
           border-radius: 28px;
-          padding: clamp(2rem, 4vw, 3.5rem) clamp(2.5rem, 5vw, 4rem);
+          padding: clamp(1.5rem, 3vw, 2rem) clamp(2rem, 4vw, 2.5rem);
           background: linear-gradient(135deg, rgba(65, 105, 225, 0.35), rgba(138, 43, 226, 0.3));
           border: 3px solid rgba(255, 215, 0, 0.5);
           box-shadow: 
@@ -659,21 +668,22 @@ export default function AIPage() {
         .royal-typewriter-container::after {
           content: '';
           position: absolute;
-          inset: 0;
+          inset: -3px;
           border-radius: 28px;
-          padding: 3px;
           background: linear-gradient(
             45deg,
-            rgba(255, 215, 0, 0.6),
-            rgba(218, 165, 32, 0.4),
-            rgba(255, 215, 0, 0.6)
+            rgba(255, 215, 0, 0.8),
+            rgba(218, 165, 32, 0.6),
+            rgba(255, 215, 0, 0.8),
+            rgba(218, 165, 32, 0.6),
+            rgba(255, 215, 0, 0.8)
           );
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
+          background-size: 200% 100%;
+          animation: borderGlow 3s linear infinite;
           pointer-events: none;
           opacity: 0;
           transition: opacity 0.4s ease;
+          z-index: -1;
         }
         
         .royal-typewriter-container:hover {
@@ -825,18 +835,8 @@ export default function AIPage() {
         
         @media (max-width: 768px) {
           .royal-typewriter-container {
-            padding: 1.8rem 1.5rem;
-            min-height: 130px;
-          }
-          
-          .royal-typewriter-text {
-            font-size: clamp(2.2rem, 7vw, 3.5rem);
-            font-weight: 900;
-          }
-          
-          .royal-typewriter-cursor {
-            font-size: clamp(2.2rem, 7vw, 3.5rem);
-            font-weight: 900;
+            padding: 1.5rem;
+            min-height: 90px;
           }
         }
       `}</style>
