@@ -2,8 +2,8 @@ import Head from 'next/head';
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 
-const CV_VIEW_URL = 'https://drive.google.com/file/d/1RE5Q5YLAnbNZBOqIZ4r_u9tTCGb3rfKG/preview';
-const CV_DOWNLOAD_URL = 'https://drive.google.com/uc?export=download&id=1RE5Q5YLAnbNZBOqIZ4r_u9tTCGb3rfKG';
+const CV_VIEW_URL = 'https://drive.google.com/file/d/1c7KeejQq-sDxC1FbnEUGiKUEkHDn2iOf/preview';
+const CV_DOWNLOAD_URL = 'https://drive.google.com/uc?export=download&id=1c7KeejQq-sDxC1FbnEUGiKUEkHDn2iOf';
 const LOADING_DURATION = 5;
 
 const tabs = [
