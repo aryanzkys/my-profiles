@@ -21,19 +21,27 @@ exports.handler = async () => {
       if (res.ok) {
         const rows = await res.json();
         const row = rows?.[0] || {};
-        return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ shutdown: !!row.shutdown }) };
+        const shutdown = !!(row.shutdown ?? row.shutdown_main ?? row.shutdownMain);
+        const shutdownAi = !!(row.shutdown_ai ?? row.shutdownAi ?? row.shutdownai ?? row.aiShutdown);
+        return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ shutdown, shutdownAi }) };
       } else {
         const t = await res.text();
         if (res.status === 404 && /Could not find the table/i.test(t)) {
           const s = await storageRead();
-          if (s) return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ shutdown: !!s.shutdown }) };
+          if (s) {
+            const shutdown = !!(s.shutdown ?? s.shutdown_main ?? s.shutdownMain);
+            const shutdownAi = !!(s.shutdownAi ?? s.shutdown_ai ?? s.shutdownai ?? s.aiShutdown);
+            return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ shutdown, shutdownAi }) };
+          }
         }
       }
     }
     if (fs.existsSync(DATA_FILE)) {
       const json = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-      return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ shutdown: !!json.shutdown }) };
+      const shutdown = !!(json.shutdown ?? json.shutdown_main ?? json.shutdownMain);
+      const shutdownAi = !!(json.shutdownAi ?? json.shutdown_ai ?? json.shutdownai ?? json.aiShutdown);
+      return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ shutdown, shutdownAi }) };
     }
-    return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ shutdown: false }) };
-  } catch { return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ shutdown: false }) }; }
+    return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ shutdown: false, shutdownAi: false }) };
+  } catch { return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ shutdown: false, shutdownAi: false }) }; }
 };

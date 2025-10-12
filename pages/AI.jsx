@@ -1,8 +1,9 @@
 import dynamic from 'next/dynamic';
 import Head from 'next/head';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import ParticleField from '../components/ParticleField';
+import ShutdownOverlay from '../components/ShutdownOverlay';
 import aiPrivacy from '../data/ai_privacy.json';
 
 const ROLLING_PHRASES = [
@@ -19,6 +20,13 @@ const ROLLING_PHRASES = [
 ];
 
 
+const resolveAiShutdown = (payload) => {
+  if (!payload || typeof payload !== 'object') return false;
+  const aiSpecific = payload.shutdownAi ?? payload.shutdown_ai ?? payload.shutdownai ?? payload.aiShutdown;
+  if (aiSpecific !== undefined && aiSpecific !== null) return !!aiSpecific;
+  return !!(payload.shutdown ?? payload.shutdownMain ?? payload.shutdown_main ?? payload.shutdownmain ?? false);
+};
+
 const Chatbot = dynamic(() => import('../components/Chatbot'), { ssr: false });
 const SpotifySection = dynamic(() => import('../components/SpotifySection'), { ssr: false });
 
@@ -33,6 +41,7 @@ export default function AIPage() {
   const [consentLoaded, setConsentLoaded] = useState(false);
   const [consented, setConsented] = useState(false);
   const [agree, setAgree] = useState(false);
+  const [aiShutdown, setAiShutdown] = useState(false);
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 768);
@@ -54,6 +63,43 @@ export default function AIPage() {
       }
     } catch {}
     setConsentLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const urls = Array.from(new Set([
+        '/.netlify/functions/get-site-flags',
+        `${basePath}/.netlify/functions/get-site-flags`,
+        '/api/get-site-flags',
+        `${basePath}/api/get-site-flags`,
+      ]));
+      for (const url of urls) {
+        try {
+          const r = await fetch(url, { headers: { accept: 'application/json' } });
+          if (!r.ok) continue;
+          const j = await r.json();
+          if (alive) setAiShutdown(resolveAiShutdown(j));
+          break;
+        } catch {}
+      }
+    })();
+    const onStorage = (e) => {
+      if (e.key === 'site:flags') {
+        try { const j = JSON.parse(e.newValue || '{}'); setAiShutdown(resolveAiShutdown(j)); } catch {}
+      }
+    };
+    const onEvt = () => {
+      try { const j = JSON.parse(localStorage.getItem('site:flags') || '{}'); setAiShutdown(resolveAiShutdown(j)); } catch {}
+    };
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('site:flags:updated', onEvt);
+    return () => {
+      alive = false;
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('site:flags:updated', onEvt);
+    };
   }, []);
 
   const handleTilt = (e) => {
@@ -88,6 +134,27 @@ export default function AIPage() {
     el.style.setProperty('--py', '48%');
     el.style.setProperty('--glow', '0');
   };
+
+  const advancePhrase = useCallback(() => {
+    setPhraseIndex((prev) => (prev + 1) % ROLLING_PHRASES.length);
+  }, []);
+
+  const retreatPhrase = useCallback(() => {
+    setPhraseIndex((prev) => (prev - 1 + ROLLING_PHRASES.length) % ROLLING_PHRASES.length);
+  }, []);
+
+  const handleKeyDown = useCallback((event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      advancePhrase();
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      advancePhrase();
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      retreatPhrase();
+    }
+  }, [advancePhrase, retreatPhrase]);
 
   useEffect(() => {
     if (rollingPaused) return;
@@ -128,7 +195,7 @@ const sceneStyle = {
         <ParticleField className="opacity-[0.08]" />
       </div>
 
-      <div className="relative z-10 flex min-h-screen flex-col">
+  <div className="relative z-10 flex min-h-screen flex-col">
         <header
           ref={headerRef}
           onMouseMove={handleHeaderMove}
@@ -376,6 +443,7 @@ const sceneStyle = {
               </motion.div>
             )}
           </AnimatePresence>
+          {aiShutdown && <ShutdownOverlay />}
         </main>
       </div>
 

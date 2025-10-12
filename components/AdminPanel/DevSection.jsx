@@ -3,16 +3,26 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function DevSection() {
-  const [shutdown, setShutdown] = useState(false);
+  const [shutdownMain, setShutdownMain] = useState(false);
+  const [shutdownAi, setShutdownAi] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [saved, setSaved] = useState(false);
-  const [dragging, setDragging] = useState(false);
-  const [pos, setPos] = useState(0); // 0..1 visual position for slider
-  const trackRef = useRef(null);
-  const [pending, setPending] = useState(null); // null | boolean, optimistic visual
-  const busy = pending !== null || saving; // busy while saving or pending transition
+  const [savingMain, setSavingMain] = useState(false);
+  const [savingAi, setSavingAi] = useState(false);
+  const [errorMain, setErrorMain] = useState('');
+  const [errorAi, setErrorAi] = useState('');
+  const [savedMain, setSavedMain] = useState(false);
+  const [savedAi, setSavedAi] = useState(false);
+  const [draggingMain, setDraggingMain] = useState(false);
+  const [draggingAi, setDraggingAi] = useState(false);
+  const [posMain, setPosMain] = useState(0); // 0..1 visual position for slider
+  const [posAi, setPosAi] = useState(0);
+  const trackMainRef = useRef(null);
+  const trackAiRef = useRef(null);
+  const [pendingMain, setPendingMain] = useState(null); // null | boolean, optimistic visual
+  const [pendingAi, setPendingAi] = useState(null);
+  const busyMain = pendingMain !== null || savingMain; // busy while saving or pending transition
+  const busyAi = pendingAi !== null || savingAi;
+  const [loadError, setLoadError] = useState('');
   // Admin authorities
   const [admins, setAdmins] = useState([]);
   const [adminsLoading, setAdminsLoading] = useState(false);
@@ -111,7 +121,7 @@ export default function DevSection() {
   };
 
   const fetchFlags = async () => {
-    setLoading(true); setError('');
+    setLoading(true); setLoadError('');
     try {
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
       const urls = Array.from(new Set([
@@ -125,13 +135,28 @@ export default function DevSection() {
         try { const r = await fetch(url); if (r.ok) { data = await r.json(); break; } else lastErr = `HTTP ${r.status}`; } catch (e) { lastErr = e?.message || 'Network'; }
       }
       if (!data) throw new Error(lastErr || 'Failed to load');
-      setShutdown(!!data.shutdown);
-    } catch (e) { setError(e?.message || 'Failed to load'); }
+      const main = data.shutdown ?? data.shutdown_main ?? data.shutdownMain;
+      const ai = data.shutdownAi ?? data.shutdown_ai ?? data.shutdownai;
+      setShutdownMain(!!main);
+      setShutdownAi(!!ai);
+    } catch (e) { setLoadError(e?.message || 'Failed to load'); }
     finally { setLoading(false); }
   };
 
-  const saveFlags = async (next) => {
+  const saveFlag = async (target, next) => {
+    const isMain = target === 'main';
+    const currentMain = pendingMain ?? shutdownMain;
+    const currentAi = pendingAi ?? shutdownAi;
+    const nextMain = isMain ? next : currentMain;
+    const nextAi = isMain ? currentAi : next;
+    const setSaving = isMain ? setSavingMain : setSavingAi;
+    const setError = isMain ? setErrorMain : setErrorAi;
+    const setSaved = isMain ? setSavedMain : setSavedAi;
+    const setPending = isMain ? setPendingMain : setPendingAi;
+    const setPos = isMain ? setPosMain : setPosAi;
     setSaving(true); setError(''); setSaved(false);
+    setPending(next);
+    setPos(next ? 1 : 0);
     try {
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
       const urls = Array.from(new Set([
@@ -140,25 +165,31 @@ export default function DevSection() {
         '/api/set-site-flags',
         `${basePath}/api/set-site-flags`,
       ]));
-      const body = JSON.stringify({ shutdown: next });
-      // Optimistic UI: move knob immediately
-      setPending(next);
-      setPos(next ? 1 : 0);
+      const payload = { shutdown: !!nextMain, shutdownAi: !!nextAi };
+      const body = JSON.stringify(payload);
       let ok = false; let lastErr = '';
       for (const url of urls) {
-        try { const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body }); if (r.ok) { ok = true; break; } else lastErr = `HTTP ${r.status}`; } catch (e) { lastErr = e?.message || 'Network'; }
+        try {
+          const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body });
+          if (r.ok) { ok = true; break; }
+          lastErr = `HTTP ${r.status}`;
+        } catch (e) { lastErr = e?.message || 'Network'; }
       }
       if (!ok) throw new Error(lastErr || 'Failed to save');
-      setShutdown(next); setSaved(true);
-      // Broadcast to other tabs
-      try { localStorage.setItem('site:flags', JSON.stringify({ shutdown: next, ts: Date.now() })); window.dispatchEvent(new Event('site:flags:updated')); } catch {}
-    } catch (e) { setError(e?.message || 'Failed to save'); }
-    finally {
+      setShutdownMain(!!nextMain);
+      setShutdownAi(!!nextAi);
+      setSaved(true);
+      try {
+        localStorage.setItem('site:flags', JSON.stringify({ shutdown: !!nextMain, shutdownAi: !!nextAi, ts: Date.now() }));
+        window.dispatchEvent(new Event('site:flags:updated'));
+      } catch {}
+    } catch (e) {
+      setError(e?.message || 'Failed to save');
+      setPos(isMain ? (shutdownMain ? 1 : 0) : (shutdownAi ? 1 : 0));
+    } finally {
       setSaving(false);
       setPending(null);
-      // Snap pos to actual state on failure
-      setPos((prev) => (shutdown ? 1 : 0));
-      setTimeout(()=>setSaved(false), 1500);
+      setTimeout(() => setSaved(false), 1500);
     }
   };
 
@@ -230,23 +261,32 @@ export default function DevSection() {
 
   // Keep slider knob in sync with state when not dragging
   useEffect(() => {
-    // When not dragging and no pending transition, sync to state
-    if (!dragging && pending === null) setPos(shutdown ? 1 : 0);
-  }, [shutdown, dragging, pending]);
+    if (!draggingMain && pendingMain === null) setPosMain(shutdownMain ? 1 : 0);
+  }, [shutdownMain, draggingMain, pendingMain]);
+
+  useEffect(() => {
+    if (!draggingAi && pendingAi === null) setPosAi(shutdownAi ? 1 : 0);
+  }, [shutdownAi, draggingAi, pendingAi]);
 
   // Pointer/drag handlers
-  const startDrag = (clientX) => {
-    if (saving || loading) return;
-    setDragging(true);
-    updatePosFromClientX(clientX);
+  const startDrag = (target, clientX) => {
+    const isMain = target === 'main';
+    const busy = isMain ? busyMain : busyAi;
+    const saving = isMain ? savingMain : savingAi;
+    if (saving || busy || loading) return;
+    if (clientX == null) return;
+    if (isMain) setDraggingMain(true); else setDraggingAi(true);
+    updatePosFromClientX(target, clientX);
     const move = (e) => {
       const x = 'touches' in e ? e.touches?.[0]?.clientX : e.clientX;
-      if (typeof x === 'number') updatePosFromClientX(x);
+      if (typeof x === 'number') updatePosFromClientX(target, x);
     };
     const up = () => {
-      setDragging(false);
-      const next = pos > 0.5;
-      if (next !== shutdown) saveFlags(next);
+      if (isMain) setDraggingMain(false); else setDraggingAi(false);
+      const posValue = isMain ? posMain : posAi;
+      const current = isMain ? (pendingMain ?? shutdownMain) : (pendingAi ?? shutdownAi);
+      const next = posValue > 0.5;
+      if (next !== current) saveFlag(target, next);
       window.removeEventListener('mousemove', move);
       window.removeEventListener('mouseup', up);
       window.removeEventListener('touchmove', move);
@@ -260,116 +300,222 @@ export default function DevSection() {
     window.addEventListener('touchcancel', up, { passive: true });
   };
 
-  const updatePosFromClientX = (clientX) => {
-    const el = trackRef.current;
+  const updatePosFromClientX = (target, clientX) => {
+    const el = target === 'main' ? trackMainRef.current : trackAiRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const left = rect.left + 6; // inner padding estimate
     const right = rect.right - 34; // knob width + margin
     const clamped = Math.max(0, Math.min(1, (clientX - left) / Math.max(1, right - left)));
-    setPos(clamped);
+    if (target === 'main') setPosMain(clamped);
+    else setPosAi(clamped);
   };
 
   return (
-    <section className="space-y-4">
-      <div>
-        <div className="text-xl font-semibold text-cyan-300">Developer Controls</div>
-        <div className="text-sm text-gray-400">Advanced authority to toggle maintenance mode.</div>
-      </div>
-
-      {loading ? (
-        <div className="text-sm text-gray-400">Loading flags…</div>
-      ) : (
-        <div className="rounded-xl border border-white/10 bg-black/40 p-4">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="text-cyan-200 font-medium">Shutdown Main Site</div>
-              <div className="text-xs text-gray-400">When enabled, visitors will see a full-screen development warning overlay on Home.</div>
+    <section className="space-y-8">
+      <div className="rounded-xl border border-white/10 bg-black/40 p-5 space-y-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="text-lg font-semibold text-cyan-200">Live Site Controls</div>
+            <p className="text-xs text-gray-400">Flip maintenance overlays for each surface. Changes propagate instantly to connected clients.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-gray-300">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/60 px-3 py-1">
+              <span className={`h-2.5 w-2.5 rounded-full ${(pendingMain ?? shutdownMain) ? 'bg-red-400 animate-pulse' : 'bg-emerald-400'}`} />
+              <span>Main { (pendingMain ?? shutdownMain) ? 'Offline' : 'Live' }</span>
             </div>
-            <div
-              ref={trackRef}
-              role="switch"
-              aria-checked={shutdown}
-              tabIndex={0}
-              onClick={(e) => {
-                // Ignore click if drag just occurred; quick toggle on simple click
-                if (!dragging && !busy && !loading) saveFlags(!(pending ?? shutdown));
-              }}
-              onMouseDown={(e) => startDrag(e.clientX)}
-              onTouchStart={(e) => startDrag(e.touches?.[0]?.clientX)}
-              onKeyDown={(e) => {
-                const current = pending ?? shutdown;
-                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (!busy && !loading) saveFlags(!current); }
-                if (e.key === 'ArrowLeft') { e.preventDefault(); if (!busy && !loading && current) saveFlags(false); }
-                if (e.key === 'ArrowRight') { e.preventDefault(); if (!busy && !loading && !current) saveFlags(true); }
-              }}
-              aria-busy={busy}
-              className={`relative inline-flex h-9 w-24 select-none items-center rounded-full border transition-colors outline-none focus:ring-2 focus:ring-cyan-400/50 ${
-                (pending ?? shutdown) ? 'bg-gradient-to-r from-red-600/50 via-red-500/40 to-red-400/30 border-red-400/40' : 'bg-white/10 border-white/20'
-              } ${busy ? 'cursor-wait' : 'cursor-pointer active:scale-[0.99]'} ${dragging ? 'ring-1 ring-cyan-300/40' : ''}`}
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/60 px-3 py-1">
+              <span className={`h-2.5 w-2.5 rounded-full ${(pendingAi ?? shutdownAi) ? 'bg-red-400 animate-pulse' : 'bg-emerald-400'}`} />
+              <span>AI { (pendingAi ?? shutdownAi) ? 'Offline' : 'Live' }</span>
+            </div>
+            <button
+              onClick={fetchFlags}
+              disabled={loading || busyMain || busyAi}
+              className="rounded-md border border-white/10 px-3 py-1.5 text-[11px] font-medium text-gray-200 transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {/* Track labels */}
-              <span className={`pointer-events-none absolute left-2 text-[10px] font-semibold tracking-wide transition-colors ${ (pending ?? shutdown) ? 'text-white/30' : 'text-cyan-200/90'}`}>OFF</span>
-              <span className={`pointer-events-none absolute right-2 text-[10px] font-semibold tracking-wide transition-colors ${ (pending ?? shutdown) ? 'text-red-200/90' : 'text-white/30'}`}>ON</span>
-
-              {/* Progress glow */}
+              Refresh Flags
+            </button>
+          </div>
+        </div>
+        {loading ? (
+          <div className="text-sm text-gray-400">Loading flags…</div>
+        ) : (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-cyan-200 font-medium">Shutdown Main Site</div>
+                <div className="text-xs text-gray-400">Visitors on the main site will see the maintenance overlay across routes.</div>
+              </div>
               <div
-                className="absolute inset-0 rounded-full overflow-hidden pointer-events-none"
-                aria-hidden
+                ref={trackMainRef}
+                role="switch"
+                aria-checked={pendingMain ?? shutdownMain}
+                tabIndex={0}
+                onClick={() => {
+                  if (!draggingMain && !busyMain && !loading) saveFlag('main', !(pendingMain ?? shutdownMain));
+                }}
+                onMouseDown={(e) => startDrag('main', e.clientX)}
+                onTouchStart={(e) => startDrag('main', e.touches?.[0]?.clientX)}
+                onKeyDown={(e) => {
+                  const current = pendingMain ?? shutdownMain;
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (!busyMain && !loading) saveFlag('main', !current);
+                  }
+                  if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    if (!busyMain && !loading && current) saveFlag('main', false);
+                  }
+                  if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    if (!busyMain && !loading && !current) saveFlag('main', true);
+                  }
+                }}
+                aria-busy={busyMain}
+                className={`relative inline-flex h-9 w-24 select-none items-center rounded-full border transition-colors outline-none focus:ring-2 focus:ring-cyan-400/50 ${
+                  (pendingMain ?? shutdownMain) ? 'bg-gradient-to-r from-red-600/50 via-red-500/40 to-red-400/30 border-red-400/40' : 'bg-white/10 border-white/20'
+                } ${busyMain ? 'cursor-wait' : 'cursor-pointer active:scale-[0.99]'} ${draggingMain ? 'ring-1 ring-cyan-300/40' : ''}`}
               >
-                <div
-                  className="h-full w-full"
+                <span className={`pointer-events-none absolute left-2 text-[10px] font-semibold tracking-wide transition-colors ${(pendingMain ?? shutdownMain) ? 'text-white/30' : 'text-cyan-200/90'}`}>OFF</span>
+                <span className={`pointer-events-none absolute right-2 text-[10px] font-semibold tracking-wide transition-colors ${(pendingMain ?? shutdownMain) ? 'text-red-200/90' : 'text-white/30'}`}>ON</span>
+                <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none" aria-hidden>
+                  <div
+                    className="h-full w-full"
+                    style={{
+                      background: `linear-gradient(90deg, rgba(34,211,238,0.12) 0%, rgba(34,211,238,0.2) ${Math.round(posMain * 100)}%, transparent ${Math.round(posMain * 100)}%)`,
+                      transition: draggingMain ? 'none' : 'background 150ms linear',
+                    }}
+                  />
+                  {busyMain && (
+                    <motion.div
+                      className="absolute inset-y-0 w-16 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                      initial={{ x: '-40%' }}
+                      animate={{ x: '140%' }}
+                      transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
+                    />
+                  )}
+                </div>
+                <motion.span
+                  layout
+                  transition={{ type: 'spring', stiffness: 500, damping: 32 }}
+                  className={`h-7 w-7 rounded-full shadow-md border ${(pendingMain ?? shutdownMain) ? 'border-red-300/60' : 'border-cyan-200/60'}`}
                   style={{
-                    background: `linear-gradient(90deg, rgba(34,211,238,0.12) 0%, rgba(34,211,238,0.2) ${Math.round(pos * 100)}%, transparent ${Math.round(pos * 100)}%)`,
-                    transition: dragging ? 'none' : 'background 150ms linear',
+                    background: (pendingMain ?? shutdownMain) ? 'linear-gradient(180deg, #fca5a5, #ef4444)' : 'linear-gradient(180deg, #67e8f9, #22d3ee)',
+                    transform: `translateX(${4 + posMain * 32}px)`,
                   }}
                 />
-                {busy && (
+                {busyMain && (
                   <motion.div
-                    className="absolute inset-y-0 w-16 bg-gradient-to-r from-transparent via-white/10 to-transparent"
-                    initial={{ x: '-40%' }}
-                    animate={{ x: '140%' }}
-                    transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
-                  />
+                    className="absolute h-7 w-7 rounded-full grid place-items-center"
+                    style={{ left: `${4 + posMain * 32}px` }}
+                    initial={{ rotate: 0 }}
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 0.9, ease: 'linear' }}
+                  >
+                    <div className="h-5 w-5 rounded-full border-2 border-white/40 border-t-white/90 border-r-white/70" />
+                  </motion.div>
                 )}
               </div>
-
-              {/* Knob */}
-              <motion.span
-                layout
-                transition={{ type: 'spring', stiffness: 500, damping: 32 }}
-                className={`h-7 w-7 rounded-full shadow-md border ${ (pending ?? shutdown) ? 'border-red-300/60' : 'border-cyan-200/60'}`}
-                style={{
-                  background: (pending ?? shutdown) ? 'linear-gradient(180deg, #fca5a5, #ef4444)' : 'linear-gradient(180deg, #67e8f9, #22d3ee)',
-                  transform: `translateX(${4 + pos * 32}px)`, // adjusted for wider track
-                }}
-              />
-
-              {/* Loading spinner overlay on knob */}
-              {busy && (
-                <motion.div
-                  className="absolute h-7 w-7 rounded-full grid place-items-center"
-                  style={{ left: `${4 + pos * 32}px` }}
-                  initial={{ rotate: 0 }}
-                  animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, duration: 0.9, ease: 'linear' }}
-                >
-                  <div className="h-5 w-5 rounded-full border-2 border-white/40 border-t-white/90 border-r-white/70" />
-                </motion.div>
-              )}
             </div>
+            <AnimatePresence>
+              {savedMain && (
+                <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="text-sm text-emerald-300">Saved.</motion.div>
+              )}
+              {errorMain && (
+                <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="text-sm text-red-300">{errorMain}</motion.div>
+              )}
+            </AnimatePresence>
+            <div className="h-px w-full bg-white/10" />
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-cyan-200 font-medium">Shutdown AI Site</div>
+                <div className="text-xs text-gray-400">Route /ai will display the maintenance overlay when enabled.</div>
+              </div>
+              <div
+                ref={trackAiRef}
+                role="switch"
+                aria-checked={pendingAi ?? shutdownAi}
+                tabIndex={0}
+                onClick={() => {
+                  if (!draggingAi && !busyAi && !loading) saveFlag('ai', !(pendingAi ?? shutdownAi));
+                }}
+                onMouseDown={(e) => startDrag('ai', e.clientX)}
+                onTouchStart={(e) => startDrag('ai', e.touches?.[0]?.clientX)}
+                onKeyDown={(e) => {
+                  const current = pendingAi ?? shutdownAi;
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (!busyAi && !loading) saveFlag('ai', !current);
+                  }
+                  if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    if (!busyAi && !loading && current) saveFlag('ai', false);
+                  }
+                  if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    if (!busyAi && !loading && !current) saveFlag('ai', true);
+                  }
+                }}
+                aria-busy={busyAi}
+                className={`relative inline-flex h-9 w-24 select-none items-center rounded-full border transition-colors outline-none focus:ring-2 focus:ring-cyan-400/50 ${
+                  (pendingAi ?? shutdownAi) ? 'bg-gradient-to-r from-red-600/50 via-red-500/40 to-red-400/30 border-red-400/40' : 'bg-white/10 border-white/20'
+                } ${busyAi ? 'cursor-wait' : 'cursor-pointer active:scale-[0.99]'} ${draggingAi ? 'ring-1 ring-cyan-300/40' : ''}`}
+              >
+                <span className={`pointer-events-none absolute left-2 text-[10px] font-semibold tracking-wide transition-colors ${(pendingAi ?? shutdownAi) ? 'text-white/30' : 'text-cyan-200/90'}`}>OFF</span>
+                <span className={`pointer-events-none absolute right-2 text-[10px] font-semibold tracking-wide transition-colors ${(pendingAi ?? shutdownAi) ? 'text-red-200/90' : 'text-white/30'}`}>ON</span>
+                <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none" aria-hidden>
+                  <div
+                    className="h-full w-full"
+                    style={{
+                      background: `linear-gradient(90deg, rgba(34,211,238,0.12) 0%, rgba(34,211,238,0.2) ${Math.round(posAi * 100)}%, transparent ${Math.round(posAi * 100)}%)`,
+                      transition: draggingAi ? 'none' : 'background 150ms linear',
+                    }}
+                  />
+                  {busyAi && (
+                    <motion.div
+                      className="absolute inset-y-0 w-16 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                      initial={{ x: '-40%' }}
+                      animate={{ x: '140%' }}
+                      transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
+                    />
+                  )}
+                </div>
+                <motion.span
+                  layout
+                  transition={{ type: 'spring', stiffness: 500, damping: 32 }}
+                  className={`h-7 w-7 rounded-full shadow-md border ${(pendingAi ?? shutdownAi) ? 'border-red-300/60' : 'border-cyan-200/60'}`}
+                  style={{
+                    background: (pendingAi ?? shutdownAi) ? 'linear-gradient(180deg, #fca5a5, #ef4444)' : 'linear-gradient(180deg, #67e8f9, #22d3ee)',
+                    transform: `translateX(${4 + posAi * 32}px)`,
+                  }}
+                />
+                {busyAi && (
+                  <motion.div
+                    className="absolute h-7 w-7 rounded-full grid place-items-center"
+                    style={{ left: `${4 + posAi * 32}px` }}
+                    initial={{ rotate: 0 }}
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 0.9, ease: 'linear' }}
+                  >
+                    <div className="h-5 w-5 rounded-full border-2 border-white/40 border-t-white/90 border-r-white/70" />
+                  </motion.div>
+                )}
+              </div>
+            </div>
+            <AnimatePresence>
+              {savedAi && (
+                <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="text-sm text-emerald-300">Saved.</motion.div>
+              )}
+              {errorAi && (
+                <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="text-sm text-red-300">{errorAi}</motion.div>
+              )}
+            </AnimatePresence>
           </div>
-
-          <AnimatePresence>
-            {saved && (
-              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="mt-3 text-sm text-emerald-300">Saved.</motion.div>
-            )}
-            {error && (
-              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="mt-3 text-sm text-red-300">{error}</motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
+        )}
+        {loadError && !loading && (
+          <div className="rounded-md border border-red-400/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">{loadError}</div>
+        )}
+      </div>
       {/* Admin Authorities */}
       <div className="pt-2">
         <div className="text-lg font-semibold text-cyan-200 mb-2">Admin Authorities</div>
