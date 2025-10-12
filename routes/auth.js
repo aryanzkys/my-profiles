@@ -6,10 +6,9 @@ const passwordStore = require('../utils/passwordStore');
 
 const router = express.Router();
 
-// Membatasi permintaan reset password agar tidak disalahgunakan
 const requestResetLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 menit
-  max: 5, // Maksimal 5 permintaan per IP dalam window
+  windowMs: 15 * 60 * 1000, 
+  max: 5,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -17,24 +16,33 @@ const requestResetLimiter = rateLimit({
   },
 });
 
+// Helper debug message untuk frontend
+function getDebugMessage(err) {
+  if (!err) return '';
+  if (err.code) return `Kode error: ${err.code}`;
+  if (err.response) return `Response: ${err.response.toString()}`;
+  if (err.message) return `Pesan: ${err.message}`;
+  return JSON.stringify(err);
+}
+
 // Endpoint POST /auth/request-reset
 router.post('/request-reset', requestResetLimiter, async (req, res) => {
   try {
     const { email } = req.body || {};
-
     if (!email || typeof email !== 'string') {
       return res.status(400).json({ message: 'Field email wajib diisi.' });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-
     let registered = false;
+
     try {
       registered = await passwordStore.emailExists(normalizedEmail);
     } catch (checkErr) {
-      console.error('Gagal mengecek keberadaan email admin:', checkErr);
-      const reason = checkErr?.message || checkErr?.code || 'Periksa koneksi ke database admin.';
-      return res.status(500).json({ message: `Gagal memproses permintaan reset password. (${reason})` });
+      return res.status(500).json({
+        message: 'Gagal memproses permintaan reset password.',
+        debug: `Gagal cek email di database. ${getDebugMessage(checkErr)}`
+      });
     }
 
     if (!registered) {
@@ -45,28 +53,27 @@ router.post('/request-reset', requestResetLimiter, async (req, res) => {
     try {
       resetToken = await tokenStore.createToken(normalizedEmail);
     } catch (tokenErr) {
-      console.error('Gagal membuat token reset password:', tokenErr);
-      const reason = tokenErr?.message || tokenErr?.code || 'Periksa konfigurasi penyimpanan token.';
-      return res.status(500).json({ message: `Gagal memproses permintaan reset password. (${reason})` });
+      return res.status(500).json({
+        message: 'Gagal memproses permintaan reset password.',
+        debug: `Gagal buat token. ${getDebugMessage(tokenErr)}`
+      });
     }
 
     try {
       await mailer.sendPasswordResetEmail({ email: normalizedEmail, token: resetToken });
     } catch (mailErr) {
-      console.error('Gagal mengirim email reset password:', mailErr);
-      const reason = mailErr?.response?.toString()
-        || mailErr?.responseCode
-        || mailErr?.code
-        || mailErr?.message
-        || 'Periksa konfigurasi SMTP Anda.';
-      return res.status(502).json({ message: `Gagal mengirim email reset password. (${reason})` });
+      return res.status(502).json({
+        message: 'Gagal mengirim email reset password.',
+        debug: `Cek konfigurasi SMTP: ${getDebugMessage(mailErr)}. Pastikan SMTP_HOST/PORT, SMTP_USER/PASS, dan App Password (untuk Gmail) benar.`
+      });
     }
 
     return res.json({ message: 'Instruksi reset password berhasil dikirim. Silakan cek inbox Anda.' });
   } catch (err) {
-    console.error('Kesalahan tidak terduga saat request-reset:', err);
-    const reason = err?.message || err?.code || 'Terjadi kesalahan tidak terduga.';
-    return res.status(500).json({ message: `Gagal memproses permintaan reset password. (${reason})` });
+    return res.status(500).json({
+      message: 'Terjadi kesalahan tidak terduga saat request-reset.',
+      debug: getDebugMessage(err)
+    });
   }
 });
 
@@ -74,11 +81,9 @@ router.post('/request-reset', requestResetLimiter, async (req, res) => {
 router.post('/reset', async (req, res) => {
   try {
     const { token, email, password } = req.body || {};
-
     if (!token || !email || !password) {
       return res.status(400).json({ message: 'Token, email, dan password baru wajib diisi.' });
     }
-
     if (typeof password !== 'string' || password.length < 8) {
       return res.status(422).json({ message: 'Password baru minimal 8 karakter.' });
     }
@@ -93,9 +98,10 @@ router.post('/reset', async (req, res) => {
     try {
       await passwordStore.setPassword(normalizedEmail, password);
     } catch (saveErr) {
-      console.error('Gagal menyimpan password baru:', saveErr);
-      const reason = saveErr?.message || saveErr?.code || 'Periksa penyimpanan password.';
-      return res.status(500).json({ message: `Gagal menyimpan password baru. (${reason})` });
+      return res.status(500).json({
+        message: 'Gagal menyimpan password baru.',
+        debug: `Periksa penyimpanan password. ${getDebugMessage(saveErr)}`
+      });
     }
 
     await tokenStore.markUsed(token);
@@ -103,9 +109,10 @@ router.post('/reset', async (req, res) => {
 
     return res.json({ message: 'Password berhasil direset. Silakan login dengan password baru.' });
   } catch (err) {
-    console.error('Kesalahan tidak terduga saat reset password:', err);
-    const reason = err?.message || err?.code || 'Terjadi kesalahan tidak terduga.';
-    return res.status(500).json({ message: `Gagal memproses permintaan reset password. (${reason})` });
+    return res.status(500).json({
+      message: 'Terjadi kesalahan tidak terduga saat reset password.',
+      debug: getDebugMessage(err)
+    });
   }
 });
 
