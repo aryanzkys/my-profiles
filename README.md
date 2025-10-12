@@ -2,26 +2,84 @@
 
 Interactive 3D portfolio with an Owner-grade Admin platform: authority management, presence, audit/login logs, and maintenance mode. Ships static (Next.js export) and supports serverless APIs with Supabase-first persistence and robust fallbacks. Containerized and published to GitHub Packages (GHCR) with automated Releases on tags.
 
-## Features
+## Feature Highlights
 
-- 3D portfolio: Next.js 14, TailwindCSS, Framer Motion, Spline.
-- Admin platform (Owner: `prayogoaryan63@gmail.com`):
-	- Authorities CRUD: canEditSections, canAccessDev, banned.
-	- Owner protections: cannot be banned/deleted; always full access.
-	- Maintenance mode toggle: “Shutdown Main Site” with animated UX.
-	- Presence: online/offline badges, last-seen tooltip, provider info; configurable auto-refresh.
-	- Logs:
-		- Audit logs for authority changes (actor/target/action) with filters + pagination.
-		- Admin login logs (Firebase) with filters (email/provider/date) + pagination.
-	- Instant UX: optimistic add/update/delete with Owner-only toasts for loading/success/error.
-- Security and integrity:
-	- Firebase Auth (Google + email) with login trace logging.
-	- Optional reCAPTCHA v3 on auth flows.
-	- Supabase-first backends with Storage/FS fallbacks.
-- CI/CD:
-	- Docker image published to GHCR on tag push.
-	- GitHub Release auto-created/updated on tag push; prereleases when tag contains a hyphen.
-	- “latest” tag only for stable tags (no hyphen).
+- Immersive realtime home experience powered by Next.js 14, TailwindCSS, Framer Motion, and embedded Spline scenes with shutdown overlays and mobile fallbacks.
+- AI assistant surface (Gemini via `Chatbot`) with markdown rendering, feedback capture, slow-response UX, privacy routing, and full-screen `/AI` page variant.
+- Announcement system with target selection (`main`, `ai`, or `both`), per-route gating, live status indicator, optimistic draft preview, versioning, expiry, CTA buttons, and mobile preview toggle.
+- Owner/admin workspace featuring authorities CRUD (canEditSections, canAccessDev, banned), owner lock, maintenance mode toggle, presence heartbeat and live roster, Firebase login logs, audit history, announcement list, site flag editor, and supabase-backed content editors for achievements, education, and organizations.
+- Mini experiences and utilities: signature request flow (`/sign-me`), indie games (`MiniFlappy`, `MiniFlappyPhaser`, `MiniChess`), micro experiments (`MicroSpline`, `ParticleField`), spotlight overlays, Spotify widgets, and shutdown UX.
+- Security and resilience: Firebase Auth (Google + email/password), optional reCAPTCHA v3 verification, Supabase-first persistence with storage/filesystem fallbacks, safe localStorage fallback for announcement flags, and guarded admin routing.
+- CI/CD automation: Docker image publishing to GHCR, GitHub Release automation on tags (prerelease detection), and static export pipeline for CDN or Netlify hosting.
+
+## Application Surface
+
+### Public pages (Next.js `pages/`)
+
+- `/` (`index.jsx`): 3D hero backed by `Scene`, animated overlay sections, announcement popup, mobile notice, and maintenance shutdown overlay.
+- `/AI` (`AI.jsx`): full-screen AI assistant with chatbot opened by default, curated quick questions, announcements scoped to AI target, and privacy banner.
+- `/ai-privacy` (`ai-privacy.jsx`): AI privacy statement sourced from `data/ai_privacy.json` with collapsible sections.
+- `/cv` (`cv.jsx`): résumé view with download links, achievements timeline, and educational background.
+- `/login` (`login.jsx`): Firebase email/password + Google login flow with announcement gate awareness and supabase persistence fallback.
+- `/message-to-aryan` (`message-to-aryan.jsx`): direct messaging surface with validation, optimistic send UX, and Netlify/Next API proxying.
+- `/patch` (`patch.jsx`): release notes and patch history pulled from `public/patches.json` and `data/patches.json`.
+- `/privacy` (`privacy.jsx`) and `/terms` (`terms.jsx`): policy pages sourced from JSON and rendered with timeline cards.
+- `/reset-password` (`reset-password.jsx`): token-based password reset handler integrated with `auth-service` functions.
+- `/sign-me` (`sign-me.jsx`): Supabase-backed signature request intake (PDF upload) plus status tracking for `sign_requests` table, with bucket existence checks.
+- `/cv`, `/projects`, `/contact`, `/about`, `/education` sections are composed within the main overlay using dedicated components and dynamic data contexts.
+
+### Admin and internal pages
+
+- `/admin-dashboard` (`admin-dashboard.jsx`): post-login cinematic welcome with warp transition before redirecting to the control panel.
+- `/admin` (`admin.jsx`): primary admin surface with tabbed editors (achievements, education, organizations, announcements, admin profile, developer ops, messaging moderation). Includes Firebase profile management, password change flow with re-auth, keyboard shortcuts, optimistic Supabase writes, announcement management with target filters, and live presence pulses.
+- `/admin/sign-requests` (`admin/sign-requests.jsx`): reviewer console for signature requests including status updates, signed file uploads, and audit logging.
+
+### System wrapper
+
+- `_app.jsx`: hydrates shared providers (`AuthProvider`, `DataContext`, `PerformanceContext`), attaches `AnnouncementPopup`, `AnimatedCursor`, `Chatbot`, `SpotifyFloating`, and `MobileNotice` globally, and wires theme/fonts.
+
+## Reusable Components and Modules
+
+- 3D and visual stack: `Scene`, `Overlay`, `ParticleField`, `AnimatedCursor`, `ShutdownOverlay`, `MobileNotice`, `MicroSpline`, `Overlay` section cards.
+- Portfolio sections: `About`, `Achievements`, `Education`, `Organizations`, `Projects`, `Contact`, `SignatureEditor`, `SignaturePreview`, `SpotifySection`, `SpotifyFloating`, each reading from JSON data sources or Supabase fallbacks.
+- Admin suite: `Dashboard`, `AuthProvider`, `DataContext`, `PerformanceContext`, `AnnouncementPopup`, `admin/MessagesAdmin`, `AdminPanel/DevSection`, announcement card previews, and presence awareness hooks.
+- Mini apps and experiments: `MiniFlappy`, `MiniFlappyPhaser`, `MiniChess`, `MessageToAryan`, plus chatbot presentation shells with animated markdown rendering.
+- Libraries (`lib/`): `adminApi.js`, `generatePatches.js`, `passwordResetClient.js`, `supabaseClient.js` power persistence, patch exports, and credential flows.
+- Utilities (`utils/`): `adminStore`, `mailer`, `passwordStore`, `tokenStore` provide storage fallbacks, email delivery, and token lifecycle helpers.
+
+## Data and Content Sources
+
+- JSON datasets under `data/`: `about`, `achievements`, `ai_privacy`, `contact`, `education`, `organizations`, `patches`, `site_features` feed public-facing sections and AI prompt context.
+- Auth configuration located in `auth/custom_user_data.json` and `auth/providers.json` for seeded accounts, authority scaffolding, and provider metadata.
+- Public assets: `public/patches.json`, `public/robots.txt`, `public/sitemap.xml`, and cursor SVGs.
+- Environment-specific settings in `environments/*.json`, Supabase migrations under `supabase/migrations/`, and sync pipeline configs in `sync/config.json`.
+
+## Serverless API Surface
+
+### Next.js API routes (`/api/*`)
+
+- Admin management: `admin-login-log`, `admin-login-log-list`, `admin-presence-heartbeat`, `admin-presence-list`, `admins-list`, `admins-upsert`, `admins-delete`, `admins-audit-list` for dashboard data, live presence, and audit trails.
+- Announcement and site controls: `get-announcement`, `list-announcements`, `save-announcement`, `delete-announcement`, `get-site-flags`, `set-site-flags` handle targeted announcements, shutdown flags, and storage fallbacks.
+- Content CRUD: `get-achievements`, `save-achievements`, `patches` provide CMS-style editing and export of achievements and patch notes.
+- Messaging and outreach: `messages-list`, `messages-delete`, `send-message`, `validate-instagram` cover contact submissions and validation flows.
+- AI and feedback: `gemini-chat` proxies Google Gemini requests with profile context and streaming control.
+- Maintenance helpers: `save-announcement`, `delete-announcement`, and `set-site-flags` coordinate fallback storage when Supabase/Netlify APIs are unavailable.
+
+### Netlify Functions (`/.netlify/functions/*`)
+
+- Admin management mirrors: `admin-login-log`, `admin-login-log-list`, `admin-presence-heartbeat`, `admin-presence-list`, `admins-list`, `admins-upsert`, `admins-delete`, `admins-audit-list` for production serverless deployments.
+- Announcement and site flags: `get-announcement`, `list-announcements`, `save-announcement`, `delete-announcement`, `get-site-flags`, `set-site-flags` with target filtering and fallback-safe storage.
+- Content services: `get-achievements`, `save-achievements`, `patches`, `get-education`, `save-education`, `get-organizations`, `save-organizations` maintain portfolio data.
+- Messaging suite: `messages-list`, `messages-delete`, `send-message`, `feedback-create`, `feedback-list`, `feedback-chat`, `feedback-summarize` for inbox workflows, chatbot logs, and summarization.
+- AI gateway: `gemini-chat` handles Google Generative AI calls with moderation and rate protection.
+- Auth and security: `auth-service` (password reset request/reset endpoints), `verify-recaptcha` (server-side v3 verification), `spotify-token` (refreshes Spotify API tokens), `validate-instagram` (URL sanity checks).
+- Announcements and presence share the same fallback-safe storage helpers to sync with Next API when running locally.
+
+### Other tooling
+
+- `netlify.toml` wires redirects and function directories; `functions/config.json` configures Netlify runtime.
+- `scripts/generate-patches.js` and `lib/generatePatches.js` produce versioned patch payloads for static and Netlify consumption.
+- `Dockerfile`, `nginx.conf`, and `server.js` enable multi-stage builds and static export hosting with optional Node preview server.
 
 ## Requirements
 
@@ -60,10 +118,16 @@ If deploying to username.github.io/repo:
 
 - Route: `/admin`
 - Gate: set `NEXT_PUBLIC_ADMIN_KEY` and enter once.
-- Data sources: serverless function > dev API > local JSON fallback.
-- Owner-only viewers: Audit Logs and Login Logs (with filters/pagination).
-- Presence: shows online/offline, last seen, and provider.
-- Instant UX: optimistic updates for add/update/delete/toggles with Owner toasts.
+- Data sources: serverless function > dev API > local JSON fallback across achievements, education, organizations, announcements, and authority tables.
+- Owner-only viewers: Audit Logs and Login Logs (with filters/pagination) plus announcement list filters, signature request reviewer, and developer tooling.
+- Presence: shows online/offline, last seen, and provider, backed by heartbeat functions and auto-refresh interval.
+- Instant UX: optimistic updates for add/update/delete/toggles with Owner toasts and safe rollback when Supabase is down.
+
+## Public contact and AI surfaces
+
+- `/message-to-aryan`: chat-styled contact form writing into serverless inbox with moderation queues.
+- `/AI`: Gemini-powered assistant with local data prompt seeding, markdown answers, conversation persistence, and optional feedback logging.
+- Announcement popup respects target scope (main vs AI) and gate lists to avoid admin/system routes.
 
 ## Serverless + Persistence
 
@@ -71,6 +135,7 @@ If deploying to username.github.io/repo:
 - Supabase-first tables (with Storage and FS fallbacks). Typical tables:
 	- admin_authorities, admin_audit, admin_presence, admin_logins
 	- admin_credentials, admin_password_reset_tokens (untuk fitur lupa password)
+- AI chatbot feedback tables, signature request tables (`sign_requests`), and announcement storage optionally persist beyond JSON fallbacks.
 - Achievements data remains supported via REST-first + storage fallback.
 
 ### Password reset flow
@@ -85,7 +150,8 @@ If deploying to username.github.io/repo:
 
 - Owner cannot be banned or deleted and always has access.
 - reCAPTCHA v3 can be enabled for login actions; server-side verification included.
-- Please ensure usage complies with your website’s latest terms and privacy policy (data handling, logging, retention):
+- Announcement dismissals are session-scoped to comply with request for always-on popups while respecting expiry windows.
+- Please ensure usage complies with your website's latest terms and privacy policy (data handling, logging, retention):
 	- Terms of Service: https://aryanstack.netlify.app/terms
 	- Privacy Policy: https://aryanstack.netlify.app/privacy
 
@@ -116,5 +182,5 @@ Pull & Run (after CI publishes the tag):
 ## Notes
 
 - Fullscreen layout, no scroll (`h-screen w-screen overflow-hidden`).
-- Replace Spline scene URL in your component(s) if needed.
-- Overlay or hero content can be edited under `components/`.
+- Replace Spline scene URL in `components/Scene.jsx` if needed.
+- Overlay or hero content can be edited under `components/` and asset data under `data/`.
