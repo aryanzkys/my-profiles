@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 const CV_VIEW_URL = 'https://drive.google.com/file/d/1c7KeejQq-sDxC1FbnEUGiKUEkHDn2iOf/preview';
 const CV_DOWNLOAD_URL = 'https://drive.google.com/uc?export=download&id=1c7KeejQq-sDxC1FbnEUGiKUEkHDn2iOf';
-const LOADING_DURATION = 3;
+const LOADING_DURATION = 2;
 
 const tabs = [
   { id: 'overview', label: 'Overview' },
