@@ -1,6 +1,6 @@
 {
   "meta": {
-    "last_generated": "2025-10-12T11:08:50.788Z"
+    "last_generated": "2025-10-12T12:01:31.486Z"
   },
   "patches": [
     {
@@ -1519,6 +1519,101 @@
       "date": "2025-10-12T10:33:37.000Z",
       "author": "Aryan Zaky Prayogo <prayogoaryan63@gmail.com>",
       "message": "Merge pull request #3 from aryanzkys/copilot/add-send-to-email-feature",
+      "routes": [
+        "/AI",
+        "/admin-dashboard",
+        "/admin",
+        "/admin/sign-requests",
+        "/ai-privacy",
+        "/cv",
+        "/",
+        "/login",
+        "/message-to-aryan",
+        "/patch",
+        "/privacy",
+        "/reset-password",
+        "/sign-me",
+        "/terms"
+      ],
+      "changed": [
+        {
+          "path": "pages/AI.jsx",
+          "status": "A",
+          "route": "/AI"
+        },
+        {
+          "path": "pages/admin-dashboard.jsx",
+          "status": "A",
+          "route": "/admin-dashboard"
+        },
+        {
+          "path": "pages/admin.jsx",
+          "status": "A",
+          "route": "/admin"
+        },
+        {
+          "path": "pages/admin/sign-requests.jsx",
+          "status": "A",
+          "route": "/admin/sign-requests"
+        },
+        {
+          "path": "pages/ai-privacy.jsx",
+          "status": "A",
+          "route": "/ai-privacy"
+        },
+        {
+          "path": "pages/cv.jsx",
+          "status": "A",
+          "route": "/cv"
+        },
+        {
+          "path": "pages/index.jsx",
+          "status": "A",
+          "route": "/"
+        },
+        {
+          "path": "pages/login.jsx",
+          "status": "A",
+          "route": "/login"
+        },
+        {
+          "path": "pages/message-to-aryan.jsx",
+          "status": "A",
+          "route": "/message-to-aryan"
+        },
+        {
+          "path": "pages/patch.jsx",
+          "status": "A",
+          "route": "/patch"
+        },
+        {
+          "path": "pages/privacy.jsx",
+          "status": "A",
+          "route": "/privacy"
+        },
+        {
+          "path": "pages/reset-password.jsx",
+          "status": "A",
+          "route": "/reset-password"
+        },
+        {
+          "path": "pages/sign-me.jsx",
+          "status": "A",
+          "route": "/sign-me"
+        },
+        {
+          "path": "pages/terms.jsx",
+          "status": "A",
+          "route": "/terms"
+        }
+      ]
+    },
+    {
+      "number": 82,
+      "commit": "bdf925ccbb5c0945848597d313e9ebd3f87a3fc6",
+      "date": "2025-10-12T11:47:16.000Z",
+      "author": "Aryan Zaky Prayogo <prayogoaryan63@gmail.com>",
+      "message": "Merge pull request #4 from aryanzkys/copilot/redesign-ui-ux-ai-pages",
       "routes": [
         "/AI",
         "/admin-dashboard",
