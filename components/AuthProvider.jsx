@@ -12,6 +12,7 @@ import {
   signOut,
   reload,
 } from 'firebase/auth';
+import { ensureAdminProfile } from '../lib/adminApi';
 
 const AuthCtx = createContext(null);
 
@@ -22,6 +23,7 @@ export function AuthProvider({ children }) {
   const [initError, setInitError] = useState(null);
   const recaptchaSiteKeyV3 = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY_V3 || '';
   const recaptchaVerifiedRef = useRef(false);
+  const ensuredAdminsRef = useRef(new Set());
 
   // Firebase init
   useEffect(() => {
@@ -49,6 +51,25 @@ export function AuthProvider({ children }) {
       const unsub = onAuthStateChanged(auth, async (u) => {
         setUser(u);
         setLoading(false);
+        if (u?.email) {
+          const key = u.email.toLowerCase();
+          if (!ensuredAdminsRef.current.has(key)) {
+            try {
+              const result = await ensureAdminProfile({
+                email: key,
+                uid: u.uid,
+                displayName: u.displayName || null,
+              });
+              if (result?.ok) {
+                ensuredAdminsRef.current.add(key);
+              } else {
+                throw new Error(result?.data?.message || 'ensureAdminProfile failed');
+              }
+            } catch (ensureErr) {
+              console.warn('ensureAdminProfile failed:', ensureErr?.message || ensureErr);
+            }
+          }
+        }
         // Log admin login events (when user becomes truthy)
         try {
           if (u) {

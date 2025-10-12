@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from './AuthProvider';
 import { useRouter } from 'next/router';
 import { requestPasswordReset } from '../lib/passwordResetClient';
+import { ensureAdminProfile } from '../lib/adminApi';
 
 export default function LoginForm() {
   const { signInWithGoogle, emailLogin, emailSignup, themeDark, setThemeDark, loading, user, initError } = useAuth();
@@ -46,8 +47,20 @@ export default function LoginForm() {
     if (!canSubmit) return;
     setBusy(true); setMsg('');
     try {
-      if (mode === 'login') await emailLogin(email, password);
-      else await emailSignup(email, password);
+      if (mode === 'login') {
+        await emailLogin(email, password);
+      } else {
+        const cred = await emailSignup(email, password);
+        try {
+          await ensureAdminProfile({
+            email: email.trim().toLowerCase(),
+            uid: cred?.user?.uid || null,
+            displayName: cred?.user?.displayName || null,
+          });
+        } catch (ensureErr) {
+          console.warn('ensureAdminProfile (signup) failed:', ensureErr?.message || ensureErr);
+        }
+      }
     } catch (err) {
       const code = err?.code ? ` (${err.code})` : '';
       setMsg((err?.message || 'Gagal otentikasi') + code);

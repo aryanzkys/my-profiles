@@ -31,14 +31,14 @@ module.exports = {
       'Kalau udah expired, minta link baru aja 😉 tapi jangan spam ya 🫶',
       '',
       'Stay safe & keep grinding 💪',
-      'Tim Aryan Stack 🚀',
+      'Tim Aryanstack 🚀',
     ].join('\n');
 
     // Versi HTML interaktif & colorful
     const htmlContent = `
       <div style="font-family: 'Inter', Arial, sans-serif; line-height: 1.7; color: #111827; background: #f9fafb; padding:20px; border-radius:12px;">
         <h2 style="color:#2563eb;">✨ Yo Admin!</h2>
-        <p>Kamu baru aja request <strong>reset password</strong> akunmu di <strong>Aryan Stack</strong> 🔐</p>
+        <p>Kamu baru aja request <strong>reset password</strong> akunmu di <strong>Aryanstack</strong> 🔐</p>
         <p>Langsung klik tombol di bawah buat lanjut:</p>
         <p style="text-align:center; margin: 24px 0;">
           <a href="${resetLink}" style="
@@ -59,14 +59,14 @@ module.exports = {
         <p style="font-size:14px; color:#6b7280; text-align:center;">Kalau kadaluarsa, tinggal minta link baru aja 😉</p>
         <hr style="border:none; border-top:1px solid #e5e7eb; margin:24px 0;">
         <p style="text-align:center;">💡 Tips: Jangan share link ini ke siapapun. Stay safe & keep grinding 💪</p>
-        <p style="text-align:center; font-weight:bold;">— Tim <strong>Aryan Stack</strong> 🚀</p>
+        <p style="text-align:center; font-weight:bold;">— Tim <strong>Aryanstack</strong> 🚀</p>
       </div>
     `;
 
     await transporter.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to: email,
-      subject: '🚀 Reset Password Akun Admin Aryan Stack',
+      subject: '🚀 Reset Password Akun Admin Aryanstack',
       text: textContent,
       html: htmlContent,
     });
