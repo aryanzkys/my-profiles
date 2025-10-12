@@ -319,6 +319,17 @@ export default function AIPage() {
                   >
                     <motion.div
                       className="royal-typewriter-text"
+                      style={{
+                        fontFamily: "'Cinzel', 'Times New Roman', Georgia, serif",
+                        fontSize: "clamp(3rem, 7.5vw, 5.5rem)",
+                        fontWeight: 900,
+                        color: "#FFD700",
+                        lineHeight: 1.2,
+                        letterSpacing: "0.03em",
+                        textTransform: "uppercase",
+                        position: "relative",
+                        zIndex: 1
+                      }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.3 }}
@@ -327,6 +338,14 @@ export default function AIPage() {
                       {isTyping && (
                         <motion.span
                           className="royal-typewriter-cursor"
+                          style={{
+                            display: "inline-block",
+                            marginLeft: "8px",
+                            fontFamily: "'Cinzel', 'Times New Roman', Georgia, serif",
+                            fontSize: "clamp(3rem, 7.5vw, 5.5rem)",
+                            fontWeight: 900,
+                            color: "#FFD700"
+                          }}
                           animate={{ opacity: [1, 0, 1] }}
                           transition={{ duration: 0.8, repeat: Infinity }}
                         >
@@ -560,7 +579,7 @@ export default function AIPage() {
         </main>
       </div>
 
-      <style jsx>{`
+      <style jsx global>{`
         @keyframes royal-shine {
           0% {
             background-position: -200% center;
@@ -573,20 +592,22 @@ export default function AIPage() {
         @keyframes royal-glow-pulse {
           0%, 100% {
             text-shadow: 
-              0 0 10px rgba(255, 215, 0, 0.6),
-              0 0 20px rgba(255, 215, 0, 0.4),
-              0 0 30px rgba(255, 215, 0, 0.3),
-              0 0 40px rgba(255, 215, 0, 0.2),
-              0 2px 4px rgba(0, 0, 0, 0.5);
+              0 0 20px rgba(255, 215, 0, 0.9),
+              0 0 40px rgba(255, 215, 0, 0.7),
+              0 0 60px rgba(255, 215, 0, 0.5),
+              0 0 80px rgba(255, 215, 0, 0.3),
+              0 4px 8px rgba(0, 0, 0, 0.6),
+              2px 2px 4px rgba(0, 0, 0, 0.8);
           }
           50% {
             text-shadow: 
-              0 0 20px rgba(255, 215, 0, 0.9),
-              0 0 30px rgba(255, 215, 0, 0.7),
-              0 0 40px rgba(255, 215, 0, 0.5),
-              0 0 50px rgba(255, 215, 0, 0.4),
-              0 0 60px rgba(255, 215, 0, 0.3),
-              0 2px 4px rgba(0, 0, 0, 0.5);
+              0 0 30px rgba(255, 215, 0, 1),
+              0 0 50px rgba(255, 215, 0, 0.9),
+              0 0 70px rgba(255, 215, 0, 0.7),
+              0 0 90px rgba(255, 215, 0, 0.5),
+              0 0 110px rgba(255, 215, 0, 0.3),
+              0 4px 8px rgba(0, 0, 0, 0.6),
+              2px 2px 4px rgba(0, 0, 0, 0.8);
           }
         }
         
@@ -604,9 +625,9 @@ export default function AIPage() {
           display: flex;
           align-items: center;
           justify-content: flex-start;
-          min-height: clamp(120px, 18vw, 180px);
+          min-height: clamp(150px, 20vw, 220px);
           border-radius: 28px;
-          padding: clamp(1.8rem, 3.5vw, 3rem) clamp(2rem, 4vw, 3.5rem);
+          padding: clamp(2rem, 4vw, 3.5rem) clamp(2.5rem, 5vw, 4rem);
           background: linear-gradient(135deg, rgba(65, 105, 225, 0.35), rgba(138, 43, 226, 0.3));
           border: 3px solid rgba(255, 215, 0, 0.5);
           box-shadow: 
@@ -678,47 +699,48 @@ export default function AIPage() {
         }
         
         .royal-typewriter-text {
-          font-family: 'Cinzel', serif;
-          font-size: clamp(2.5rem, 6vw, 4.5rem);
-          font-weight: 800;
-          color: rgba(255, 255, 255, 0.98);
-          line-height: 1.25;
-          letter-spacing: 0.02em;
-          background: linear-gradient(
-            135deg,
-            rgba(255, 215, 0, 1) 0%,
-            rgba(255, 235, 170, 1) 25%,
-            rgba(255, 215, 0, 1) 50%,
-            rgba(255, 235, 170, 1) 75%,
-            rgba(255, 215, 0, 1) 100%
-          );
-          background-size: 200% auto;
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-          animation: royal-shine 4s linear infinite, royal-glow-pulse 3s ease-in-out infinite;
+          font-family: 'Cinzel', 'Times New Roman', Georgia, serif;
+          font-size: clamp(3rem, 7.5vw, 5.5rem);
+          font-weight: 900;
+          color: #FFD700;
+          line-height: 1.2;
+          letter-spacing: 0.03em;
+          text-shadow: 
+            0 0 20px rgba(255, 215, 0, 0.9),
+            0 0 40px rgba(255, 215, 0, 0.7),
+            0 0 60px rgba(255, 215, 0, 0.5),
+            0 0 80px rgba(255, 215, 0, 0.3),
+            0 4px 8px rgba(0, 0, 0, 0.6),
+            2px 2px 4px rgba(0, 0, 0, 0.8);
+          animation: royal-glow-pulse 3s ease-in-out infinite;
           position: relative;
           z-index: 1;
           text-transform: uppercase;
-          filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
         }
         
         .royal-typewriter-container:hover .royal-typewriter-text {
-          animation: royal-shine 2s linear infinite, royal-glow-pulse 1.5s ease-in-out infinite;
+          animation: royal-glow-pulse 1.5s ease-in-out infinite;
+          text-shadow: 
+            0 0 30px rgba(255, 215, 0, 1),
+            0 0 50px rgba(255, 215, 0, 0.9),
+            0 0 70px rgba(255, 215, 0, 0.7),
+            0 0 90px rgba(255, 215, 0, 0.5),
+            0 4px 8px rgba(0, 0, 0, 0.6),
+            2px 2px 4px rgba(0, 0, 0, 0.8);
         }
         
         .royal-typewriter-cursor {
           display: inline-block;
           margin-left: 8px;
-          font-family: 'Cinzel', serif;
-          font-size: clamp(2.5rem, 6vw, 4.5rem);
-          font-weight: 800;
-          color: rgba(255, 215, 0, 1);
+          font-family: 'Cinzel', 'Times New Roman', Georgia, serif;
+          font-size: clamp(3rem, 7.5vw, 5.5rem);
+          font-weight: 900;
+          color: #FFD700;
           text-shadow: 
-            0 0 15px rgba(255, 215, 0, 0.8),
-            0 0 25px rgba(255, 215, 0, 0.6),
-            0 0 35px rgba(255, 215, 0, 0.4);
-          filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+            0 0 20px rgba(255, 215, 0, 1),
+            0 0 30px rgba(255, 215, 0, 0.8),
+            0 0 40px rgba(255, 215, 0, 0.6),
+            0 4px 8px rgba(0, 0, 0, 0.6);
         }
         
         .royal-bullet {
@@ -803,16 +825,18 @@ export default function AIPage() {
         
         @media (max-width: 768px) {
           .royal-typewriter-container {
-            padding: 1.5rem 1.2rem;
-            min-height: 110px;
+            padding: 1.8rem 1.5rem;
+            min-height: 130px;
           }
           
           .royal-typewriter-text {
-            font-size: clamp(1.8rem, 6vw, 2.8rem);
+            font-size: clamp(2.2rem, 7vw, 3.5rem);
+            font-weight: 900;
           }
           
           .royal-typewriter-cursor {
-            font-size: clamp(1.8rem, 6vw, 2.8rem);
+            font-size: clamp(2.2rem, 7vw, 3.5rem);
+            font-weight: 900;
           }
         }
       `}</style>
