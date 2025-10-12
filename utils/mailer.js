@@ -71,4 +71,61 @@ module.exports = {
       html: htmlContent,
     });
   },
+
+  /**
+   * Mengirim CV ke email user
+   */
+  async sendCVEmail({ email, cvDownloadUrl }) {
+    // Versi teks (fallback)
+    const textContent = [
+      '📄 CV Aryan Zaky Prayogo',
+      '',
+      'Terima kasih sudah request CV saya!',
+      '',
+      `Download CV di sini: ${cvDownloadUrl}`,
+      '',
+      '✨ CV ini optimized untuk ATS parsing dan siap dibagikan ke recruiter.',
+      '',
+      'Butuh format lain atau ada pertanyaan? Langsung hubungi saya melalui AryanStack!',
+      '',
+      'Best regards,',
+      'Aryan Zaky Prayogo 🚀',
+    ].join('\n');
+
+    // Versi HTML interaktif & colorful
+    const htmlContent = `
+      <div style="font-family: 'Inter', Arial, sans-serif; line-height: 1.7; color: #111827; background: #f9fafb; padding:20px; border-radius:12px;">
+        <h2 style="color:#2563eb;">📄 CV Aryan Zaky Prayogo</h2>
+        <p>Terima kasih sudah request <strong>CV saya</strong>! 🎉</p>
+        <p>Klik tombol di bawah untuk download CV dalam format PDF:</p>
+        <p style="text-align:center; margin: 24px 0;">
+          <a href="${cvDownloadUrl}" style="
+            display:inline-block;
+            background: linear-gradient(90deg, #10b981, #06b6d4);
+            color:#fff;
+            padding:14px 32px;
+            border-radius:12px;
+            text-decoration:none;
+            font-weight:bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease-in-out;
+          " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            📥 Download CV
+          </a>
+        </p>
+        <p style="font-size:14px; color:#6b7280; text-align:center;">✨ CV ini sudah <strong>optimized untuk ATS parsing</strong> dan siap dibagikan ke recruiter!</p>
+        <hr style="border:none; border-top:1px solid #e5e7eb; margin:24px 0;">
+        <p style="text-align:center;">💡 Butuh format lain atau ada pertanyaan? Langsung hubungi saya melalui <strong>AryanStack</strong>!</p>
+        <p style="text-align:center; font-weight:bold;">Best regards,<br/><strong>Aryan Zaky Prayogo</strong> 🚀</p>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to: email,
+      subject: '📄 CV Aryan Zaky Prayogo - Download Link',
+      text: textContent,
+      html: htmlContent,
+    });
+  },
 };
