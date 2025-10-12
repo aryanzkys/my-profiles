@@ -11,6 +11,9 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET_TOKENS || 'app_data';
 const SUPABASE_OBJECT = process.env.SUPABASE_OBJECT_TOKENS || 'password-reset-tokens.json';
 
+// Fallback in-memory store (untuk lingkungan serverless yang read-only)
+const inMemoryTokens = new Map();
+
 const supabaseHeaders = SUPABASE_SERVICE_ROLE_KEY ? {
   apikey: SUPABASE_SERVICE_ROLE_KEY,
   Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
@@ -164,6 +167,54 @@ function pruneRecords(records) {
   });
 }
 
+function pruneInMemory() {
+  const now = Date.now();
+  for (const [token, detail] of inMemoryTokens.entries()) {
+    const exp = new Date(detail.expires_at).getTime();
+    if (detail.used || Number.isNaN(exp) || exp <= now) {
+      inMemoryTokens.delete(token);
+    }
+  }
+}
+
+function removeInMemoryByEmail(email) {
+  for (const [token, detail] of inMemoryTokens.entries()) {
+    if (detail.email === email) {
+      inMemoryTokens.delete(token);
+    }
+  }
+}
+
+function storeInMemory(record) {
+  pruneInMemory();
+  removeInMemoryByEmail(record.email);
+  inMemoryTokens.set(record.token, record);
+}
+
+function getInMemory(token) {
+  pruneInMemory();
+  const detail = inMemoryTokens.get(token);
+  if (!detail) return null;
+  const exp = new Date(detail.expires_at).getTime();
+  if (detail.used || Number.isNaN(exp) || exp <= Date.now()) {
+    inMemoryTokens.delete(token);
+    return null;
+  }
+  return detail;
+}
+
+function markUsedInMemory(token) {
+  const detail = inMemoryTokens.get(token);
+  if (!detail) return;
+  detail.used = true;
+  detail.used_at = nowIso();
+  inMemoryTokens.set(token, detail);
+}
+
+function deleteInMemory(token) {
+  inMemoryTokens.delete(token);
+}
+
 module.exports = {
   /**
    * Membuat token reset baru dan menyimpannya di penyimpanan persisten.
@@ -182,9 +233,13 @@ module.exports = {
     };
 
     try {
+      removeInMemoryByEmail(normalized);
       await restDeleteByEmail(normalized);
       const ok = await restUpsertToken(record);
-      if (ok) return token;
+      if (ok) {
+        storeInMemory(record);
+        return token;
+      }
     } catch (err) {
       console.error('Gagal menyimpan token via Supabase REST:', err?.message || err);
     }
@@ -196,7 +251,10 @@ module.exports = {
         const cleaned = pruneRecords(records).filter((row) => normalizeEmail(row.email) !== normalized);
         cleaned.push(record);
         const ok = await storageWrite(cleaned);
-        if (ok) return token;
+        if (ok) {
+          storeInMemory(record);
+          return token;
+        }
       }
     } catch (err) {
       console.error('Gagal menyimpan token ke storage Supabase:', err?.message || err);
@@ -207,12 +265,15 @@ module.exports = {
     const cleaned = pruneRecords(local).filter((row) => normalizeEmail(row.email) !== normalized);
     cleaned.push(record);
     const ok = await writeLocalFile(cleaned);
-    if (!ok) throw new Error('Gagal menyimpan token reset password.');
+    if (!ok) {
+      console.warn('Gagal menyimpan token reset password ke filesystem. Menggunakan in-memory fallback.');
+    }
+    storeInMemory(record);
     return token;
   },
 
   /**
-   * Mengambil detail token jika masih valid.
+   * Mengambil detail token jika masih valid melalui in-memory fallback.
    */
   async lookupToken(token) {
     if (!token) return null;
@@ -224,6 +285,13 @@ module.exports = {
           await restDeleteByToken(token);
           return null;
         }
+        storeInMemory({
+          token,
+          email: normalizeEmail(viaRest.email),
+          expires_at: viaRest.expires_at,
+          used: !!viaRest.used,
+          created_at: viaRest.created_at || nowIso(),
+        });
         return {
           email: normalizeEmail(viaRest.email),
           expiresAt: new Date(viaRest.expires_at).getTime(),
@@ -234,13 +302,13 @@ module.exports = {
       console.error('Gagal membaca token via Supabase REST:', err?.message || err);
     }
 
-    // Cek di Supabase Storage
     try {
       const records = await storageRead();
       if (Array.isArray(records)) {
         const cleaned = pruneRecords(records);
         const match = cleaned.find((row) => row.token === token);
         if (match) {
+          storeInMemory(match);
           return {
             email: normalizeEmail(match.email),
             expiresAt: new Date(match.expires_at).getTime(),
@@ -255,18 +323,30 @@ module.exports = {
       console.error('Gagal membaca token dari storage Supabase:', err?.message || err);
     }
 
-    // Cek filesystem lokal
     const local = await readLocalFile();
     const cleaned = pruneRecords(local);
     const match = cleaned.find((row) => row.token === token);
     if (cleaned.length !== local.length) {
-      await writeLocalFile(cleaned);
+      const ok = await writeLocalFile(cleaned);
+      if (!ok && match) {
+        storeInMemory(match);
+      }
     }
-    if (!match) return null;
+    if (match) {
+      storeInMemory(match);
+      return {
+        email: normalizeEmail(match.email),
+        expiresAt: new Date(match.expires_at).getTime(),
+        used: !!match.used,
+      };
+    }
+
+    const memoryMatch = getInMemory(token);
+    if (!memoryMatch) return null;
     return {
-      email: normalizeEmail(match.email),
-      expiresAt: new Date(match.expires_at).getTime(),
-      used: !!match.used,
+      email: normalizeEmail(memoryMatch.email),
+      expiresAt: new Date(memoryMatch.expires_at).getTime(),
+      used: !!memoryMatch.used,
     };
   },
 
@@ -278,7 +358,10 @@ module.exports = {
 
     try {
       const restOk = await restMarkUsed(token);
-      if (restOk) return;
+      if (restOk) {
+        markUsedInMemory(token);
+        return;
+      }
     } catch (err) {
       console.error('Gagal menandai token via REST:', err?.message || err);
     }
@@ -291,6 +374,7 @@ module.exports = {
           return { ...row, used: true, used_at: nowIso() };
         });
         await storageWrite(next);
+        markUsedInMemory(token);
         return;
       }
     } catch (err) {
@@ -303,6 +387,7 @@ module.exports = {
       return { ...row, used: true, used_at: nowIso() };
     });
     await writeLocalFile(next);
+    markUsedInMemory(token);
   },
 
   /**
@@ -313,7 +398,10 @@ module.exports = {
 
     try {
       const restOk = await restDeleteByToken(token);
-      if (restOk) return;
+      if (restOk) {
+        deleteInMemory(token);
+        return;
+      }
     } catch (err) {
       console.error('Gagal menghapus token via REST:', err?.message || err);
     }
@@ -323,6 +411,7 @@ module.exports = {
       if (Array.isArray(records)) {
         const next = records.filter((row) => row.token !== token);
         await storageWrite(next);
+        deleteInMemory(token);
         return;
       }
     } catch (err) {
@@ -332,5 +421,6 @@ module.exports = {
     const local = await readLocalFile();
     const next = local.filter((row) => row.token !== token);
     await writeLocalFile(next);
+    deleteInMemory(token);
   },
 };
