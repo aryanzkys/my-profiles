@@ -22,6 +22,10 @@ export default function CvShowcasePage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [timeLeft, setTimeLeft] = useState(LOADING_DURATION);
   const [showContent, setShowContent] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [email, setEmail] = useState('');
+  const [emailStatus, setEmailStatus] = useState({ message: '', isError: false });
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     const countdown = window.setInterval(() => {
@@ -37,6 +41,44 @@ export default function CvShowcasePage() {
 
     return () => window.clearInterval(countdown);
   }, []);
+
+  const handleSendEmail = async (e) => {
+    e.preventDefault();
+    setEmailStatus({ message: '', isError: false });
+
+    // Validate email
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailStatus({ message: 'Masukkan alamat email yang valid', isError: true });
+      return;
+    }
+
+    setIsSending(true);
+
+    try {
+      const response = await fetch('/.netlify/functions/send-cv-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setEmailStatus({ message: data.message || 'CV berhasil dikirim ke email Anda!', isError: false });
+        setEmail('');
+        setTimeout(() => {
+          setShowEmailModal(false);
+          setEmailStatus({ message: '', isError: false });
+        }, 3000);
+      } else {
+        setEmailStatus({ message: data.error || 'Gagal mengirim email', isError: true });
+      }
+    } catch (error) {
+      setEmailStatus({ message: 'Terjadi kesalahan. Silakan coba lagi.', isError: true });
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   const tabContent = useMemo(() => {
     if (activeTab === 'preview') {
@@ -88,6 +130,7 @@ export default function CvShowcasePage() {
             <ul className="mt-3 space-y-2 text-sm text-neutral-300">
               <li>• Load the embedded preview to skim directly on the site.</li>
               <li>• Use smart download for a ready-to-share PDF.</li>
+              <li>• Send CV to your email for easy access anywhere.</li>
               <li>• Need an alternate format? Ping me through AryanStack&apos;s chat assistant.</li>
             </ul>
           </div>
@@ -257,6 +300,12 @@ export default function CvShowcasePage() {
                   >
                     Download PDF
                   </a>
+                  <button
+                    onClick={() => setShowEmailModal(true)}
+                    className="inline-flex items-center justify-center rounded-xl border border-emerald-400/40 bg-emerald-500/20 px-5 py-2.5 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/30 hover:border-emerald-400/60"
+                  >
+                    Send to Email
+                  </button>
                   <a
                     href={CV_VIEW_URL.replace('/preview', '/view')}
                     target="_blank"
@@ -331,6 +380,92 @@ export default function CvShowcasePage() {
         </motion.div>
       </div>
       </div>
+
+      {/* Email Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative w-full max-w-md rounded-3xl border border-neutral-800/60 bg-neutral-900/95 p-6 shadow-2xl backdrop-blur-xl"
+          >
+            <button
+              onClick={() => {
+                setShowEmailModal(false);
+                setEmailStatus({ message: '', isError: false });
+                setEmail('');
+              }}
+              className="absolute right-4 top-4 rounded-lg p-2 text-neutral-400 transition hover:bg-neutral-800/60 hover:text-neutral-200"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.35em] text-emerald-400">Send to Email</p>
+                <h3 className="mt-2 text-xl font-semibold text-neutral-50">Get CV in Your Inbox</h3>
+                <p className="mt-2 text-sm text-neutral-400">
+                  Masukkan alamat email Anda dan kami akan mengirimkan link download CV langsung ke inbox Anda.
+                </p>
+              </div>
+
+              <form onSubmit={handleSendEmail} className="space-y-4">
+                <div>
+                  <label htmlFor="email-input" className="block text-sm font-medium text-neutral-300">
+                    Email Address
+                  </label>
+                  <input
+                    id="email-input"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="mt-2 w-full rounded-lg border border-neutral-700 bg-neutral-800/60 px-4 py-2.5 text-sm text-neutral-100 placeholder-neutral-500 transition focus:border-emerald-400/60 focus:outline-none focus:ring-2 focus:ring-emerald-400/40"
+                    required
+                    disabled={isSending}
+                  />
+                </div>
+
+                {emailStatus.message && (
+                  <div
+                    className={`rounded-lg border px-4 py-3 text-sm ${
+                      emailStatus.isError
+                        ? 'border-red-400/40 bg-red-500/10 text-red-300'
+                        : 'border-emerald-400/40 bg-emerald-500/10 text-emerald-300'
+                    }`}
+                  >
+                    {emailStatus.message}
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEmailModal(false);
+                      setEmailStatus({ message: '', isError: false });
+                      setEmail('');
+                    }}
+                    className="flex-1 rounded-xl border border-neutral-700 px-4 py-2.5 text-sm font-semibold text-neutral-300 transition hover:border-neutral-600 hover:bg-neutral-800/60"
+                    disabled={isSending}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSending}
+                    className="flex-1 rounded-xl bg-emerald-500/90 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSending ? 'Sending...' : 'Send CV'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </main>
   );
 }
