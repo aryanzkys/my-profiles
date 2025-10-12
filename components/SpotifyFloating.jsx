@@ -908,10 +908,10 @@ export default function SpotifyFloating() {
               </div>
 
               <div className="p-3 space-y-3 overflow-y-auto min-h-0">
-                <div className="text-[13px] text-gray-300">Hey, what do you wanna listen to while chatting with Aryan’s AI? 🎶</div>
+                <div className="text-[13px] text-gray-300">Ayo bestie, what tunes you tryna vibe to while chatting with the Royal AI? 🎶👑</div>
 
                 {!token && (
-                  <div className="text-xs text-gray-400">You’re not connected. Click “Connect Spotify” to search and play previews.</div>
+                  <div className="text-xs text-gray-400">Yo, you're not linked up yet, fam! Hit 'Connect Spotify' to search bangers and preview tracks. 🔥</div>
                 )}
 
                 {/* Search type toggle */}

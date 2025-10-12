@@ -274,7 +274,7 @@ export default function SpotifySection() {
                 loading="eager"
                 decoding="async"
               />
-              <span>Tune Your AI Vibes</span>
+              <span>Tune Your Royal Vibes</span>
             </div>
             {token && (
               <div className="hidden sm:flex items-center gap-2 text-xs text-green-300">
@@ -293,7 +293,7 @@ export default function SpotifySection() {
           </div>
 
           <div className="p-4 space-y-4">
-            <div className="text-[13px] text-gray-300">Put on some music while chatting with Aryan’s AI Assistant 🎶</div>
+            <div className="text-[13px] text-gray-300">Put on some bangers while vibing with Aryan's Royal AI Advisor 🎶👑</div>
             {!token && (
               <div className="text-xs text-gray-400">You’re not connected. Click “Connect Spotify” to search and play previews.</div>
             )}
