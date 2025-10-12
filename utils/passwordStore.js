@@ -8,6 +8,9 @@ const SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET_PASSWORDS || 'app_data';
 const SUPABASE_OBJECT = process.env.SUPABASE_OBJECT_PASSWORDS || 'admin-passwords.json';
+const SUPABASE_ADMINS_BUCKET = process.env.SUPABASE_BUCKET_ADMINS || 'app_data';
+const SUPABASE_ADMINS_OBJECT = process.env.SUPABASE_OBJECT_ADMINS || 'admins.json';
+const OWNER_EMAIL = (process.env.OWNER_EMAIL || process.env.NEXT_PUBLIC_OWNER_EMAIL || 'prayogoaryan63@gmail.com').toLowerCase();
 
 const PASSWORD_SALT_ROUNDS = Number(process.env.PASSWORD_SALT_ROUNDS || 12);
 
@@ -107,6 +110,47 @@ function normalizeEmail(email) {
   return (email || '').trim().toLowerCase();
 }
 
+async function storageReadAdmins() {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
+  const url = `${SUPABASE_URL}/storage/v1/object/${encodeURIComponent(SUPABASE_ADMINS_BUCKET)}/${SUPABASE_ADMINS_OBJECT}`;
+  const res = await fetch(url, { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } });
+  if (!res.ok) return null;
+  const text = await res.text();
+  try {
+    const parsed = JSON.parse(text);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+async function restAdminAuthorityExists(email) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
+  const url = `${SUPABASE_URL}/rest/v1/admin_authorities?email=eq.${encodeURIComponent(email)}&select=email&limit=1`;
+  const res = await fetch(url, { headers: { ...supabaseHeaders, Accept: 'application/json' } });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    if (res.status === 404 && /Could not find the table/i.test(text)) return null;
+    throw new Error(`Supabase REST fetch admin_authorities failed (${res.status})`);
+  }
+  const rows = await res.json();
+  if (!Array.isArray(rows) || !rows.length) return null;
+  return rows[0];
+}
+
+async function localAdminsExists(email) {
+  try {
+    const adminsFile = path.join(DATA_DIR, 'admins.json');
+    if (!fs.existsSync(adminsFile)) return false;
+    const raw = fs.readFileSync(adminsFile, 'utf8');
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return false;
+    return arr.some((row) => row && normalizeEmail(row.email) === email);
+  } catch {
+    return false;
+  }
+}
+
 module.exports = {
   /**
    * Mengecek apakah admin dengan email tertentu memiliki password tersimpan.
@@ -114,6 +158,9 @@ module.exports = {
   async emailExists(email) {
     const normalized = normalizeEmail(email);
     if (!normalized) return false;
+
+     // Owner selalu dianggap ada agar tidak terblokir reset password
+    if (normalized === OWNER_EMAIL) return true;
 
     try {
       const viaRest = await restFetchByEmail(normalized);
@@ -133,7 +180,32 @@ module.exports = {
     }
 
     const local = await readLocalFile();
-    return local.some((row) => row && normalizeEmail(row.email) === normalized);
+    if (local.some((row) => row && normalizeEmail(row.email) === normalized)) {
+      return true;
+    }
+
+    // Tambahan: cek tabel admin_authorities atau fallback admins.json
+    try {
+      const adminAuthority = await restAdminAuthorityExists(normalized);
+      if (adminAuthority) return true;
+    } catch (err) {
+      console.error('Gagal memeriksa admin_authorities:', err?.message || err);
+    }
+
+    try {
+      const adminStorage = await storageReadAdmins();
+      if (Array.isArray(adminStorage) && adminStorage.some((row) => row && normalizeEmail(row.email) === normalized)) {
+        return true;
+      }
+    } catch (err) {
+      console.error('Gagal membaca admins.json dari storage:', err?.message || err);
+    }
+
+    if (await localAdminsExists(normalized)) {
+      return true;
+    }
+
+    return false;
   },
 
   /**

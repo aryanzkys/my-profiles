@@ -3,6 +3,7 @@ const rateLimit = require('express-rate-limit');
 const mailer = require('../utils/mailer');
 const tokenStore = require('../utils/tokenStore');
 const passwordStore = require('../utils/passwordStore');
+const adminStore = require('../utils/adminStore');
 
 const router = express.Router();
 
@@ -32,15 +33,15 @@ router.post('/request-reset', requestResetLimiter, async (req, res, next) => {
 
   // Mengecek ke storage cred admin tanpa membocorkan status ke klien.
   // Respons ke klien tetap sama walaupun email tidak ditemukan.
-    let exists = false;
+    let registered = false;
     try {
-      exists = await passwordStore.emailExists(normalizedEmail);
+      registered = await adminStore.emailExists(normalizedEmail);
     } catch (checkErr) {
-      console.error('Gagal mengecek keberadaan email admin:', checkErr?.message || checkErr);
+      console.error('Gagal mengecek keberadaan admin:', checkErr?.message || checkErr);
       return res.status(500).json({ message: 'Gagal memproses permintaan reset password.' });
     }
 
-    if (!exists) {
+    if (!registered) {
       return res.status(404).json({ message: 'Email belum terdaftar. Silakan sign up terlebih dahulu.' });
     }
 
