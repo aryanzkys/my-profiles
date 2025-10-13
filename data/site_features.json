@@ -1,95 +1,763 @@
 {
-  "global": {
-    "chatbot": [
-      "Floating Chatbot shows on all routes except /AI and admin/login; on /AI it renders full-screen inside the page.",
-      "History persists locally; Clear chat button resets the conversation.",
-      "Keyboard: Enter to send, Shift+Enter for newline; Esc closes the floating chat window.",
-      "Short, friendly answers; supports Markdown (bold, lists, links, inline code)."
-    ],
-    "links": [
+  "site_metadata": {
+    "name": "Aryan's Portfolio",
+    "description": "Interactive 3D portfolio with AI assistant, admin platform, and mini games",
+    "owner": "Aryan Zaky Prayogo",
+    "role": "Aspiring DevSecOps Engineer • Computer Science Student",
+    "university": "Brawijaya University",
+    "primary_urls": [
       "https://aryanstack.netlify.app",
-      "https://aryanstack.netlify.app/ai"
-    ],
-    "routes": [
-  "/ — Main Site with immersive 3D background and Overlay navigation.",
-  "/AI — Dedicated AI page with full-screen Chatbot and inline Spotify section.",
-  "/cv — Harvard-style bullet-point CV with a Download PDF (print) button."
+      "https://aryanstack.netlify.app/ai",
+      "https://aryanstack.netlify.app/cv"
     ]
   },
-  "main_site": {
-    "navigation": [
-      "Top bar with buttons: Home, About, Achievements, Education, Organizations, Projects, Contact, Message.",
-      "Switch sections by clicking buttons; About’s \"View Achievements\" also jumps to Achievements."
-    ],
-    "home": [
-      "Center hero text: ‘Hi, I'm Aryan – Computer Science Student’ with subtitle ‘Aspiring DevSecOps Engineer’."
-    ],
-    "about": [
-      "Interactive 3D-hover profile card with holographic avatar and light-following glow.",
-      "Stats pills and CTAs: Contact Me (mailto), View Achievements (navigates), GitHub link."
-    ],
-    "achievements": [
-      "Year-based timeline; each entry may include a certificate.",
-      "Preview certificate inline (Eye button) or open in Google Drive (Open button)."
-    ],
-    "education": [
-      "Scrollable timeline with animated progress line; active item tracks scroll/mouse position.",
-      "Logos shown for Brawijaya University and SMA Negeri 1 Singosari when applicable."
-    ],
-    "organizations": [
-      "Filter tabs: All, Active, Past; search box filters by org/role/year.",
-      "Cards highlight Active roles; grid adapts responsively."
-    ],
-    "projects": [
-      "Mini Games: tabs for Chess and Flappy Bird; scores/settings persist locally.",
-      "Banner notes the section is WIP and invites playing the mini games."
-    ],
-    "contact": [
-      "List of social links with copy buttons (copy link or handle).",
-      "Includes Email, LinkedIn, Instagram, GitHub; X is noted as ‘on development’."
-    ],
-    "message": [
-      "Send a direct message: Instagram username (optional, validated), Initials/Name (required), Message (required, 500 chars).",
-      "Shows success/fail status; sanitizes @username and validates via serverless API."
-    ],
-    "performance": [
-      "Performance button opens settings: Auto (device-aware), Lite (reduced motion), High (full effects)."
-    ],
-    "visuals": [
-      "Full-viewport 3D scene background, glassy overlay UI, mobile notice, optional shutdown overlay."
-    ]
+  "pages": {
+    "public_pages": {
+      "/": {
+        "name": "Home / Main Portfolio",
+        "description": "Immersive 3D hero page with overlay navigation system",
+        "features": [
+          "Full-viewport 3D Spline scene background with interactive elements",
+          "Animated overlay navigation with glassy morphism UI",
+          "Sections: Home hero, About, Achievements, Education, Organizations, Projects, Contact, Message",
+          "Performance settings: Auto (device-aware), Lite (reduced motion), High (full effects)",
+          "Mobile notice for optimal viewing experience",
+          "Announcement popup system with target filtering (main/ai/both)",
+          "Shutdown overlay for maintenance mode",
+          "Animated cursor with custom interactions"
+        ]
+      },
+      "/AI": {
+        "name": "AI Assistant Page",
+        "description": "Full-screen AI chatbot with Spotify integration",
+        "features": [
+          "Full-screen Gemini-powered chatbot with context about Aryan's profile",
+          "Persistent conversation history with local storage",
+          "Clear chat functionality",
+          "Markdown rendering support (bold, lists, links, inline code)",
+          "Typing indicator and slow-processing UX hints",
+          "Quick question suggestions for common queries",
+          "Spotify integration section ('Tune Your AI Vibes')",
+          "Ambient particle field background with gradient glows",
+          "3D tilt effect on chat card (reduced on mobile)",
+          "Announcement popup scoped to AI target",
+          "Privacy banner with link to AI privacy policy",
+          "Feedback capture system for AI responses"
+        ]
+      },
+      "/cv": {
+        "name": "Curriculum Vitae",
+        "description": "Harvard-style résumé with download functionality",
+        "features": [
+          "Professional CV layout with personal information",
+          "Download as PDF button (print functionality)",
+          "Achievements timeline with certificate links",
+          "Educational background with institutions and dates",
+          "Skills and competencies display",
+          "Responsive design for various screen sizes"
+        ]
+      },
+      "/login": {
+        "name": "Admin Login",
+        "description": "Authentication page for admin access",
+        "features": [
+          "Firebase authentication integration",
+          "Email/password login",
+          "Google OAuth login",
+          "reCAPTCHA v3 verification (optional)",
+          "Login attempt logging",
+          "Redirect to admin dashboard on success",
+          "Announcement gate awareness"
+        ]
+      },
+      "/message-to-aryan": {
+        "name": "Direct Messaging",
+        "description": "Contact form for sending messages to Aryan",
+        "features": [
+          "Instagram username input (optional, validated)",
+          "Name/Initials field (required)",
+          "Message textarea (required, 500 character limit)",
+          "Instagram username sanitization (@username)",
+          "Validation via serverless API",
+          "Success/failure status display",
+          "Message submission to moderation queue",
+          "Netlify/Next API proxying"
+        ]
+      },
+      "/ai-privacy": {
+        "name": "AI Privacy Policy",
+        "description": "Privacy statement for AI assistant usage",
+        "features": [
+          "Collapsible sections for different privacy aspects",
+          "Data collection and usage disclosure",
+          "Information sourced from ai_privacy.json",
+          "Clear formatting with timeline cards"
+        ]
+      },
+      "/privacy": {
+        "name": "Privacy Policy",
+        "description": "Site-wide privacy policy",
+        "features": [
+          "Comprehensive privacy statement",
+          "Data handling and retention policies",
+          "User rights information",
+          "Timeline card rendering"
+        ]
+      },
+      "/terms": {
+        "name": "Terms of Service",
+        "description": "Terms and conditions for site usage",
+        "features": [
+          "Legal terms and conditions",
+          "Usage guidelines",
+          "Timeline card format"
+        ]
+      },
+      "/patch": {
+        "name": "Release Notes",
+        "description": "Version history and patch notes",
+        "features": [
+          "Release notes display",
+          "Patch history from patches.json",
+          "Version information",
+          "Change log with categorized updates"
+        ]
+      },
+      "/sign-me": {
+        "name": "Signature Request",
+        "description": "Document signature request submission",
+        "features": [
+          "PDF file upload functionality",
+          "Email validation",
+          "Supabase storage integration",
+          "Signature request status tracking",
+          "Bucket existence verification",
+          "Upload progress indication"
+        ]
+      },
+      "/reset-password": {
+        "name": "Password Reset",
+        "description": "Token-based password reset handler",
+        "features": [
+          "Token validation from email link",
+          "New password input with confirmation",
+          "Integration with auth-service functions",
+          "Success/error messaging",
+          "30-minute token expiration"
+        ]
+      }
+    },
+    "admin_pages": {
+      "/admin-dashboard": {
+        "name": "Admin Dashboard Landing",
+        "description": "Post-login welcome screen",
+        "features": [
+          "Cinematic warp transition animation",
+          "Automatic redirect to main admin panel",
+          "Welcome message"
+        ]
+      },
+      "/admin": {
+        "name": "Admin Control Panel",
+        "description": "Main administrative interface",
+        "features": [
+          "Role-based access control (Owner vs Admin)",
+          "Authority management: canEditSections, canAccessDev, banned flags",
+          "Tabbed interface with sections:",
+          "- Achievements Editor: CRUD operations for achievements with certificates",
+          "- Education Editor: Manage educational timeline entries",
+          "- Organizations Editor: Manage organization memberships and roles",
+          "- Announcements Manager: Create/edit/delete announcements with target selection",
+          "- Admin Profile: View/edit own profile, change password with re-authentication",
+          "- Developer Operations: Owner-only access to advanced tools",
+          "- Messages Moderation: Review and manage contact form submissions",
+          "Firebase profile management",
+          "Supabase-first persistence with fallbacks",
+          "Optimistic UI updates",
+          "Live presence system with heartbeat",
+          "Admin roster showing online/offline status",
+          "Audit logging for all administrative actions",
+          "Login logs with filtering and pagination",
+          "Site flags editor (maintenance mode toggle)",
+          "Keyboard shortcuts support",
+          "Real-time presence indicators"
+        ]
+      },
+      "/admin/sign-requests": {
+        "name": "Signature Request Reviewer",
+        "description": "Review and manage signature requests",
+        "features": [
+          "List all signature requests with status",
+          "Update request status (pending/approved/rejected)",
+          "Upload signed documents",
+          "Audit logging for status changes",
+          "Document preview functionality",
+          "Email notification integration"
+        ]
+      }
+    }
   },
-  "ai_page": {
-    "header": [
-      "British coat of arms icon left of the title.",
-      "RGB gradient title with elegant periodic sheen and mouse-responsive highlight.",
-      "Description: ‘Your intelligent gateway to explore Aryan’s journey and insights…’."
-    ],
-    "chatbot": [
-      "Full-screen Chatbot card with Clear chat, persistent history, and Markdown rendering.",
-      "Typing indicator and slow-processing hint, draggable in floating mode (not on /AI)."
-    ],
-    "spotify": [
-      "Inline ‘Tune Your AI Vibes’ section with small Spotify logo.",
-      "Connect via Spotify OAuth PKCE; Disconnect supported; token auto-refresh.",
-      "Search Tracks or Playlists; ‘Preview only’ filter for Tracks; recent queries chips.",
-      "Play 30s audio previews (Play/Pause/Stop). Embed track/playlist via button or paste a Spotify URL.",
-      "No ‘Now Playing’ queue or Web Playback SDK — previews and embeds only."
-    ],
-    "visuals": [
-      "Ambient particle field, gradient glows, subtle grid, and gentle 3D tilt on the chat card.",
-      "Reduced motion on mobile for comfort/performance."
-    ],
-    "access": [
-      "Floating Chatbot button is hidden on /AI to avoid duplication; use the full-screen Chatbot instead."
-    ]
+  "components": {
+    "layout_components": {
+      "Scene": {
+        "description": "3D Spline scene background renderer",
+        "features": [
+          "Embedded Spline scene with URL configuration",
+          "Performance-aware rendering",
+          "Fallback handling for failed loads"
+        ]
+      },
+      "Overlay": {
+        "description": "Main navigation and content overlay system",
+        "features": [
+          "Glassy morphism UI design",
+          "Section switching via top navigation bar",
+          "Smooth transitions between sections",
+          "Responsive layout adaptation"
+        ]
+      },
+      "MobileNotice": {
+        "description": "Mobile device notification",
+        "features": [
+          "Desktop viewing recommendation",
+          "Dismissible notice",
+          "Device detection"
+        ]
+      },
+      "ShutdownOverlay": {
+        "description": "Maintenance mode overlay",
+        "features": [
+          "Full-screen maintenance message",
+          "Site flags integration",
+          "Admin bypass capability"
+        ]
+      },
+      "AnnouncementPopup": {
+        "description": "Dynamic announcement system",
+        "features": [
+          "Target-based filtering (main/ai/both)",
+          "Route-based gating",
+          "Expiry handling",
+          "CTA button support",
+          "Session-scoped dismissals",
+          "Mobile preview toggle",
+          "Optimistic draft preview",
+          "Version tracking"
+        ]
+      }
+    },
+    "portfolio_sections": {
+      "About": {
+        "description": "Personal profile section",
+        "features": [
+          "Interactive 3D-hover profile card",
+          "Holographic avatar effect",
+          "Light-following glow animation",
+          "Stats pills display",
+          "Call-to-action buttons: Contact Me (mailto), View Achievements, GitHub link",
+          "Personal bio and background information"
+        ]
+      },
+      "Achievements": {
+        "description": "Awards and achievements timeline",
+        "features": [
+          "Year-based timeline organization",
+          "Certificate preview (Eye button - inline preview)",
+          "Certificate open in Google Drive (Open button)",
+          "Achievement descriptions with emojis",
+          "Responsive grid layout"
+        ]
+      },
+      "Education": {
+        "description": "Educational background timeline",
+        "features": [
+          "Scrollable animated timeline",
+          "Progress line animation",
+          "Active item tracking with scroll/mouse position",
+          "Institution logos (Brawijaya University, SMA Negeri 1 Singosari)",
+          "Degree and date information"
+        ]
+      },
+      "Organizations": {
+        "description": "Organization memberships display",
+        "features": [
+          "Filter tabs: All, Active, Past",
+          "Search functionality by organization/role/year",
+          "Active role highlighting",
+          "Responsive card grid",
+          "Organization details with roles and dates"
+        ]
+      },
+      "Projects": {
+        "description": "Projects and mini games showcase",
+        "features": [
+          "Work-in-progress banner",
+          "Mini games section with tabs",
+          "Chess game integration",
+          "Flappy Bird game integration",
+          "Local storage for scores and settings",
+          "Invitation to play while section is under development"
+        ]
+      },
+      "Contact": {
+        "description": "Social media and contact links",
+        "features": [
+          "Social links list with icons",
+          "Copy buttons (copy link or handle)",
+          "Supported platforms: Email, LinkedIn, Instagram, GitHub",
+          "X/Twitter noted as 'in development'",
+          "Click-to-copy functionality"
+        ]
+      },
+      "MessageToAryan": {
+        "description": "Direct message submission component",
+        "features": [
+          "Form validation",
+          "Character counter (500 max)",
+          "Instagram username sanitization",
+          "Optimistic send UX",
+          "Success/error messaging"
+        ]
+      }
+    },
+    "ai_and_interactive": {
+      "Chatbot": {
+        "description": "AI-powered chatbot interface",
+        "features": [
+          "Floating mode: Shows on all routes except /AI and /admin/login",
+          "Full-screen mode: Renders inside /AI page",
+          "Local conversation history persistence",
+          "Clear chat button",
+          "Markdown rendering (bold, lists, links, inline code)",
+          "Keyboard shortcuts: Enter to send, Shift+Enter for newline, Esc to close",
+          "Typing indicator with animations",
+          "Slow-processing hints for user awareness",
+          "Draggable in floating mode",
+          "Google Gemini integration",
+          "Context-aware responses about Aryan's profile",
+          "Feedback capture system"
+        ]
+      },
+      "SpotifySection": {
+        "description": "Spotify integration for AI page",
+        "features": [
+          "Spotify OAuth PKCE authentication",
+          "Connect/Disconnect functionality",
+          "Token auto-refresh mechanism",
+          "Search functionality for Tracks and Playlists",
+          "'Preview only' filter for tracks with 30s samples",
+          "Recent query chips for quick access",
+          "Audio preview player (Play/Pause/Stop controls)",
+          "Embed track/playlist via button",
+          "Paste Spotify URL to auto-embed",
+          "No full playback or Web Playback SDK",
+          "Preview-only mode with 30-second samples"
+        ]
+      },
+      "SpotifyFloating": {
+        "description": "Floating Spotify widget",
+        "features": [
+          "Minimized floating widget",
+          "Quick access to Spotify features",
+          "Expandable interface"
+        ]
+      },
+      "MiniChess": {
+        "description": "Interactive chess game",
+        "features": [
+          "Full chess game implementation using chess.js",
+          "React-chessboard integration",
+          "Local game state persistence",
+          "Move validation",
+          "Game history tracking",
+          "Score persistence"
+        ]
+      },
+      "MiniFlappy": {
+        "description": "Flappy Bird game (Canvas version)",
+        "features": [
+          "Canvas-based game rendering",
+          "Score tracking",
+          "Local high score persistence",
+          "Game restart functionality",
+          "Collision detection"
+        ]
+      },
+      "MiniFlappyPhaser": {
+        "description": "Flappy Bird game (Phaser version)",
+        "features": [
+          "Phaser 3 game engine integration",
+          "Enhanced graphics and animations",
+          "Physics-based gameplay",
+          "Score system with local persistence",
+          "Multiple game states (menu, playing, game over)"
+        ]
+      }
+    },
+    "visual_effects": {
+      "ParticleField": {
+        "description": "Ambient particle animation system",
+        "features": [
+          "Canvas-based particle rendering",
+          "Performance-optimized animations",
+          "Used on /AI page for ambient effects",
+          "Responsive to screen size"
+        ]
+      },
+      "AnimatedCursor": {
+        "description": "Custom cursor with animations",
+        "features": [
+          "Custom cursor styling",
+          "Interaction feedback",
+          "Hover state animations",
+          "Desktop-only (hidden on mobile)"
+        ]
+      },
+      "MicroSpline": {
+        "description": "Micro Spline experiments",
+        "features": [
+          "Small 3D scene experiments",
+          "Interactive elements",
+          "Performance testing"
+        ]
+      }
+    },
+    "admin_components": {
+      "Dashboard": {
+        "description": "Admin dashboard component",
+        "features": [
+          "Statistics overview",
+          "Quick access links",
+          "Activity summary"
+        ]
+      },
+      "AdminPanel/DevSection": {
+        "description": "Developer operations panel",
+        "features": [
+          "Owner-only access",
+          "Advanced configuration tools",
+          "Audit trail viewer",
+          "System diagnostics",
+          "Database management tools"
+        ]
+      },
+      "LoginForm": {
+        "description": "Authentication form component",
+        "features": [
+          "Email/password fields",
+          "Google OAuth button",
+          "reCAPTCHA integration",
+          "Form validation",
+          "Error handling"
+        ]
+      },
+      "SignatureEditor": {
+        "description": "Digital signature editor",
+        "features": [
+          "Canvas-based signature drawing",
+          "Clear and save functionality",
+          "Export as image"
+        ]
+      },
+      "SignaturePreview": {
+        "description": "Signature preview component",
+        "features": [
+          "Display saved signatures",
+          "PDF preview integration"
+        ]
+      }
+    },
+    "context_providers": {
+      "AuthProvider": {
+        "description": "Firebase authentication context",
+        "features": [
+          "User state management",
+          "Authentication status tracking",
+          "Protected route handling"
+        ]
+      },
+      "DataContext": {
+        "description": "Global data management context",
+        "features": [
+          "Centralized data fetching",
+          "Cache management",
+          "Data synchronization"
+        ]
+      },
+      "PerformanceContext": {
+        "description": "Performance settings context",
+        "features": [
+          "Performance mode management (Auto/Lite/High)",
+          "Device capability detection",
+          "Animation control",
+          "Reduced motion support"
+        ]
+      }
+    }
   },
-  "shortcuts": {
-    "chat": [
-      "Enter to send; Shift+Enter for newline; Esc closes floating chat (not applicable on full-screen /AI)."
-    ],
-    "spotify": [
-      "Press Enter in the search box to search; paste an open.spotify.com link to auto-embed on blur/paste."
-    ]
+  "api_endpoints": {
+    "admin_management": {
+      "/api/admin-login-log": "Log admin login attempts with timestamp and metadata",
+      "/api/admin-login-log-list": "Retrieve paginated list of admin login logs with filters",
+      "/api/admin-presence-heartbeat": "Update admin presence status (online/offline/last_seen)",
+      "/api/admin-presence-list": "Get list of all admin presence statuses",
+      "/api/admins-list": "Retrieve list of all admin users with authorities",
+      "/api/admins-upsert": "Create or update admin user with authority flags",
+      "/api/admins-delete": "Delete admin user (Owner protection enforced)",
+      "/api/admins-audit-list": "Retrieve audit trail of admin actions with pagination"
+    },
+    "announcements": {
+      "/api/get-announcement": "Fetch active announcement with target filtering",
+      "/api/list-announcements": "Get all announcements with optional target filter",
+      "/api/save-announcement": "Create or update announcement with target and expiry",
+      "/api/delete-announcement": "Remove announcement by ID"
+    },
+    "content_management": {
+      "/api/get-achievements": "Fetch achievements data from Supabase or JSON fallback",
+      "/api/save-achievements": "Save achievements data to Supabase with storage fallback",
+      "/api/patches": "Generate and retrieve patch notes and version history"
+    },
+    "messaging": {
+      "/api/messages-list": "Get all contact form submissions for moderation",
+      "/api/messages-delete": "Delete message by ID (soft delete)",
+      "/api/send-message": "Submit new contact message with validation",
+      "/api/validate-instagram": "Validate Instagram username format and existence"
+    },
+    "ai_and_feedback": {
+      "/api/gemini-chat": "Proxy Google Gemini AI requests with context and rate limiting",
+      "/api/feedback-create": "Log AI chatbot feedback from users",
+      "/api/feedback-list": "Retrieve AI feedback entries for analysis",
+      "/api/feedback-chat": "Get conversation history for feedback context",
+      "/api/feedback-summarize": "Generate summary of feedback data"
+    },
+    "site_configuration": {
+      "/api/get-site-flags": "Retrieve site-wide flags (maintenance mode, etc.)",
+      "/api/set-site-flags": "Update site flags with fallback storage"
+    },
+    "authentication": {
+      "/api/auth-service": "Password reset endpoints (request-reset, reset)",
+      "/api/verify-recaptcha": "Server-side reCAPTCHA v3 verification"
+    },
+    "spotify": {
+      "/api/spotify-token": "Refresh Spotify OAuth tokens"
+    },
+    "email": {
+      "/api/send-cv-email": "Send CV via email with SMTP integration"
+    }
+  },
+  "netlify_functions": {
+    "description": "Serverless functions deployed on Netlify (mirrors and extends API routes)",
+    "functions": {
+      "admin-login-log": "Log admin login attempts",
+      "admin-login-log-list": "Retrieve login logs",
+      "admin-presence-heartbeat": "Update presence status",
+      "admin-presence-list": "Get presence roster",
+      "admins-list": "List admin users",
+      "admins-upsert": "Create/update admin",
+      "admins-delete": "Delete admin",
+      "admins-audit-list": "Retrieve audit logs",
+      "get-announcement": "Fetch announcements",
+      "list-announcements": "List all announcements",
+      "save-announcement": "Save announcement",
+      "delete-announcement": "Delete announcement",
+      "get-achievements": "Fetch achievements",
+      "save-achievements": "Save achievements",
+      "get-education": "Fetch education data",
+      "save-education": "Save education data",
+      "get-organizations": "Fetch organizations",
+      "save-organizations": "Save organizations",
+      "patches": "Generate patch notes",
+      "messages-list": "List messages",
+      "messages-delete": "Delete message",
+      "send-message": "Send contact message",
+      "feedback-create": "Create AI feedback",
+      "feedback-list": "List AI feedback",
+      "feedback-chat": "Get feedback conversations",
+      "feedback-summarize": "Summarize feedback",
+      "gemini-chat": "AI chat proxy",
+      "auth-service": "Password reset service",
+      "verify-recaptcha": "reCAPTCHA verification",
+      "spotify-token": "Spotify token refresh",
+      "validate-instagram": "Instagram validation",
+      "send-cv-email": "Email CV delivery",
+      "get-site-flags": "Retrieve site flags",
+      "set-site-flags": "Update site flags"
+    }
+  },
+  "data_sources": {
+    "json_files": {
+      "about.json": "Personal information, biography, background story",
+      "achievements.json": "Awards and achievements organized by year with certificates",
+      "ai_privacy.json": "AI assistant privacy policy content",
+      "contact.json": "Social media links and contact information",
+      "education.json": "Educational timeline with institutions and degrees",
+      "organizations.json": "Organization memberships with roles and dates",
+      "patches.json": "Version history and release notes",
+      "site_features.json": "This file - comprehensive site documentation for AI training"
+    },
+    "supabase_tables": {
+      "admin_authorities": "Admin user authority flags and permissions",
+      "admin_audit": "Audit trail of administrative actions",
+      "admin_presence": "Real-time admin online/offline status",
+      "admin_logins": "Login attempt history with metadata",
+      "admin_credentials": "Hashed passwords for admin authentication",
+      "admin_password_reset_tokens": "Temporary tokens for password reset (30min expiry)",
+      "sign_requests": "Signature request submissions with status tracking",
+      "announcements": "Site-wide announcements with targeting and expiry",
+      "messages": "Contact form submissions",
+      "feedback": "AI chatbot feedback entries",
+      "achievements": "Dynamic achievements data",
+      "education": "Dynamic education entries",
+      "organizations": "Dynamic organization data"
+    },
+    "supabase_storage": {
+      "documents": "PDF uploads for signature requests and signed documents"
+    }
+  },
+  "features": {
+    "authentication_and_security": {
+      "firebase_auth": "Email/password and Google OAuth authentication",
+      "recaptcha_v3": "Optional reCAPTCHA verification for login actions",
+      "role_based_access": "Owner and Admin roles with granular permissions",
+      "authority_flags": "canEditSections, canAccessDev, banned status per admin",
+      "owner_protection": "Owner cannot be deleted or banned",
+      "session_management": "Secure session handling with Firebase",
+      "password_reset": "Token-based password reset with email delivery (30min expiry)",
+      "login_logging": "All login attempts logged with timestamp and metadata",
+      "audit_trail": "Comprehensive audit logging for all admin actions"
+    },
+    "performance": {
+      "performance_modes": "Auto (device-aware), Lite (reduced motion), High (full effects)",
+      "lazy_loading": "Dynamic imports for heavy components",
+      "code_splitting": "Optimized bundle splitting with Next.js",
+      "static_export": "Static site generation for CDN hosting",
+      "image_optimization": "Next.js automatic image optimization",
+      "responsive_design": "Mobile-first responsive layouts",
+      "reduced_motion": "Accessibility support for motion sensitivity"
+    },
+    "persistence": {
+      "supabase_first": "Primary data storage with Supabase",
+      "storage_fallback": "Supabase Storage fallback when REST fails",
+      "filesystem_fallback": "Local JSON file fallback for development",
+      "local_storage": "Browser localStorage for client-side persistence",
+      "optimistic_updates": "Immediate UI updates with background sync",
+      "session_storage": "Session-scoped data for announcements"
+    },
+    "real_time": {
+      "presence_system": "Live admin online/offline status with heartbeat",
+      "presence_refresh": "Configurable refresh interval (default 60s)",
+      "live_roster": "Real-time admin presence list",
+      "auto_heartbeat": "Automatic presence updates while admin is active"
+    },
+    "integrations": {
+      "google_gemini": "AI assistant powered by Google Generative AI",
+      "spotify_oauth": "Spotify authentication with PKCE flow",
+      "spotify_api": "Search tracks/playlists, play previews, embed content",
+      "firebase": "Authentication and user management",
+      "supabase": "Database, storage, and REST API",
+      "smtp": "Email delivery for password resets and notifications",
+      "spline": "3D scene embedding and interactions",
+      "phaser": "Game engine for mini games"
+    },
+    "ui_ux": {
+      "3d_visuals": "Spline 3D scenes with interactive elements",
+      "glassy_morphism": "Modern glass effect UI design",
+      "framer_motion": "Smooth animations and transitions",
+      "particle_effects": "Ambient particle field backgrounds",
+      "custom_cursor": "Animated custom cursor (desktop only)",
+      "mobile_optimized": "Responsive design with mobile notices",
+      "dark_theme": "Dark color scheme throughout the site",
+      "accessibility": "Keyboard navigation and screen reader support"
+    },
+    "maintenance": {
+      "maintenance_mode": "Site-wide shutdown overlay with admin bypass",
+      "announcement_system": "Targeted announcements with expiry and CTAs",
+      "version_control": "Patch notes and release history",
+      "health_checks": "Supabase connection verification"
+    }
+  },
+  "keyboard_shortcuts": {
+    "chatbot": {
+      "Enter": "Send message",
+      "Shift+Enter": "New line in message",
+      "Esc": "Close floating chat window (not on /AI page)"
+    },
+    "spotify": {
+      "Enter": "Search tracks/playlists when in search box"
+    },
+    "admin": {
+      "various": "Keyboard shortcuts supported in admin panel (defined per section)"
+    }
+  },
+  "technical_stack": {
+    "framework": "Next.js 14 with React 18",
+    "styling": "TailwindCSS with PostCSS",
+    "animations": "Framer Motion",
+    "3d_graphics": "Spline (embedded scenes)",
+    "games": "Phaser 3 (Flappy Bird), chess.js (Chess)",
+    "authentication": "Firebase Auth",
+    "database": "Supabase (PostgreSQL)",
+    "storage": "Supabase Storage",
+    "serverless": "Netlify Functions and Next.js API Routes",
+    "ai": "Google Gemini API",
+    "music": "Spotify Web API",
+    "forms": "Native React forms with validation",
+    "pdf": "html2pdf.js, pdf-lib, pdfjs-dist",
+    "email": "Nodemailer with SMTP",
+    "security": "reCAPTCHA v3, bcryptjs",
+    "deployment": "Netlify (primary), Docker/GHCR (containerized)",
+    "ci_cd": "GitHub Actions (Docker publish, Release automation)"
+  },
+  "deployment": {
+    "netlify": {
+      "build_command": "next build",
+      "publish_directory": "out",
+      "functions_directory": "netlify/functions",
+      "redirects": "Configured in netlify.toml"
+    },
+    "docker": {
+      "multi_stage_build": "Optimized Docker build with nginx serving",
+      "github_packages": "Published to ghcr.io/aryanzkys/my-profiles",
+      "versioning": "Tags match release versions (e.g., v1.0.0-beta)",
+      "latest_tag": "Applied only to stable releases (no dash in tag)"
+    },
+    "static_export": {
+      "next_export": "Static HTML/CSS/JS export to 'out/' directory",
+      "base_path": "Configurable for subdirectory hosting",
+      "cdn_ready": "Optimized for CDN and static hosting"
+    }
+  },
+  "environment_variables": {
+    "required": {
+      "NEXT_PUBLIC_ADMIN_KEY": "Admin panel access key (localStorage)",
+      "SUPABASE_URL": "Supabase project URL",
+      "SUPABASE_SERVICE_ROLE_KEY": "Supabase service role key for admin operations"
+    },
+    "optional": {
+      "NEXT_PUBLIC_BASE_PATH": "Base path for subdirectory hosting",
+      "SUPABASE_DB_URL": "Direct PostgreSQL connection string",
+      "NEXT_PUBLIC_RECAPTCHA_SITE_KEY_V3": "reCAPTCHA v3 site key",
+      "RECAPTCHA_SECRET_KEY": "reCAPTCHA v3 secret key",
+      "RECAPTCHA_SCORE_THRESHOLD": "reCAPTCHA score threshold (default 0.5)",
+      "NEXT_PUBLIC_PRESENCE_REFRESH_MS": "Presence heartbeat interval (default 60000)",
+      "SMTP_HOST": "SMTP server hostname",
+      "SMTP_PORT": "SMTP server port",
+      "SMTP_USER": "SMTP username",
+      "SMTP_PASS": "SMTP password",
+      "SMTP_FROM": "Email sender address",
+      "PASSWORD_SALT_ROUNDS": "bcrypt salt rounds for password hashing",
+      "NEXT_PUBLIC_PASSWORD_RESET_FUNCTION": "Password reset function name",
+      "NEXT_PUBLIC_PASSWORD_RESET_BASE_URL": "Custom domain for password reset",
+      "NEXT_PUBLIC_PASSWORD_RESET_PORT": "Development proxy port"
+    }
+  },
+  "notes": {
+    "project_type": "Interactive 3D portfolio with comprehensive admin platform",
+    "target_audience": "Recruiters, potential employers, academic contacts, visitors",
+    "design_philosophy": "Modern, immersive, interactive with professional functionality",
+    "scalability": "Designed for extensibility with modular architecture",
+    "documentation": "Comprehensive README.md and inline code documentation",
+    "license": "Private repository - proprietary code",
+    "maintenance": "Active development with version control and release automation"
   }
 }
