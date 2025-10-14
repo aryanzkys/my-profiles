@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const he = require('he');
 
 // Membuat transporter menggunakan kredensial SMTP dari variabel lingkungan
 const transporter = nodemailer.createTransport({
@@ -143,6 +144,11 @@ module.exports = {
       timeZone: 'Asia/Jakarta',
     });
 
+    // Escape potentially tainted values for HTML context
+    const safeIp = he.encode(ip || '');
+    const safeUserAgent = he.encode(userAgent || '');
+    const safeFormattedTime = he.encode(formattedTime || '');
+
     // Versi teks (fallback)
     const textContent = [
       '✅ Password Berhasil Diubah',
@@ -172,15 +178,15 @@ module.exports = {
           <table style="width:100%; font-size:14px;">
             <tr>
               <td style="color:#6b7280; padding:6px 0;"><strong>Waktu:</strong></td>
-              <td style="color:#111827; padding:6px 0;">${formattedTime}</td>
+              <td style="color:#111827; padding:6px 0;">${safeFormattedTime}</td>
             </tr>
             <tr>
               <td style="color:#6b7280; padding:6px 0;"><strong>IP Address:</strong></td>
-              <td style="color:#111827; padding:6px 0;">${ip}</td>
+              <td style="color:#111827; padding:6px 0;">${safeIp}</td>
             </tr>
             <tr>
               <td style="color:#6b7280; padding:6px 0; vertical-align:top;"><strong>Browser/Device:</strong></td>
-              <td style="color:#111827; padding:6px 0;">${userAgent}</td>
+              <td style="color:#111827; padding:6px 0;">${safeUserAgent}</td>
             </tr>
           </table>
         </div>
