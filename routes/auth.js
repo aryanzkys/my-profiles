@@ -55,6 +55,18 @@ const requestResetLimiter = rateLimit({
   },
 });
 
+// Rate limiter for OTP verification (e.g., /auth/verify-otp)
+const verifyOtpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // max 5 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: resolveClientIp,
+  message: {
+    message: 'Terlalu banyak percobaan verifikasi OTP. Silakan coba lagi nanti.',
+  },
+});
+
 // Helper debug message untuk frontend
 function getDebugMessage(err) {
   if (!err) return '';
@@ -237,7 +249,7 @@ router.post('/request-otp', async (req, res) => {
 });
 
 // Endpoint POST /auth/verify-otp - Verify OTP before allowing password reset
-router.post('/verify-otp', async (req, res) => {
+router.post('/verify-otp', verifyOtpLimiter, async (req, res) => {
   const clientIp = resolveClientIp(req);
   const userAgent = req.headers?.['user-agent'] || 'unknown';
   
