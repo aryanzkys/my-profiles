@@ -56,22 +56,23 @@ function validatePassword(password, email = '') {
     }
   }
 
-  // Check against common passwords
+  // Check against common passwords (only if password is exactly the common password or starts/ends with it)
   const passwordLower = password.toLowerCase();
   for (const common of COMMON_PASSWORDS) {
-    if (passwordLower === common || passwordLower.includes(common)) {
+    if (passwordLower === common || 
+        (common.length >= 6 && (passwordLower.startsWith(common) || passwordLower.endsWith(common)))) {
       errors.push('Password terlalu umum. Gunakan kombinasi yang lebih unik.');
       break;
     }
   }
 
-  // Check for sequential characters (123, abc, etc.)
-  if (/(?:abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)/i.test(password)) {
-    errors.push('Password tidak boleh mengandung karakter berurutan (abc, xyz, dll).');
+  // Check for sequential characters (4+ in a row: 1234, abcd, etc.)
+  if (/(?:abcd|bcde|cdef|defg|efgh|fghi|ghij|hijk|ijkl|jklm|klmn|lmno|mnop|nopq|opqr|pqrs|qrst|rstu|stuv|tuvw|uvwx|vwxy|wxyz)/i.test(password)) {
+    errors.push('Password tidak boleh mengandung 4+ karakter berurutan (abcd, wxyz, dll).');
   }
 
-  if (/(?:012|123|234|345|456|567|678|789|890)/.test(password)) {
-    errors.push('Password tidak boleh mengandung angka berurutan (123, 456, dll).');
+  if (/(?:0123|1234|2345|3456|4567|5678|6789|7890)/.test(password)) {
+    errors.push('Password tidak boleh mengandung 4+ angka berurutan (1234, 5678, dll).');
   }
 
   // Check for repeated characters (aaa, 111, etc.)

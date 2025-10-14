@@ -15,6 +15,12 @@ out/
 .env.local
 .env.production
 
+# Data files (local development storage)
+data/password-reset-tokens.json
+data/otp-tokens.json
+data/security-logs.json
+data/admin-passwords.json
+
 # OS/editor
 .DS_Store
 Thumbs.db
