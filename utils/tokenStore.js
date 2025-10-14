@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-const TOKEN_TTL_MS = 30 * 60 * 1000;
+const TOKEN_TTL_MS = 10 * 60 * 1000; // 10 minutes for security
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'password-reset-tokens.json');
 

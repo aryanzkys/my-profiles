@@ -217,7 +217,7 @@ export default function LoginForm() {
               >
                 <h2 className="text-lg font-semibold text-cyan-200 mb-2">Lupa Password Admin</h2>
                 <p className="text-xs text-gray-300 mb-4">
-                  Masukkan email admin yang terdaftar. Jika valid, sistem akan mengirimkan instruksi reset password yang berlaku selama 30 menit.
+                  Masukkan email admin yang terdaftar. Sistem akan mengirim link reset yang berlaku 10 menit + kode OTP untuk verifikasi 2 faktor.
                 </p>
                 <form onSubmit={onResetSubmit} className="space-y-3">
                   <div>
