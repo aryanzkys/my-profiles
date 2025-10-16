@@ -43,7 +43,7 @@ export default function CvShowcasePage() {
     return () => window.clearInterval(countdown);
   }, []);
 
-  const handleSendEmail = async (e) => {
+  const handleSendEmail = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setEmailStatus({ message: '', isError: false });
 

@@ -104,7 +104,7 @@ export function LiquidEther({
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [colors, speed, blur])
+  }, [colors, speed])
 
   return (
     <canvas
