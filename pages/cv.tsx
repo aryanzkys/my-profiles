@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import { LiquidEther } from '@/components/ui/liquid-ether';
 
 const CV_VIEW_URL = 'https://drive.google.com/file/d/1c7KeejQq-sDxC1FbnEUGiKUEkHDn2iOf/preview';
 const CV_DOWNLOAD_URL = 'https://drive.google.com/uc?export=download&id=1c7KeejQq-sDxC1FbnEUGiKUEkHDn2iOf';
@@ -42,7 +43,7 @@ export default function CvShowcasePage() {
     return () => window.clearInterval(countdown);
   }, []);
 
-  const handleSendEmail = async (e) => {
+  const handleSendEmail = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setEmailStatus({ message: '', isError: false });
 
@@ -141,6 +142,9 @@ export default function CvShowcasePage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-neutral-950 text-neutral-100">
+      {/* LiquidEther Background Effect */}
+      <LiquidEther className="fixed inset-0 -z-10" />
+      
       <Head>
         <title>Aryan’s CV</title>
         <meta
