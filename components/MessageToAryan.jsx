@@ -4,6 +4,22 @@ import { motion, AnimatePresence } from "framer-motion";
 
 function classNames(...xs) { return xs.filter(Boolean).join(' '); }
 
+const CATEGORY_OPTIONS = [
+  { value: 'general', label: 'General Inquiry', hint: 'Casual hellos, quick syncs, or simple updates.' },
+  { value: 'collaboration', label: 'Collaboration', hint: 'Project ideas, partnerships, or co-creation notes.' },
+  { value: 'feedback', label: 'Feedback', hint: 'Product thoughts, critiques, or testimonials.' },
+  { value: 'business', label: 'Business', hint: 'Consulting, hiring, sponsorship, or press.' },
+  { value: 'technical', label: 'Technical', hint: 'Bug reports, architecture deep dives, or support.' },
+  { value: 'other', label: 'Other', hint: 'Anything that lives outside the usual tracks.' },
+];
+
+const PRIORITY_OPTIONS = [
+  { value: 'low', label: 'Low', eta: '~72h', hint: 'Non-urgent notes or FYIs.' },
+  { value: 'normal', label: 'Normal', eta: '24-48h', hint: 'Standard follow-up cadence.' },
+  { value: 'high', label: 'High', eta: '< 24h', hint: 'Time-sensitive context appreciated.' },
+  { value: 'urgent', label: 'Urgent', eta: '< 12h', hint: 'Critical matters needing rapid response.' },
+];
+
 export default function MessageToAryan() {
   const [instagram, setInstagram] = useState('');
   const [igUser, setIgUser] = useState('');
@@ -70,12 +86,23 @@ export default function MessageToAryan() {
     return () => { alive = false; clearTimeout(t); };
   }, [igUser]);
 
-  const remaining = Math.max(0, maxLen - message.length);
-
   // Character count animation
   useEffect(() => {
     setCharCount(message.length);
   }, [message]);
+
+  const selectedCategory = useMemo(
+    () => CATEGORY_OPTIONS.find((opt) => opt.value === category) || CATEGORY_OPTIONS[0],
+    [category]
+  );
+
+  const selectedPriority = useMemo(
+    () => PRIORITY_OPTIONS.find((opt) => opt.value === priority) || PRIORITY_OPTIONS[1],
+    [priority]
+  );
+
+  const charPercent = Math.min(100, (charCount / maxLen) * 100);
+  const charTone = charPercent > 90 ? 'bg-red-400' : charPercent > 70 ? 'bg-amber-300' : 'bg-cyan-400';
 
   const validate = () => {
     const e = {};
@@ -207,67 +234,208 @@ export default function MessageToAryan() {
             </motion.p>
           </div>
 
-          <div className="grid grid-cols-1 gap-3">
-            {/* Instagram */}
-            <div>
-              <label className="block text-xs text-gray-300 mb-1">Instagram Username (optional)</label>
-              <div className="relative">
-                <input
-                  value={instagram}
-                  onChange={(e)=>onInstagramChange(e.target.value)}
-                  placeholder="@yourusername"
-                  className={classNames(
-                    "w-full bg-black/40 border rounded-md px-3 py-2 pr-10 outline-none focus:ring-1 text-gray-100 placeholder-gray-500 caret-cyan-300",
-                    igValid===true ? "border-emerald-400/40 focus:ring-emerald-400/40" : igValid===false ? "border-red-400/40 focus:ring-red-400/40" : "border-white/10 focus:ring-cyan-400/40"
-                  )}
-                />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs">
-                  <AnimatePresence initial={false}>
-                    {igChecking && (
-                      <motion.span key="checking" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-gray-400">…</motion.span>
+          <div className="space-y-8">
+            <div className="grid gap-6">
+              <div className="grid gap-5 sm:grid-cols-2">
+                {/* Instagram */}
+                <div className="sm:col-span-2">
+                  <label className="block text-xs text-gray-300 mb-1">Instagram Username (optional)</label>
+                  <div className="relative">
+                    <input
+                      value={instagram}
+                      onChange={(e)=>onInstagramChange(e.target.value)}
+                      onFocus={()=>setFocusedField('instagram')}
+                      onBlur={()=>setFocusedField(null)}
+                      placeholder="@yourusername"
+                      className={classNames(
+                        "w-full bg-black/40 border rounded-xl px-4 py-3 pr-12 outline-none focus:ring-1 text-gray-100 placeholder-gray-500 caret-cyan-300 transition-all duration-300",
+                        igValid===true
+                          ? "border-emerald-400/50 focus:ring-emerald-400/40 shadow-[0_0_20px_rgba(52,211,153,0.25)]"
+                          : igValid===false
+                            ? "border-red-400/50 focus:ring-red-400/40"
+                            : focusedField === 'instagram'
+                              ? "border-cyan-400/60 focus:ring-cyan-400/60 shadow-[0_0_20px_rgba(34,211,238,0.25)]"
+                              : "border-white/10 focus:ring-cyan-400/30"
+                      )}
+                    />
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs">
+                      <AnimatePresence initial={false}>
+                        {igChecking && (
+                          <motion.span key="checking" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-gray-400">…</motion.span>
+                        )}
+                        {igValid===true && !igChecking && (
+                          <motion.span key="ok" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }} className="text-emerald-400">✔</motion.span>
+                        )}
+                        {igValid===false && !igChecking && (
+                          <motion.span key="bad" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }} className="text-red-400">⚠</motion.span>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                  <div className="text-[11px] text-gray-400 mt-1">Leave empty if you prefer anonymity; we’ll store "-".</div>
+                </div>
+
+                {/* Initials / Name */}
+                <div>
+                  <label className="block text-xs text-gray-300 mb-1">Initials / Name <span className="text-red-400">*</span></label>
+                  <input
+                    value={initials}
+                    onChange={(e)=>setInitials(e.target.value)}
+                    onFocus={()=>setFocusedField('initials')}
+                    onBlur={()=>setFocusedField(null)}
+                    placeholder="e.g., AJ • Ary • AnonymousJedi"
+                    className={classNames(
+                      "w-full bg-black/40 border rounded-xl px-4 py-3 outline-none focus:ring-1 text-gray-100 placeholder-gray-500 caret-cyan-300 transition-all duration-300",
+                      errors.initials
+                        ? "border-red-400/50 focus:ring-red-400/40"
+                        : focusedField === 'initials'
+                          ? "border-cyan-400/60 focus:ring-cyan-400/60 shadow-[0_0_20px_rgba(34,211,238,0.25)]"
+                          : "border-white/10 focus:ring-cyan-400/30"
                     )}
-                    {igValid===true && !igChecking && (
-                      <motion.span key="ok" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }} className="text-emerald-400">✔</motion.span>
+                  />
+                  {errors.initials && <div className="text-xs text-red-400 mt-1">{errors.initials}</div>}
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-xs text-gray-300 mb-1">Contact Email (optional)</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e)=>setEmail(e.target.value)}
+                    onFocus={()=>setFocusedField('email')}
+                    onBlur={()=>setFocusedField(null)}
+                    placeholder="you@company.com"
+                    className={classNames(
+                      "w-full bg-black/40 border rounded-xl px-4 py-3 outline-none focus:ring-1 text-gray-100 placeholder-gray-500 caret-cyan-300 transition-all duration-300",
+                      errors.email
+                        ? "border-red-400/50 focus:ring-red-400/40"
+                        : focusedField === 'email'
+                          ? "border-cyan-400/60 focus:ring-cyan-400/60 shadow-[0_0_20px_rgba(34,211,238,0.25)]"
+                          : "border-white/10 focus:ring-cyan-400/30"
                     )}
-                    {igValid===false && !igChecking && (
-                      <motion.span key="bad" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }} className="text-red-400">⚠</motion.span>
-                    )}
-                  </AnimatePresence>
+                  />
+                  {errors.email && <div className="text-xs text-red-400 mt-1">{errors.email}</div>}
                 </div>
               </div>
-              <div className="text-[11px] text-gray-400 mt-1">Leave empty if you prefer anonymity; we’ll store "-".</div>
-            </div>
 
-            {/* Initials / Name */}
-            <div>
-              <label className="block text-xs text-gray-300 mb-1">Initials / Name <span className="text-red-400">*</span></label>
-              <input
-                value={initials}
-                onChange={(e)=>setInitials(e.target.value)}
-                placeholder="e.g., AJ • Ary • AnonymousJedi"
-                className={classNames("w-full bg-black/40 border rounded-md px-3 py-2 outline-none focus:ring-1 text-gray-100 placeholder-gray-500 caret-cyan-300", errors.initials?"border-red-400/40 focus:ring-red-400/40":"border-white/10 focus:ring-cyan-400/40")}
-              />
-              {errors.initials && <div className="text-xs text-red-400 mt-1">{errors.initials}</div>}
-            </div>
+              <div className="grid gap-5 sm:grid-cols-2">
+                {/* Category */}
+                <div>
+                  <label className="block text-xs text-gray-300 mb-1">Message Category</label>
+                  <div className="relative">
+                    <select
+                      value={category}
+                      onChange={(e)=>setCategory(e.target.value)}
+                      onFocus={()=>setFocusedField('category')}
+                      onBlur={()=>setFocusedField(null)}
+                      className={classNames(
+                        "w-full appearance-none bg-black/40 border rounded-xl px-4 py-3 pr-10 text-gray-100 focus:ring-1 outline-none transition-all duration-300",
+                        focusedField === 'category'
+                          ? "border-cyan-400/60 focus:ring-cyan-400/60 shadow-[0_0_20px_rgba(34,211,238,0.25)]"
+                          : "border-white/10 focus:ring-cyan-400/30"
+                      )}
+                    >
+                      {CATEGORY_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value} className="bg-slate-900">
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    <svg className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-cyan-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M6 9l6 6 6-6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <div className="text-[11px] text-gray-400 mt-1">{selectedCategory.hint}</div>
+                </div>
 
-            {/* Message */}
-            <div>
-              <label className="block text-xs text-gray-300 mb-1">Message / Feedback <span className="text-red-400">*</span></label>
-              <div className="relative">
-                <textarea
-                  value={message}
-                  onChange={(e)=>setMessage(e.target.value.slice(0, maxLen+2))}
-                  rows={5}
-                  placeholder="Type your message to Aryan here..."
-                  className={classNames("w-full bg-black/40 border rounded-md px-3 py-2 outline-none resize-y min-h-[120px] focus:ring-1 text-gray-100 placeholder-gray-500 caret-cyan-300", errors.message?"border-red-400/40 focus:ring-red-400/40":"border-white/10 focus:ring-cyan-400/40")}
-                />
-                <div className="absolute bottom-1 right-2 text-[11px] text-gray-400">{remaining} / {maxLen}</div>
+                {/* Priority */}
+                <div>
+                  <label className="block text-xs text-gray-300 mb-1">Priority</label>
+                  <div className="relative">
+                    <select
+                      value={priority}
+                      onChange={(e)=>setPriority(e.target.value)}
+                      onFocus={()=>setFocusedField('priority')}
+                      onBlur={()=>setFocusedField(null)}
+                      className={classNames(
+                        "w-full appearance-none bg-black/40 border rounded-xl px-4 py-3 pr-10 text-gray-100 focus:ring-1 outline-none transition-all duration-300",
+                        focusedField === 'priority'
+                          ? "border-cyan-400/60 focus:ring-cyan-400/60 shadow-[0_0_20px_rgba(34,211,238,0.25)]"
+                          : "border-white/10 focus:ring-cyan-400/30"
+                      )}
+                    >
+                      {PRIORITY_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value} className="bg-slate-900">
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    <svg className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-cyan-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M6 9l6 6 6-6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <div className="text-[11px] text-gray-400 mt-1 flex items-center gap-1">
+                    <span>Target response:</span>
+                    <span className="text-cyan-300 font-medium">{selectedPriority.eta}</span>
+                    <span>• {selectedPriority.hint}</span>
+                  </div>
+                </div>
               </div>
-              {errors.message && <div className="text-xs text-red-400 mt-1">{errors.message}</div>}
+
+              {/* Message */}
+              <div>
+                <label className="block text-xs text-gray-300 mb-1">Message / Brief <span className="text-red-400">*</span></label>
+                <div className="relative">
+                  <textarea
+                    value={message}
+                    onChange={(e)=>setMessage(e.target.value.slice(0, maxLen))}
+                    onFocus={()=>setFocusedField('message')}
+                    onBlur={()=>setFocusedField(null)}
+                    rows={5}
+                    placeholder="Share the context, goal, or story you'd like Aryan to know..."
+                    className={classNames(
+                      "w-full bg-black/40 border rounded-2xl px-4 py-3 outline-none resize-y min-h-[140px] focus:ring-1 text-gray-100 placeholder-gray-500 caret-cyan-300 transition-all duration-300",
+                      errors.message
+                        ? "border-red-400/50 focus:ring-red-400/40"
+                        : focusedField === 'message'
+                          ? "border-cyan-400/60 focus:ring-cyan-400/60 shadow-[0_0_30px_rgba(34,211,238,0.2)]"
+                          : "border-white/10 focus:ring-cyan-400/30"
+                    )}
+                  />
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
+                </div>
+                {errors.message && <div className="text-xs text-red-400 mt-1">{errors.message}</div>}
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-[11px] text-gray-400">
+                  <span>
+                    {charPercent > 85
+                      ? 'Close to the limit — focus on the essentials.'
+                      : charPercent > 60
+                        ? 'Great detail. Feel free to tighten or keep expanding.'
+                        : 'Paint the full picture. Context helps deliver a sharper response.'}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-32 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                      <div
+                        className={classNames('h-full transition-all duration-300', charTone)}
+                        style={{ width: `${charPercent}%` }}
+                      />
+                    </div>
+                    <span className="text-gray-300">{charCount} / {maxLen}</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Submit Button */}
-            <div className="pt-2">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-xs text-gray-400 flex items-center gap-2">
+                <svg className="h-4 w-4 text-cyan-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 22s8-4 8-10V6l-8-4-8 4v6c0 6 8 10 8 10z" />
+                </svg>
+                <span>
+                  Priority set to <span className="text-cyan-200 font-semibold">{selectedPriority.label}</span> • typical response {selectedPriority.eta}
+                </span>
+              </div>
               <motion.button
                 onClick={onSubmit}
                 disabled={busy}
@@ -280,7 +448,6 @@ export default function MessageToAryan() {
                   busy ? "opacity-70 cursor-wait" : "hover:shadow-[0_0_40px_rgba(34,211,238,0.3)] hover:border-cyan-400/70"
                 )}
               >
-                {/* Animated background */}
                 <motion.div
                   className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                   style={{
@@ -295,7 +462,7 @@ export default function MessageToAryan() {
                     ease: 'linear',
                   }}
                 />
-                
+
                 <span className="relative z-10 flex items-center gap-2">
                   {busy ? (
                     <>
@@ -406,7 +573,7 @@ export default function MessageToAryan() {
                 </div>
               </div>
             </motion.div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </motion.div>
