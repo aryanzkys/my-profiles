@@ -7,18 +7,14 @@ import ShutdownOverlay from '../components/ShutdownOverlay';
 import aiPrivacy from '../data/ai_privacy.json';
 
 const PHRASES = [
-  "Yo, it's Your Royal AI Advisor, innit 👑🤖",
-  "Fam, let's cook up some mad schemes 💡✨",
-  "Bestie, spill the tea, I'm here for it ☕👂",
-  "Need that inspo? Say less, buddy 💫",
-  "Lowkey ready to vibe on your next move 🚀",
-  "No cap, I got your back fr fr",
-  "Living that royal coding life, mate 💻👑",
-  "Straight fire ideas? Let's make it slap 🔥",
-  "Rizz up your projects, I'm here to help 💥",
-  "Bet, let's get this bread together 🍞✨",
-  "Main character energy activated 🌟",
-  "Slay the day, Your Majesty👑"
+  "Your AI Assistant, Ready to Help",
+  "Ask Me Anything About Aryan",
+  "Here to Answer Your Questions",
+  "Explore Projects & Insights",
+  "Let's Discuss Technology",
+  "Available 24/7 for You",
+  "Powered by Advanced AI",
+  "Smart Conversations, Better Results"
 ];
 
 
@@ -204,292 +200,296 @@ export default function AIPage() {
   }, [phraseIndex]);
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-[#0a1628] via-[#1a2a4e] to-[#0f1b3a] text-slate-100">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-black text-slate-100">
       <Head>
-        <title>Aryan's AI Assistant</title>
+        <title>AI Assistant - AryanStack</title>
         <meta name="robots" content="index,follow" />
-        <meta name="description" content="Chat with Aryan's Royal AI Assistant - your personal guide to everything Aryan, served with that UK royal flair!" />
-        <meta name="keywords" content="AI, chatbot, Royal AI, AryanStack, Aryan AI Assistant, Aryan Zaky Prayogo, Royal Blue Medieval" />
+        <meta name="description" content="Chat with Aryan's AI Assistant - intelligent conversations powered by advanced AI technology" />
+        <meta name="keywords" content="AI, chatbot, AI Assistant, AryanStack, Aryan AI, Aryan Zaky Prayogo, artificial intelligence" />
         <link rel="canonical" href="https://aryanstack.netlify.app/ai" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
       </Head>
 
-      {/* Royal background effects */}
+      {/* Modern gradient background effects */}
       <div className="pointer-events-none absolute inset-0">
-        {/* Medieval tapestry pattern */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{ 
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234169e1' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` 
-        }} />
+        {/* Gradient mesh */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(56,189,248,0.15),transparent_50%),radial-gradient(circle_at_80%_80%,rgba(168,85,247,0.15),transparent_50%),radial-gradient(circle_at_40%_80%,rgba(52,211,153,0.1),transparent_50%)]" />
         
-        {/* Royal blue radial gradients */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(65,105,225,0.25),transparent_55%),radial-gradient(circle_at_80%_10%,rgba(30,144,255,0.2),transparent_55%),radial-gradient(circle_at_50%_80%,rgba(138,43,226,0.15),transparent_60%)]" />
+        {/* Animated gradient orbs */}
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.5, 0.3],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute top-1/4 -left-48 h-96 w-96 rounded-full bg-gradient-to-br from-cyan-500/30 to-blue-500/30 blur-3xl"
+        />
+        <motion.div
+          animate={{
+            scale: [1.2, 1, 1.2],
+            opacity: [0.4, 0.6, 0.4],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1,
+          }}
+          className="absolute bottom-1/4 -right-48 h-96 w-96 rounded-full bg-gradient-to-br from-fuchsia-500/30 to-purple-500/30 blur-3xl"
+        />
         
-        {/* Gold accent gradients */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_50%,rgba(255,215,0,0.08),transparent_40%),radial-gradient(circle_at_90%_60%,rgba(218,165,32,0.06),transparent_45%)]" />
+        {/* Subtle grid overlay */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_80%)]" />
         
-        {/* Particle field with royal blue tint */}
-        <ParticleField className="opacity-[0.12]" />
-        
-        {/* Animated crown floating elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          {[...Array(8)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute text-4xl opacity-20"
-              style={{
-                left: `${(i * 15 + 10) % 100}%`,
-                top: `${(i * 25 + 5) % 100}%`,
-              }}
-              animate={{
-                y: [0, -30, 0],
-                rotate: [0, 10, -10, 0],
-                scale: [1, 1.1, 1],
-              }}
-              transition={{
-                duration: 8 + i * 0.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: i * 0.3,
-              }}
-            >
-              👑
-            </motion.div>
-          ))}
-        </div>
+        {/* Particle field */}
+        <ParticleField className="opacity-[0.08]" />
       </div>
 
       <div className="relative z-10 flex min-h-screen flex-col">
-        {/* Royal Header with crown */}
-        <header
-          ref={headerRef}
-          onMouseMove={handleHeaderMove}
-          onMouseLeave={resetHeaderMove}
-          onMouseEnter={() => {
-            const el = headerRef.current;
-            if (el) el.style.setProperty('--glow', '1');
-          }}
-          className="w-full border-b border-yellow-500/20 backdrop-blur-sm relative"
-          style={{
-            background: 'linear-gradient(180deg, rgba(65,105,225,0.15) 0%, rgba(26,42,78,0.05) 100%)',
-          }}
-        >
-          {/* Royal crest decoration */}
-          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-            <motion.div
-              animate={{
-                y: [0, -5, 0],
-                rotate: [0, 5, -5, 0],
-              }}
-              transition={{
-                duration: 6,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className="text-6xl filter drop-shadow-[0_0_20px_rgba(255,215,0,0.6)]"
-            >
-              👑
-            </motion.div>
-          </div>
+        {/* Modern Header */}
+        <header className="w-full border-b border-white/5 backdrop-blur-xl relative bg-gradient-to-b from-slate-900/50 to-transparent">
 
-          <div className="container mx-auto px-4 py-12 md:py-16">
+          <div className="container mx-auto px-4 py-16 md:py-20">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="grid gap-12 md:grid-cols-[minmax(0,1fr)_380px] md:items-end"
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              className="max-w-4xl mx-auto text-center space-y-8"
             >
-              <div className="space-y-6">
-                <span className="inline-flex items-center rounded-full border-2 border-yellow-500/40 bg-blue-900/40 px-6 py-2.5 text-xs uppercase tracking-[0.28em] text-yellow-200 font-bold backdrop-blur-md shadow-[0_0_25px_rgba(255,215,0,0.3)]">
-                  ⚜️ Royal AI Court ⚜️
+              {/* Status Badge */}
+              <div className="flex items-center justify-center gap-3">
+                <motion.div
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [0.5, 1, 0.5],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.6)]"
+                />
+                <span className="text-sm text-slate-400 font-medium">
+                  AI Assistant Online
                 </span>
+              </div>
+
+              {/* Main Heading with Typewriter */}
+              <div className="space-y-4">
+                <h1 className="sr-only">{PHRASES[phraseIndex]}</h1>
                 
-                <div className="space-y-4">
-                  <h1 className="sr-only">{PHRASES[phraseIndex]}</h1>
-                  
-                  {/* Royal Typewriter Effect */}
-                  <div
-                    className="royal-typewriter-container"
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`${PHRASES[phraseIndex]} - tap to shuffle`}
-                    onClick={advancePhrase}
-                    onKeyDown={handleKeyDown}
-                  >
-                    <motion.div
-                      className="royal-typewriter-text"
-                      style={{
-                        fontFamily: "'Cinzel', 'Times New Roman', Georgia, serif",
-                        fontSize: "40px",
-                        fontWeight: 900,
-                        color: "#FFD700",
-                        lineHeight: 1.2,
-                        letterSpacing: "0.03em",
-                        textTransform: "uppercase",
-                        position: "relative",
-                        zIndex: 1,
-                        wordWrap: "break-word",
-                        overflowWrap: "break-word",
-                        maxWidth: "100%"
-                      }}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      {displayedText}
-                      {isTyping && (
-                        <motion.span
-                          className="royal-typewriter-cursor"
-                          style={{
-                            display: "inline-block",
-                            marginLeft: "8px",
-                            fontFamily: "'Cinzel', 'Times New Roman', Georgia, serif",
-                            fontSize: "40px",
-                            fontWeight: 900,
-                            color: "#FFD700"
-                          }}
-                          animate={{ opacity: [1, 0, 1] }}
-                          transition={{ duration: 0.8, repeat: Infinity }}
-                        >
-                          |
-                        </motion.span>
-                      )}
-                    </motion.div>
+                <motion.div
+                  className="relative cursor-pointer group"
+                  onClick={advancePhrase}
+                  onKeyDown={handleKeyDown}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${PHRASES[phraseIndex]} - click to change`}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className="text-5xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-fuchsia-400 bg-clip-text text-transparent leading-tight">
+                    {displayedText}
+                    {isTyping && (
+                      <motion.span
+                        className="inline-block ml-2 w-1 h-[0.9em] bg-gradient-to-b from-cyan-400 to-fuchsia-400 align-middle"
+                        animate={{ opacity: [1, 0, 1] }}
+                        transition={{ duration: 0.8, repeat: Infinity }}
+                      />
+                    )}
                   </div>
                   
-                  <p className="max-w-xl text-sm leading-7 text-blue-100 md:text-base font-medium">
-                    Ayo fam, peep the latest on what Aryan's been cooking, how the vibes are hitting, and all the lowkey tea behind the scenes. 
-                    Ask me whatever, stay curious, and keep it 100. 👑✨
-                  </p>
-                </div>
+                  {/* Gradient underline effect */}
+                  <motion.div
+                    className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400/0 via-cyan-400/50 to-cyan-400/0 rounded-full"
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ duration: 0.8, delay: 0.3 }}
+                  />
+                </motion.div>
                 
-                {/* Royal Feature Cards */}
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="royal-highlight-card">
-                    <div className="text-2xl mb-2">💬</div>
-                    <h3>Shoot your shot</h3>
-                    <p>Ask about projects, backstory, or what's bussin' right now, mate.</p>
-                  </div>
-                  <div className="royal-highlight-card">
-                    <div className="text-2xl mb-2">✨</div>
-                    <h3>Vibes on point</h3>
-                    <p>Clean aesthetic so the chat stays fire and center, innit.</p>
-                  </div>
-                  <div className="royal-highlight-card">
-                    <div className="text-2xl mb-2">🎵</div>
-                    <h3>Level up the mood</h3>
-                    <p>Spotify slaps add that perfect soundtrack while you vibe, fr fr.</p>
-                  </div>
-                </div>
+                <p className="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                  Discover insights about Aryan's projects, experience, and technical expertise through intelligent conversations powered by advanced AI.
+                </p>
               </div>
               
-              {/* Quick Start Royal Panel */}
+              {/* Feature Pills */}
+              <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
+                <div className="px-4 py-2 rounded-full border border-cyan-400/20 bg-cyan-400/5 text-cyan-300 backdrop-blur-sm">
+                  <span className="mr-2">💬</span>
+                  Natural Conversations
+                </div>
+                <div className="px-4 py-2 rounded-full border border-fuchsia-400/20 bg-fuchsia-400/5 text-fuchsia-300 backdrop-blur-sm">
+                  <span className="mr-2">⚡</span>
+                  Instant Responses
+                </div>
+                <div className="px-4 py-2 rounded-full border border-emerald-400/20 bg-emerald-400/5 text-emerald-300 backdrop-blur-sm">
+                  <span className="mr-2">🎵</span>
+                  Spotify Integration
+                </div>
+                <div className="px-4 py-2 rounded-full border border-blue-400/20 bg-blue-400/5 text-blue-300 backdrop-blur-sm">
+                  <span className="mr-2">🔒</span>
+                  Privacy First
+                </div>
+              </div>
+
+              {/* Example Questions */}
               <motion.div
-                initial={{ opacity: 0, y: 16 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.45, delay: 0.08, ease: 'easeOut' }}
-                className="w-full rounded-[26px] border-2 border-yellow-500/30 bg-gradient-to-br from-blue-900/40 to-purple-900/30 px-7 py-8 backdrop-blur-md shadow-[0_0_30px_rgba(65,105,225,0.3)]"
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto"
               >
-                <h2 className="text-sm font-bold text-yellow-200 uppercase tracking-wider">🏰 Enter the Royal Court</h2>
-                <p className="mt-3 text-xs leading-6 text-blue-100">
-                  Say wassup, ask for inspo, or drop what you're vibing on and this assistant keeps it real and lowkey fire, bestie. 💯
-                </p>
-                <div className="mt-6 space-y-3 text-xs text-blue-50">
-                  <div className="royal-mini-pill">"Yo, what's Aryan geeked about this week? 🔥"</div>
-                  <div className="royal-mini-pill">"Need a playlist for deep focus? Hook me up, fam 🎧"</div>
-                  <div className="royal-mini-pill">"Spill the tea on the craziest project you've shipped 💅"</div>
+                <div className="p-4 rounded-xl border border-white/5 bg-white/[0.02] backdrop-blur-sm hover:border-cyan-400/20 hover:bg-white/[0.04] transition-all duration-300">
+                  <div className="text-cyan-400 text-sm font-medium mb-2">Projects</div>
+                  <div className="text-xs text-slate-400">"Tell me about Aryan's latest work"</div>
+                </div>
+                <div className="p-4 rounded-xl border border-white/5 bg-white/[0.02] backdrop-blur-sm hover:border-fuchsia-400/20 hover:bg-white/[0.04] transition-all duration-300">
+                  <div className="text-fuchsia-400 text-sm font-medium mb-2">Experience</div>
+                  <div className="text-xs text-slate-400">"What technologies does he specialize in?"</div>
+                </div>
+                <div className="p-4 rounded-xl border border-white/5 bg-white/[0.02] backdrop-blur-sm hover:border-emerald-400/20 hover:bg-white/[0.04] transition-all duration-300">
+                  <div className="text-emerald-400 text-sm font-medium mb-2">Contact</div>
+                  <div className="text-xs text-slate-400">"How can I collaborate with Aryan?"</div>
                 </div>
               </motion.div>
             </motion.div>
           </div>
         </header>
 
-        <main className="container mx-auto flex w-full flex-1 flex-col px-4 pb-20 pt-10 md:px-6">
-          {/* Royal Chatbot Section */}
-          <section className="relative isolate">
-            <div className="absolute -inset-x-6 -top-10 bottom-0 rounded-[44px] bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-transparent blur-[110px]" />
+        <main className="container mx-auto flex w-full flex-1 flex-col px-4 pb-20 pt-12 md:px-6">
+          {/* Chatbot Section */}
+          <section className="relative isolate max-w-5xl mx-auto w-full">
+            {/* Ambient glow */}
+            <div className="absolute -inset-x-6 -top-10 bottom-0 rounded-[44px] bg-gradient-to-br from-cyan-500/10 via-fuchsia-500/10 to-transparent blur-[120px]" />
             
             <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
               ref={cardRef}
               onMouseMove={handleTilt}
               onMouseLeave={resetTilt}
               style={{ transform: `perspective(1200px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)` }}
-              className="relative overflow-hidden rounded-[34px] border-2 border-yellow-500/20 bg-gradient-to-br from-blue-950/90 to-purple-950/80 shadow-[0_30px_80px_-40px_rgba(65,105,225,0.6),0_0_50px_rgba(255,215,0,0.15)] backdrop-blur-xl transition-transform duration-200"
+              className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/90 to-slate-950/90 shadow-[0_20px_70px_-15px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-transform duration-200"
             >
-              {/* Royal decorative top border */}
-              <div className="absolute inset-x-10 top-6 h-[2px] bg-gradient-to-r from-transparent via-yellow-400/60 to-transparent" />
+              {/* Gradient border effect */}
+              <div className="absolute inset-0 rounded-3xl p-[1px] bg-gradient-to-br from-cyan-400/20 via-fuchsia-400/20 to-transparent pointer-events-none" />
               
-              {/* Corner crown decorations */}
-              <div className="absolute top-4 left-4 text-2xl opacity-60">👑</div>
-              <div className="absolute top-4 right-4 text-2xl opacity-60">👑</div>
-              
-              <div className="rounded-[34px] p-2 md:p-3">
+              <div className="rounded-3xl p-2 md:p-3">
                 <Chatbot initialOpen fullScreen hideFab />
               </div>
             </motion.div>
           </section>
 
-          {/* Spotify & Features Royal Section */}
-          <section className="relative mt-12 grid gap-6 md:grid-cols-[400px_minmax(0,1fr)] md:items-stretch">
+          {/* Spotify & Features Section */}
+          <section className="relative mt-16 grid gap-8 lg:grid-cols-2 max-w-6xl mx-auto w-full">
+            {/* Spotify Card */}
             <motion.div
-              initial={{ opacity: 0, y: 18 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-80px' }}
-              transition={{ duration: 0.45, ease: 'easeOut' }}
-              className="relative overflow-hidden rounded-[30px] border-2 border-yellow-500/25 bg-gradient-to-br from-blue-900/50 via-purple-900/30 to-blue-950/40 p-[1px] shadow-[0_0_40px_rgba(65,105,225,0.25)]"
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: '-50px' }}
+              transition={{ duration: 0.5 }}
+              className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900/80 to-slate-950/80 backdrop-blur-xl shadow-xl"
             >
-              <div className="rounded-[28px] backdrop-blur-xl p-6">
-                <div className="flex items-center justify-between text-xs uppercase tracking-[0.24em] text-yellow-200 font-bold">
-                  <span>🎶 Royal Playlist</span>
-                  <span>Spotify</span>
+              <div className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-400/20 to-emerald-600/20 border border-emerald-400/30 flex items-center justify-center">
+                      <svg className="h-6 w-6 text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-slate-200">Spotify Player</div>
+                      <div className="text-xs text-slate-400">Music while you chat</div>
+                    </div>
+                  </div>
                 </div>
-                <p className="mt-4 text-sm leading-7 text-blue-100">
-                  Queue up Aryan's bangers while you chat, fam. The playlist stays locked in with the vibe so the convo never misses, fr fr. 🔥
+                
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  Listen to Aryan's curated playlist while exploring the AI assistant. Perfect ambient music for productive conversations.
                 </p>
-                <div className="mt-6 overflow-hidden rounded-2xl border-2 border-yellow-500/20 bg-gradient-to-br from-blue-950/90 to-purple-950/70 shadow-inner">
+                
+                <div className="overflow-hidden rounded-xl border border-white/5 bg-black/20">
                   <SpotifySection />
                 </div>
               </div>
             </motion.div>
             
+            {/* Features Card */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-80px' }}
-              transition={{ duration: 0.45, delay: 0.08, ease: 'easeOut' }}
-              className="rounded-[30px] border-2 border-yellow-500/25 bg-gradient-to-br from-blue-900/40 to-purple-900/30 px-8 py-10 backdrop-blur-xl shadow-[0_0_40px_rgba(65,105,225,0.25)]"
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: '-50px' }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900/80 to-slate-950/80 backdrop-blur-xl shadow-xl p-6"
             >
-              <h3 className="text-base font-bold text-yellow-200 uppercase tracking-wider">Why this hits different, innit 👑</h3>
-              <div className="mt-6 grid gap-6 md:grid-cols-2">
-                <div className="royal-feature">
-                  <h4>🗣️ No cap energy</h4>
-                  <p>Feels like texting Aryan directly—no stiff robot vibes, just pure authenticity, bestie.</p>
+              <h3 className="text-lg font-semibold text-slate-200 mb-6">Key Features</h3>
+              <div className="grid gap-4">
+                <div className="flex gap-4 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:border-cyan-400/20 hover:bg-white/[0.04] transition-all duration-300">
+                  <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-gradient-to-br from-cyan-400/20 to-cyan-600/20 border border-cyan-400/30 flex items-center justify-center">
+                    <svg className="h-5 w-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-200 mb-1">Natural Dialogue</h4>
+                    <p className="text-xs text-slate-400 leading-relaxed">Conversational AI that understands context and provides relevant, detailed answers.</p>
+                  </div>
                 </div>
-                <div className="royal-feature">
-                  <h4>🎯 Locked in fr</h4>
-                  <p>Answers stay on point with whatever you throw into the mix, no fumbling the bag.</p>
+                
+                <div className="flex gap-4 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:border-fuchsia-400/20 hover:bg-white/[0.04] transition-all duration-300">
+                  <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-gradient-to-br from-fuchsia-400/20 to-fuchsia-600/20 border border-fuchsia-400/30 flex items-center justify-center">
+                    <svg className="h-5 w-5 text-fuchsia-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-200 mb-1">Fast & Reliable</h4>
+                    <p className="text-xs text-slate-400 leading-relaxed">Powered by advanced AI with instant response times and high accuracy.</p>
+                  </div>
                 </div>
-                <div className="royal-feature">
-                  <h4>🌍 Always around</h4>
-                  <p>Jump in from any device—zero prep, just vibes. Mobile, tablet, desktop? We got you, mate.</p>
+                
+                <div className="flex gap-4 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:border-emerald-400/20 hover:bg-white/[0.04] transition-all duration-300">
+                  <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-gradient-to-br from-emerald-400/20 to-emerald-600/20 border border-emerald-400/30 flex items-center justify-center">
+                    <svg className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-200 mb-1">Privacy Focused</h4>
+                    <p className="text-xs text-slate-400 leading-relaxed">Your conversations are private and secure with transparent data practices.</p>
+                  </div>
                 </div>
-                <div className="royal-feature">
-                  <h4>✨ Royal smooth</h4>
-                  <p>Majestic visuals and buttery animations keep the focus on you, your highness.</p>
+                
+                <div className="flex gap-4 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:border-blue-400/20 hover:bg-white/[0.04] transition-all duration-300">
+                  <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-gradient-to-br from-blue-400/20 to-blue-600/20 border border-blue-400/30 flex items-center justify-center">
+                    <svg className="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-200 mb-1">Always Available</h4>
+                    <p className="text-xs text-slate-400 leading-relaxed">Access from any device, anytime. Responsive design for desktop, tablet, and mobile.</p>
+                  </div>
                 </div>
               </div>
             </motion.div>
           </section>
 
-          {/* Royal Consent Modal */}
+          {/* Privacy Consent Modal */}
           <AnimatePresence>
             {consentLoaded && !consented && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
                 aria-modal="true"
                 role="dialog"
               >
@@ -497,63 +497,106 @@ export default function AIPage() {
                   initial={{ y: 20, opacity: 0, scale: 0.95 }}
                   animate={{ y: 0, opacity: 1, scale: 1 }}
                   exit={{ y: 12, opacity: 0, scale: 0.98 }}
-                  transition={{ type: 'spring', stiffness: 260, damping: 28 }}
-                  className="relative mx-5 w-full max-w-lg rounded-3xl border-2 border-yellow-500/30 bg-gradient-to-br from-blue-950/95 to-purple-950/90 shadow-[0_30px_80px_-30px_rgba(65,105,225,0.7),0_0_60px_rgba(255,215,0,0.2)] backdrop-blur-xl"
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  className="relative w-full max-w-lg rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900/95 to-slate-950/95 shadow-[0_20px_70px_-15px_rgba(0,0,0,0.8)] backdrop-blur-xl"
                 >
-                  {/* Crown decoration */}
-                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-4xl filter drop-shadow-[0_0_15px_rgba(255,215,0,0.8)]">
-                    👑
+                  {/* Header */}
+                  <div className="flex items-center justify-between gap-3 border-b border-white/10 px-6 py-5">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-cyan-400/20 to-fuchsia-400/20 border border-cyan-400/30 flex items-center justify-center">
+                        <svg className="h-6 w-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h2 className="text-base font-semibold text-slate-200">Privacy Notice</h2>
+                        <p className="text-xs text-slate-400">Please review before continuing</p>
+                      </div>
+                    </div>
                   </div>
                   
-                  <div className="flex items-center justify-between gap-3 border-b-2 border-yellow-500/20 px-6 py-5 bg-gradient-to-r from-blue-900/30 to-purple-900/30">
-                    <h2 className="text-base font-bold text-yellow-200 uppercase tracking-wider">Before we link up, fam</h2>
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-blue-200 font-semibold">Royal Protocol</span>
-                  </div>
-                  
-                  <div className="px-6 py-5 text-sm text-blue-100">
-                    <p className="leading-6 text-blue-100 font-medium">
-                      Ayo bestie, we keep it transparent so you can chat without the stress, fr fr. 
-                      Quick peek at the AI policy and we're gucci to go! 👑✨
+                  {/* Content */}
+                  <div className="px-6 py-5 space-y-4">
+                    <p className="text-sm text-slate-300 leading-relaxed">
+                      Before using the AI assistant, please review our privacy practices. We're committed to transparency and protecting your data.
                     </p>
-                    <ul className="mt-4 space-y-2 text-xs text-blue-200">
-                      <li className="flex gap-2">
-                        <span className="royal-bullet" />
-                        <span>Your convo stays with you—bounce anytime and poof, it's gone, no cap.</span>
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="royal-bullet" />
-                        <span>Spotify plug is totally optional, mate. Disconnect if you're not vibing with it.</span>
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="royal-bullet" />
-                        <span>We monitor the vibes so replies stay fresh, helpful, and lowkey fire.</span>
-                      </li>
-                    </ul>
+                    
+                    <div className="space-y-3">
+                      <div className="flex gap-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <div className="h-5 w-5 rounded-full bg-gradient-to-br from-emerald-400/20 to-emerald-600/20 border border-emerald-400/30 flex items-center justify-center">
+                            <svg className="h-3 w-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs font-medium text-slate-200 mb-1">Private Conversations</div>
+                          <div className="text-xs text-slate-400">Your messages are not stored permanently. Clear your conversation anytime.</div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <div className="h-5 w-5 rounded-full bg-gradient-to-br from-blue-400/20 to-blue-600/20 border border-blue-400/30 flex items-center justify-center">
+                            <svg className="h-3 w-3 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs font-medium text-slate-200 mb-1">Optional Integration</div>
+                          <div className="text-xs text-slate-400">Spotify integration is completely optional and can be disconnected anytime.</div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <div className="h-5 w-5 rounded-full bg-gradient-to-br from-cyan-400/20 to-cyan-600/20 border border-cyan-400/30 flex items-center justify-center">
+                            <svg className="h-3 w-3 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs font-medium text-slate-200 mb-1">Quality Monitoring</div>
+                          <div className="text-xs text-slate-400">Conversations may be reviewed to improve response quality and accuracy.</div>
+                        </div>
+                      </div>
+                    </div>
+                    
                     <a
                       href="/ai-privacy"
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-yellow-300 hover:text-yellow-200 underline decoration-yellow-400/50 hover:decoration-yellow-300"
+                      className="inline-flex items-center gap-2 text-xs font-medium text-cyan-400 hover:text-cyan-300 transition-colors"
                     >
-                      📜 Read the Royal AI Policy
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Read Full Privacy Policy
                     </a>
-                    <label className="mt-5 flex items-start gap-3 text-xs text-blue-100 font-medium">
+                    
+                    <label className="flex items-start gap-3 p-3 rounded-lg border border-white/5 bg-white/[0.02] cursor-pointer hover:border-cyan-400/20 hover:bg-white/[0.04] transition-all duration-300">
                       <input
                         type="checkbox"
                         checked={agree}
                         onChange={(event) => setAgree(event.target.checked)}
-                        className="mt-[2px] h-4 w-4 rounded border-yellow-400/30 bg-blue-900/30 accent-yellow-500"
+                        className="mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5 text-cyan-400 focus:ring-2 focus:ring-cyan-400/50 focus:ring-offset-0"
                       />
-                      <span>Bet, I'm in! Let's get this bread. 🍞</span>
+                      <span className="text-xs text-slate-300 leading-relaxed">
+                        I understand and agree to the AI privacy practices outlined above.
+                      </span>
                     </label>
                   </div>
                   
-                  <div className="flex items-center justify-end gap-3 border-t-2 border-yellow-500/20 px-6 py-4 bg-gradient-to-r from-purple-900/30 to-blue-900/30">
+                  {/* Footer */}
+                  <div className="flex items-center justify-end gap-3 border-t border-white/10 px-6 py-4">
                     <a
                       href="/"
-                      className="rounded-full border-2 border-yellow-500/30 px-4 py-2 text-xs text-blue-100 font-medium transition hover:bg-yellow-500/10 hover:border-yellow-400/50"
+                      className="px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-slate-300 hover:bg-white/5 transition-all duration-300"
                     >
-                      Maybe later, fam
+                      Maybe Later
                     </a>
                     <button
                       disabled={!agree}
@@ -565,13 +608,13 @@ export default function AIPage() {
                         } catch {}
                         setConsented(true);
                       }}
-                      className={`rounded-full border-2 px-6 py-2 text-xs font-bold uppercase tracking-wider transition shadow-lg ${
+                      className={`px-6 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
                         agree 
-                          ? 'border-yellow-400/60 bg-gradient-to-r from-yellow-500/30 to-yellow-600/20 text-yellow-100 hover:shadow-[0_0_25px_rgba(255,215,0,0.4)] hover:scale-105' 
-                          : 'border-gray-600/30 bg-gray-800/20 text-gray-500 cursor-not-allowed opacity-50'
+                          ? 'bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white hover:shadow-[0_0_20px_rgba(56,189,248,0.4)] hover:scale-105' 
+                          : 'bg-slate-800/50 text-slate-500 cursor-not-allowed'
                       }`}
                     >
-                      {agree ? '🚀 Let\'s gooo!' : '⏳ Check the box'}
+                      {agree ? 'Continue to AI Assistant' : 'Please Accept'}
                     </button>
                   </div>
                 </motion.div>
@@ -583,264 +626,27 @@ export default function AIPage() {
       </div>
 
       <style jsx global>{`
-        @keyframes royal-shine {
-          0% {
-            background-position: -200% center;
-          }
-          100% {
-            background-position: 200% center;
-          }
+        /* Smooth scrolling */
+        html {
+          scroll-behavior: smooth;
         }
         
-        @keyframes royal-glow-pulse {
-          0%, 100% {
-            text-shadow: 
-              0 0 20px rgba(255, 215, 0, 0.9),
-              0 0 40px rgba(255, 215, 0, 0.7),
-              0 0 60px rgba(255, 215, 0, 0.5),
-              0 0 80px rgba(255, 215, 0, 0.3),
-              0 4px 8px rgba(0, 0, 0, 0.6),
-              2px 2px 4px rgba(0, 0, 0, 0.8);
-          }
-          50% {
-            text-shadow: 
-              0 0 30px rgba(255, 215, 0, 1),
-              0 0 50px rgba(255, 215, 0, 0.9),
-              0 0 70px rgba(255, 215, 0, 0.7),
-              0 0 90px rgba(255, 215, 0, 0.5),
-              0 0 110px rgba(255, 215, 0, 0.3),
-              0 4px 8px rgba(0, 0, 0, 0.6),
-              2px 2px 4px rgba(0, 0, 0, 0.8);
-          }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+          width: 10px;
         }
         
-        @keyframes shimmer {
-          0% {
-            transform: translateX(-100%) rotate(45deg);
-          }
-          100% {
-            transform: translateX(100%) rotate(45deg);
-          }
+        ::-webkit-scrollbar-track {
+          background: rgba(15, 23, 42, 0.5);
         }
         
-        @keyframes borderGlow {
-          0%, 100% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
+        ::-webkit-scrollbar-thumb {
+          background: rgba(56, 189, 248, 0.3);
+          border-radius: 5px;
         }
         
-        .royal-typewriter-container {
-          position: relative;
-          display: flex;
-          align-items: center;
-          justify-content: flex-start;
-          height: 156px;
-          border-radius: 28px;
-          padding: clamp(1.5rem, 3vw, 2rem) clamp(2rem, 4vw, 2.5rem);
-          background: linear-gradient(135deg, rgba(65, 105, 225, 0.35), rgba(138, 43, 226, 0.3));
-          border: 3px solid rgba(255, 215, 0, 0.5);
-          box-shadow: 
-            0 25px 60px -35px rgba(65, 105, 225, 0.6), 
-            0 0 50px rgba(255, 215, 0, 0.25),
-            inset 0 0 60px rgba(255, 215, 0, 0.1);
-          cursor: pointer;
-          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-          overflow: hidden;
-        }
-        
-        .royal-typewriter-container::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(255, 215, 0, 0.2),
-            transparent
-          );
-          animation: shimmer 3s infinite;
-          pointer-events: none;
-        }
-        
-        .royal-typewriter-container::after {
-          content: '';
-          position: absolute;
-          inset: -3px;
-          border-radius: 28px;
-          background: linear-gradient(
-            45deg,
-            rgba(255, 215, 0, 0.8),
-            rgba(218, 165, 32, 0.6),
-            rgba(255, 215, 0, 0.8),
-            rgba(218, 165, 32, 0.6),
-            rgba(255, 215, 0, 0.8)
-          );
-          background-size: 200% 100%;
-          animation: borderGlow 3s linear infinite;
-          pointer-events: none;
-          opacity: 0;
-          transition: opacity 0.4s ease;
-          z-index: -1;
-        }
-        
-        .royal-typewriter-container:hover {
-          transform: translateY(-4px) scale(1.01);
-          box-shadow: 
-            0 36px 90px -40px rgba(65, 105, 225, 0.7), 
-            0 0 70px rgba(255, 215, 0, 0.4),
-            inset 0 0 80px rgba(255, 215, 0, 0.15);
-          border-color: rgba(255, 215, 0, 0.8);
-        }
-        
-        .royal-typewriter-container:hover::after {
-          opacity: 1;
-        }
-        
-        .royal-typewriter-container:focus-visible {
-          outline: none;
-          border-color: rgba(255, 215, 0, 0.9);
-          box-shadow: 
-            0 0 0 6px rgba(255, 215, 0, 0.3), 
-            0 30px 70px -40px rgba(255, 215, 0, 0.65),
-            inset 0 0 100px rgba(255, 215, 0, 0.2);
-        }
-        
-        .royal-typewriter-text {
-          font-family: 'Cinzel', 'Times New Roman', Georgia, serif;
-          font-size: clamp(3rem, 7.5vw, 5.5rem);
-          font-weight: 900;
-          color: #FFD700;
-          line-height: 1.2;
-          letter-spacing: 0.03em;
-          text-shadow: 
-            0 0 20px rgba(255, 215, 0, 0.9),
-            0 0 40px rgba(255, 215, 0, 0.7),
-            0 0 60px rgba(255, 215, 0, 0.5),
-            0 0 80px rgba(255, 215, 0, 0.3),
-            0 4px 8px rgba(0, 0, 0, 0.6),
-            2px 2px 4px rgba(0, 0, 0, 0.8);
-          animation: royal-glow-pulse 3s ease-in-out infinite;
-          position: relative;
-          z-index: 1;
-          text-transform: uppercase;
-        }
-        
-        .royal-typewriter-container:hover .royal-typewriter-text {
-          animation: royal-glow-pulse 1.5s ease-in-out infinite;
-          text-shadow: 
-            0 0 30px rgba(255, 215, 0, 1),
-            0 0 50px rgba(255, 215, 0, 0.9),
-            0 0 70px rgba(255, 215, 0, 0.7),
-            0 0 90px rgba(255, 215, 0, 0.5),
-            0 4px 8px rgba(0, 0, 0, 0.6),
-            2px 2px 4px rgba(0, 0, 0, 0.8);
-        }
-        
-        .royal-typewriter-cursor {
-          display: inline-block;
-          margin-left: 8px;
-          font-family: 'Cinzel', 'Times New Roman', Georgia, serif;
-          font-size: clamp(3rem, 7.5vw, 5.5rem);
-          font-weight: 900;
-          color: #FFD700;
-          text-shadow: 
-            0 0 20px rgba(255, 215, 0, 1),
-            0 0 30px rgba(255, 215, 0, 0.8),
-            0 0 40px rgba(255, 215, 0, 0.6),
-            0 4px 8px rgba(0, 0, 0, 0.6);
-        }
-        
-        .royal-bullet {
-          margin-top: 0.4rem;
-          height: 8px;
-          width: 8px;
-          border-radius: 999px;
-          background: linear-gradient(135deg, rgba(255, 215, 0, 1), rgba(218, 165, 32, 1));
-          flex-shrink: 0;
-          box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-        }
-        
-        .royal-highlight-card {
-          border-radius: 20px;
-          border: 2px solid rgba(255, 215, 0, 0.2);
-          background: linear-gradient(135deg, rgba(65, 105, 225, 0.25), rgba(138, 43, 226, 0.15));
-          padding: 1.5rem;
-          backdrop-filter: blur(12px);
-          color: rgba(255, 255, 255, 0.95);
-          transition: all 0.3s ease;
-          box-shadow: 0 0 20px rgba(65, 105, 225, 0.2);
-        }
-        .royal-highlight-card:hover {
-          border-color: rgba(255, 215, 0, 0.4);
-          box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
-          transform: translateY(-2px);
-        }
-        .royal-highlight-card h3 {
-          font-size: 0.85rem;
-          font-weight: 700;
-          margin-bottom: 0.6rem;
-          color: rgba(255, 215, 0, 0.95);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-        .royal-highlight-card p {
-          font-size: 0.8rem;
-          line-height: 1.6;
-          color: rgba(200, 220, 255, 0.9);
-        }
-        
-        .royal-mini-pill {
-          display: inline-flex;
-          border-radius: 999px;
-          border: 2px solid rgba(255, 215, 0, 0.25);
-          background: linear-gradient(135deg, rgba(65, 105, 225, 0.3), rgba(138, 43, 226, 0.2));
-          padding: 0.6rem 1rem;
-          font-weight: 600;
-          transition: all 0.3s ease;
-          cursor: pointer;
-        }
-        .royal-mini-pill:hover {
-          border-color: rgba(255, 215, 0, 0.4);
-          background: linear-gradient(135deg, rgba(65, 105, 225, 0.4), rgba(138, 43, 226, 0.3));
-          box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
-        }
-        
-        .royal-feature {
-          border-radius: 20px;
-          border: 2px solid rgba(255, 215, 0, 0.2);
-          background: linear-gradient(135deg, rgba(65, 105, 225, 0.2), rgba(138, 43, 226, 0.15));
-          padding: 1.35rem;
-          transition: all 0.3s ease;
-          box-shadow: 0 0 20px rgba(65, 105, 225, 0.15);
-        }
-        .royal-feature:hover {
-          border-color: rgba(255, 215, 0, 0.35);
-          box-shadow: 0 0 30px rgba(255, 215, 0, 0.25);
-          transform: translateY(-2px);
-        }
-        .royal-feature h4 {
-          font-size: 0.9rem;
-          font-weight: 700;
-          margin-bottom: 0.5rem;
-          color: rgba(255, 215, 0, 0.95);
-        }
-        .royal-feature p {
-          font-size: 0.82rem;
-          line-height: 1.6;
-          color: rgba(200, 220, 255, 0.9);
-        }
-        
-        @media (max-width: 768px) {
-          .royal-typewriter-container {
-            padding: 1.5rem;
-            height: 140px;
-          }
+        ::-webkit-scrollbar-thumb:hover {
+          background: rgba(56, 189, 248, 0.5);
         }
       `}</style>
     </div>

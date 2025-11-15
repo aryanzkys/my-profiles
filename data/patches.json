@@ -1,6 +1,6 @@
 {
   "meta": {
-    "last_generated": "2025-10-14T06:46:22.536Z"
+    "last_generated": "2025-11-15T14:39:10.747Z"
   },
   "patches": [
     {
@@ -1812,6 +1812,284 @@
           "path": "pages/reset-password.jsx",
           "status": "M",
           "route": "/reset-password"
+        }
+      ]
+    },
+    {
+      "number": 85,
+      "commit": "d8d84715a70dee4f83064492b60623afdc50df0c",
+      "date": "2025-10-12T01:04:30.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "Menambahkan fitur email reset password admin",
+      "routes": [
+        "/reset-password"
+      ],
+      "changed": [
+        {
+          "path": "pages/reset-password.jsx",
+          "status": "A",
+          "route": "/reset-password"
+        }
+      ]
+    },
+    {
+      "number": 86,
+      "commit": "75b0bebec5a21ce5becc52328287edd882b74a40",
+      "date": "2025-10-12T07:04:15.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "yoiiiwoijfoajwofjawo",
+      "routes": [
+        "/AI"
+      ],
+      "changed": [
+        {
+          "path": "pages/AI.jsx",
+          "status": "M",
+          "route": "/AI"
+        }
+      ]
+    },
+    {
+      "number": 87,
+      "commit": "7105cd31bc4f81ddc96ec482b3e75070b977ddf1",
+      "date": "2025-10-12T07:18:47.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "yowaimo",
+      "routes": [
+        "/AI"
+      ],
+      "changed": [
+        {
+          "path": "pages/AI.jsx",
+          "status": "M",
+          "route": "/AI"
+        }
+      ]
+    },
+    {
+      "number": 88,
+      "commit": "28141a0a84c1cef833979a3c275f6fa53671014c",
+      "date": "2025-10-12T07:37:41.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "yowakk",
+      "routes": [
+        "/AI"
+      ],
+      "changed": [
+        {
+          "path": "pages/AI.jsx",
+          "status": "M",
+          "route": "/AI"
+        }
+      ]
+    },
+    {
+      "number": 89,
+      "commit": "654cc60e39e0f01f4d15cecd1dacf07d8e42187c",
+      "date": "2025-10-12T07:47:56.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "yepppp",
+      "routes": [
+        "/AI"
+      ],
+      "changed": [
+        {
+          "path": "pages/AI.jsx",
+          "status": "M",
+          "route": "/AI"
+        }
+      ]
+    },
+    {
+      "number": 90,
+      "commit": "5ad43603cc03681485742e45d61922be31bfbe60",
+      "date": "2025-10-12T08:14:57.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "yeee mamanyim",
+      "routes": [
+        "/AI",
+        "/"
+      ],
+      "changed": [
+        {
+          "path": "pages/AI.jsx",
+          "status": "M",
+          "route": "/AI"
+        },
+        {
+          "path": "pages/index.jsx",
+          "status": "M",
+          "route": "/"
+        }
+      ]
+    },
+    {
+      "number": 91,
+      "commit": "7501936a68c889dfe9d18966941bb356f1a6285d",
+      "date": "2025-10-12T10:19:08.000Z",
+      "author": "copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>",
+      "message": "Add Send to Email feature for CV page",
+      "routes": [
+        "/cv"
+      ],
+      "changed": [
+        {
+          "path": "pages/cv.jsx",
+          "status": "M",
+          "route": "/cv"
+        }
+      ]
+    },
+    {
+      "number": 92,
+      "commit": "3e221d1c9612e19f27c1c7d57239a4062caa8a34",
+      "date": "2025-10-12T11:17:08.000Z",
+      "author": "copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>",
+      "message": "Transform AI page with Royal Blue Medieval theme and Gen-Z slang",
+      "routes": [
+        "/AI"
+      ],
+      "changed": [
+        {
+          "path": "pages/AI.jsx",
+          "status": "M",
+          "route": "/AI"
+        }
+      ]
+    },
+    {
+      "number": 93,
+      "commit": "c82fad21b6bd1e126d9d8ec6b748a3144dff9196",
+      "date": "2025-10-12T12:06:00.000Z",
+      "author": "copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>",
+      "message": "Replace 3D rolling carousel with Royal Typewriter Effect",
+      "routes": [
+        "/AI"
+      ],
+      "changed": [
+        {
+          "path": "pages/AI.jsx",
+          "status": "M",
+          "route": "/AI"
+        }
+      ]
+    },
+    {
+      "number": 94,
+      "commit": "65a36a80ad16992f68978c0b805b1fe782bad67b",
+      "date": "2025-10-12T12:24:07.000Z",
+      "author": "copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>",
+      "message": "Add medieval font and interactive shining effects to Royal Typewriter",
+      "routes": [
+        "/AI"
+      ],
+      "changed": [
+        {
+          "path": "pages/AI.jsx",
+          "status": "M",
+          "route": "/AI"
+        }
+      ]
+    },
+    {
+      "number": 95,
+      "commit": "fa797f842407e7d6d57c2d68e2db62e6b63d44cd",
+      "date": "2025-10-12T13:16:22.000Z",
+      "author": "copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>",
+      "message": "Fix Cinzel font not applying: use inline styles and global CSS for medieval font",
+      "routes": [
+        "/AI"
+      ],
+      "changed": [
+        {
+          "path": "pages/AI.jsx",
+          "status": "M",
+          "route": "/AI"
+        }
+      ]
+    },
+    {
+      "number": 96,
+      "commit": "cdae2dc36e62bffbbd26009c0afd585a45b1e388",
+      "date": "2025-10-12T13:32:15.000Z",
+      "author": "copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>",
+      "message": "Reduce font size to 40px and fix border glow to cover entire border",
+      "routes": [
+        "/AI"
+      ],
+      "changed": [
+        {
+          "path": "pages/AI.jsx",
+          "status": "M",
+          "route": "/AI"
+        }
+      ]
+    },
+    {
+      "number": 97,
+      "commit": "acbe28839a22a1801b5bce1c7f4683736d07acd8",
+      "date": "2025-10-12T13:48:27.000Z",
+      "author": "copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>",
+      "message": "Fix Royal Typewriter container to fixed height - prevents page movement",
+      "routes": [
+        "/AI"
+      ],
+      "changed": [
+        {
+          "path": "pages/AI.jsx",
+          "status": "M",
+          "route": "/AI"
+        }
+      ]
+    },
+    {
+      "number": 98,
+      "commit": "312631cc6f1f08c983e83ed920bcfa5ff4a2af2c",
+      "date": "2025-10-12T13:56:12.000Z",
+      "author": "Aryan Zaky Prayogo <prayogoaryan63@gmail.com>",
+      "message": "Change loading duration and update email messages",
+      "routes": [
+        "/cv"
+      ],
+      "changed": [
+        {
+          "path": "pages/cv.jsx",
+          "status": "M",
+          "route": "/cv"
+        }
+      ]
+    },
+    {
+      "number": 99,
+      "commit": "f02411159d2b212569affaa6cf4b5a3c104d2abc",
+      "date": "2025-10-12T13:58:10.000Z",
+      "author": "Aryan Zaky Prayogo <prayogoaryan63@gmail.com>",
+      "message": "Reduce loading duration from 3 to 2 seconds",
+      "routes": [
+        "/cv"
+      ],
+      "changed": [
+        {
+          "path": "pages/cv.jsx",
+          "status": "M",
+          "route": "/cv"
+        }
+      ]
+    },
+    {
+      "number": 100,
+      "commit": "3d8c776ebb9aa4ebd4dab10c985bb9ac111380fe",
+      "date": "2025-11-15T14:04:44.000Z",
+      "author": "Aryan <prayogoaryan63@example.com>",
+      "message": "halo",
+      "routes": [
+        "/message-to-aryan"
+      ],
+      "changed": [
+        {
+          "path": "pages/message-to-aryan.jsx",
+          "status": "M",
+          "route": "/message-to-aryan"
         }
       ]
     }

@@ -146,24 +146,105 @@ export default function MessagesAdmin() {
       </div>
       {loading && <div className="text-sm text-gray-400">Loading…</div>}
       {error && <div className="text-sm text-red-400">{error}</div>}
-      <div className="grid gap-2">
-        {rows.map(r => (
-          <div key={r.id} className="rounded-lg border border-white/10 bg-black/40 p-3">
-            <div className="text-[11px] text-gray-400">
-              {(() => {
-                const iso = r.created_at || r.createdAt;
-                const d = iso ? new Date(iso) : null;
-                const valid = d && !isNaN(d.getTime());
-                return valid ? d.toLocaleString() : '-';
-              })()}
-            </div>
-            <div className="text-sm text-cyan-200">{r.initials} <span className="text-gray-400">{r.instagram}</span></div>
-            <div className="text-gray-200 text-sm whitespace-pre-wrap">{r.message}</div>
-            <div className="mt-2 flex justify-end">
-              <button onClick={() => onDelete(r.id)} disabled={busyId===r.id} className="text-xs px-2 py-1 rounded-md border border-red-400/40 bg-red-600/20 text-red-100 hover:bg-red-600/30 disabled:opacity-60">{busyId===r.id?'Deleting…':'Delete'}</button>
-            </div>
-          </div>
-        ))}
+      <div className="grid gap-3">
+        {rows.map(r => {
+          const CATEGORY_MAP = {
+            general: { label: 'General Inquiry', color: 'bg-slate-500/20 border-slate-400/40 text-slate-200' },
+            collaboration: { label: 'Collaboration', color: 'bg-purple-500/20 border-purple-400/40 text-purple-200' },
+            feedback: { label: 'Feedback', color: 'bg-blue-500/20 border-blue-400/40 text-blue-200' },
+            business: { label: 'Business', color: 'bg-amber-500/20 border-amber-400/40 text-amber-200' },
+            technical: { label: 'Technical', color: 'bg-cyan-500/20 border-cyan-400/40 text-cyan-200' },
+            other: { label: 'Other', color: 'bg-gray-500/20 border-gray-400/40 text-gray-200' },
+          };
+          const PRIORITY_MAP = {
+            low: { label: 'Low', color: 'bg-gray-500/20 border-gray-400/40 text-gray-200' },
+            normal: { label: 'Normal', color: 'bg-green-500/20 border-green-400/40 text-green-200' },
+            high: { label: 'High', color: 'bg-orange-500/20 border-orange-400/40 text-orange-200' },
+            urgent: { label: 'Urgent', color: 'bg-red-500/20 border-red-400/40 text-red-200' },
+          };
+          const cat = CATEGORY_MAP[r.category] || CATEGORY_MAP.general;
+          const pri = PRIORITY_MAP[r.priority] || PRIORITY_MAP.normal;
+          
+          return (
+            <motion.div 
+              key={r.id} 
+              layout
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-xl border border-white/10 bg-gradient-to-br from-black/60 to-black/40 backdrop-blur-sm p-4 hover:border-cyan-400/30 transition-all duration-300"
+            >
+              {/* Header with timestamp and badges */}
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] text-gray-400">
+                    {(() => {
+                      const iso = r.created_at || r.createdAt || r.timestamp;
+                      const d = iso ? new Date(iso) : null;
+                      const valid = d && !isNaN(d.getTime());
+                      return valid ? d.toLocaleString() : '-';
+                    })()}
+                  </span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full border ${cat.color} font-medium`}>
+                    {cat.label}
+                  </span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full border ${pri.color} font-medium`}>
+                    {pri.label}
+                  </span>
+                </div>
+              </div>
+
+              {/* Sender info */}
+              <div className="flex items-start gap-3 mb-3">
+                <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-br from-cyan-500/20 to-fuchsia-500/20 border border-cyan-400/30 flex items-center justify-center">
+                  <svg className="h-5 w-5 text-cyan-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium text-cyan-200">{r.initials || 'Anonymous'}</span>
+                    {r.instagram && r.instagram !== '-' && (
+                      <a 
+                        href={`https://instagram.com/${r.instagram.replace('@', '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-gray-400 hover:text-fuchsia-300 transition-colors"
+                      >
+                        {r.instagram}
+                      </a>
+                    )}
+                  </div>
+                  {r.email && r.email !== '-' && (
+                    <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
+                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      <span>{r.email}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Message content */}
+              <div className="rounded-lg bg-black/40 border border-white/5 p-3 mb-3">
+                <div className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">
+                  {r.message}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end">
+                <button 
+                  onClick={() => onDelete(r.id)} 
+                  disabled={busyId===r.id} 
+                  className="text-xs px-3 py-1.5 rounded-lg border border-red-400/40 bg-red-600/20 text-red-100 hover:bg-red-600/30 hover:shadow-[0_0_12px_rgba(239,68,68,0.25)] disabled:opacity-60 disabled:cursor-wait transition-all duration-300"
+                >
+                  {busyId===r.id ? 'Deleting…' : 'Delete'}
+                </button>
+              </div>
+            </motion.div>
+          );
+        })}
         {!loading && !error && rows.length === 0 && (
           <div className="text-sm text-gray-400">No messages yet.</div>
         )}
