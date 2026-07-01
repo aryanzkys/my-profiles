@@ -71,7 +71,7 @@ Interactive 3D portfolio with an Owner-grade Admin platform: authority managemen
 - Announcement and site flags: `get-announcement`, `list-announcements`, `save-announcement`, `delete-announcement`, `get-site-flags`, `set-site-flags` with target filtering and fallback-safe storage.
 - Content services: `get-achievements`, `save-achievements`, `patches`, `get-education`, `save-education`, `get-organizations`, `save-organizations` maintain portfolio data.
 - Messaging suite: `messages-list`, `messages-delete`, `send-message`, `feedback-create`, `feedback-list`, `feedback-chat`, `feedback-summarize` for inbox workflows, chatbot logs, and summarization.
-- AI gateway: `groq-chat` handles Qwen3 32B calls through Groq with moderation and rate protection.
+- AI gateway: `groq-chat` handles Qwen3 32B calls through Groq with compact conversation context.
 - Auth and security: `auth-service` (password reset request/reset endpoints), `verify-recaptcha` (server-side v3 verification), `spotify-token` (refreshes Spotify API tokens), `validate-instagram` (URL sanity checks).
 - Announcements and presence share the same fallback-safe storage helpers to sync with Next API when running locally.
 

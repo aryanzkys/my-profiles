@@ -33,7 +33,7 @@ exports.handler = async (event) => {
     const reply = await createGroqChatCompletion([
       { role: 'system', content: system },
       { role: 'user', content: user },
-    ], { maxCompletionTokens: 1024 });
+    ], { maxCompletionTokens: 512 });
     return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ reply: reply || '' }) };
   } catch (e) {
     return { statusCode: e?.status || 500, body: JSON.stringify({ error: e?.message || 'Server error' }) };

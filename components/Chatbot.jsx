@@ -11,12 +11,12 @@ import contact from '../data/contact.json';
 import siteFeatures from '../data/site_features.json';
 import aiPrivacy from '../data/ai_privacy.json';
 
-const SERVER_PROXY_PATHS = [
+const SERVER_PROXY_PATHS = Array.from(new Set([
   '/.netlify/functions/groq-chat',
   (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/.netlify/functions/groq-chat',
   '/api/groq-chat',
   (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/api/groq-chat',
-];
+]));
 
 function RobotAvatar() {
   return (
@@ -110,6 +110,7 @@ export default function Chatbot({ initialOpen = false, fullScreen = false, hideF
           });
           if (r.ok) { res = r; break; }
           lastErr = `HTTP ${r.status}`;
+          if (r.status === 429) break;
         } catch (e) { lastErr = e?.message || 'Network error'; }
       }
       if (!res) throw new Error(lastErr || 'Failed to reach proxy');
@@ -508,7 +509,7 @@ function buildProfilePrompt() {
     if (about.headline) lines.push(`Focus: ${about.headline}`);
     if (Array.isArray(about.summary) && about.summary.length) {
       lines.push('Summary:');
-      lines.push(...about.summary.map(s => `- ${s}`));
+      lines.push(...about.summary.slice(0, 3).map(s => `- ${s}`));
     }
     if (lines.length) parts.push('\nPROFILE — About:\n' + lines.join('\n'));
   }
@@ -593,7 +594,7 @@ function buildProfilePrompt() {
     if (lines.length) parts.push('\nPROFILE — Site Features (UI/UX Guide):\n' + lines.join('\n'));
   }
 
-  // Privacy Policy (AI Pages)
+  // Keep privacy context concise so repeated chats stay below provider token limits.
   if (aiPrivacy && typeof aiPrivacy === 'object') {
     const lines = [];
     try {
@@ -601,46 +602,7 @@ function buildProfilePrompt() {
       if (aiPrivacy.link) lines.push(`Link: ${aiPrivacy.link}`);
       if (aiPrivacy.last_updated) lines.push(`Last Updated: ${aiPrivacy.last_updated}`);
       if (aiPrivacy.consent_note) lines.push(`Consent: ${aiPrivacy.consent_note}`);
-      if (Array.isArray(aiPrivacy.collected_data) && aiPrivacy.collected_data.length) {
-        lines.push('What Data is Collected:');
-        aiPrivacy.collected_data.forEach(d => {
-          if (!d) return; const name = d.name || 'Data'; const details = d.details || '';
-          lines.push(`- ${name}: ${details}`);
-        });
-      }
-      if (Array.isArray(aiPrivacy.usage) && aiPrivacy.usage.length) {
-        lines.push('How Data is Used:');
-        aiPrivacy.usage.forEach(u => lines.push(`- ${u}`));
-      }
-      if (Array.isArray(aiPrivacy.storage_security) && aiPrivacy.storage_security.length) {
-        lines.push('Storage & Security:');
-        aiPrivacy.storage_security.forEach(s => lines.push(`- ${s}`));
-      }
-      if (aiPrivacy.controls && typeof aiPrivacy.controls === 'object') {
-        lines.push('Your Choices & Controls:');
-        const c = aiPrivacy.controls;
-        if (Array.isArray(c.quick_actions) && c.quick_actions.length) {
-          lines.push('- Quick Actions:');
-          c.quick_actions.forEach(a => lines.push(`  • ${a}`));
-        }
-        if (Array.isArray(c.in_chat) && c.in_chat.length) {
-          lines.push('- In-Chat:');
-          c.in_chat.forEach(a => lines.push(`  • ${a}`));
-        }
-        if (Array.isArray(c.local_storage_keys) && c.local_storage_keys.length) {
-          lines.push('- Local Storage Keys:');
-          c.local_storage_keys.forEach(k => lines.push(`  • ${k}`));
-        }
-        if (c.contact) lines.push(`- Contact: ${c.contact}`);
-      }
-      if (Array.isArray(aiPrivacy.third_parties) && aiPrivacy.third_parties.length) {
-        lines.push('Third-Party Services:');
-        aiPrivacy.third_parties.forEach(tp => {
-          if (!tp) return; const name = tp.name || 'Service'; const note = tp.note ? ` — ${tp.note}` : '';
-          lines.push(`- ${name}${note}`);
-        });
-      }
-      if (aiPrivacy.changes) lines.push(`Changes: ${aiPrivacy.changes}`);
+      if (aiPrivacy.controls?.contact) lines.push(`Contact: ${aiPrivacy.controls.contact}`);
     } catch {}
     if (lines.length) parts.push('\nPROFILE — AI Privacy Policy:\n' + lines.join('\n'));
   }

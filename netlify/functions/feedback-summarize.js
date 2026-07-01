@@ -28,7 +28,7 @@ exports.handler = async () => {
   const prompt = `You are Aryan's AI Assistant. Summarize the following user feedback about Aryan's site in a concise, structured, and friendly way. Include: top themes, positives, constructive points, and 3-5 actionable improvements. Use accessible formatting: clear headings (##), bold for key phrases, short bullet points, and emojis sparingly for clarity. When it helps, use a small Markdown table or a short blockquote for an example. Keep it under 180 words.\n\nFeedback:\n${texts.join('\n')}`;
     const reply = await createGroqChatCompletion([
       { role: 'user', content: prompt },
-    ], { maxCompletionTokens: 1024 });
+    ], { maxCompletionTokens: 512 });
     return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ summary: reply || '' }) };
   } catch (e) {
     return { statusCode: e?.status || 500, body: JSON.stringify({ error: e?.message || 'Server error' }) };

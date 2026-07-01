@@ -524,7 +524,7 @@
       "/api/validate-instagram": "Validate Instagram username format and existence"
     },
     "ai_and_feedback": {
-      "/api/groq-chat": "Proxy Qwen3 32B requests through Groq with context and rate limiting",
+      "/api/groq-chat": "Proxy Qwen3 32B requests through Groq with compact conversation context",
       "/api/feedback-create": "Log AI chatbot feedback from users",
       "/api/feedback-list": "Retrieve AI feedback entries for analysis",
       "/api/feedback-chat": "Get conversation history for feedback context",

@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     const messages = [];
     if (profile) messages.push({ role: 'system', content: String(profile) });
     if (Array.isArray(history)) {
-      for (const m of history) {
+      for (const m of history.slice(-8)) {
         if (!m || !m.text) continue;
         messages.push({ role: m.role === 'ai' ? 'assistant' : 'user', content: String(m.text) });
       }
