@@ -12,10 +12,10 @@ import siteFeatures from '../data/site_features.json';
 import aiPrivacy from '../data/ai_privacy.json';
 
 const SERVER_PROXY_PATHS = [
-  '/.netlify/functions/gemini-chat',
-  (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/.netlify/functions/gemini-chat',
-  '/api/gemini-chat',
-  (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/api/gemini-chat',
+  '/.netlify/functions/groq-chat',
+  (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/.netlify/functions/groq-chat',
+  '/api/groq-chat',
+  (process.env.NEXT_PUBLIC_BASE_PATH || '') + '/api/groq-chat',
 ];
 
 function RobotAvatar() {
@@ -328,7 +328,7 @@ export default function Chatbot({ initialOpen = false, fullScreen = false, hideF
                 <div className="flex-1">
                   <div className={fullScreen? "text-cyan-200 font-semibold text-lg" : "text-cyan-200 font-medium"}>Aryan’s AI Assistant</div>
                   <div className={fullScreen? "text-xs md:text-sm text-gray-400 flex items-center gap-2" : "text-xs text-gray-400 flex items-center gap-2"}>
-                    <span>Powered by Google</span>
+                    <span>Qwen3 32B via Groq</span>
                     <span aria-hidden className="inline-flex h-4 w-4">
                       <svg viewBox="0 0 16 16" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M8 2 A6 6 0 0 1 14 8" stroke="#4285F4" strokeWidth="2" strokeLinecap="round"/>

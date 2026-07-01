@@ -277,7 +277,7 @@ export default function MessagesAdmin() {
         <AnimatePresence>
           {summary && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="mt-4 rounded-lg border border-cyan-400/30 bg-cyan-500/10 p-3 text-sm text-cyan-100 shadow-[0_0_14px_rgba(34,211,238,0.18)]">
-              <div className="text-xs text-cyan-200 mb-1">Gemini Summary</div>
+              <div className="text-xs text-cyan-200 mb-1">Qwen Summary</div>
               <div className="overflow-x-auto">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}

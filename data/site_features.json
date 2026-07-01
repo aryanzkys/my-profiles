@@ -31,7 +31,7 @@
         "name": "AI Assistant Page",
         "description": "Full-screen AI chatbot with Spotify integration",
         "features": [
-          "Full-screen Gemini-powered chatbot with context about Aryan's profile",
+          "Full-screen Qwen3 32B-powered chatbot with context about Aryan's profile",
           "Persistent conversation history with local storage",
           "Clear chat functionality",
           "Markdown rendering support (bold, lists, links, inline code)",
@@ -333,7 +333,7 @@
           "Typing indicator with animations",
           "Slow-processing hints for user awareness",
           "Draggable in floating mode",
-          "Google Gemini integration",
+          "Qwen3 32B integration via Groq",
           "Context-aware responses about Aryan's profile",
           "Feedback capture system"
         ]
@@ -524,7 +524,7 @@
       "/api/validate-instagram": "Validate Instagram username format and existence"
     },
     "ai_and_feedback": {
-      "/api/gemini-chat": "Proxy Google Gemini AI requests with context and rate limiting",
+      "/api/groq-chat": "Proxy Qwen3 32B requests through Groq with context and rate limiting",
       "/api/feedback-create": "Log AI chatbot feedback from users",
       "/api/feedback-list": "Retrieve AI feedback entries for analysis",
       "/api/feedback-chat": "Get conversation history for feedback context",
@@ -574,7 +574,7 @@
       "feedback-list": "List AI feedback",
       "feedback-chat": "Get feedback conversations",
       "feedback-summarize": "Summarize feedback",
-      "gemini-chat": "AI chat proxy",
+      "groq-chat": "AI chat proxy",
       "auth-service": "Password reset service",
       "verify-recaptcha": "reCAPTCHA verification",
       "spotify-token": "Spotify token refresh",
@@ -650,7 +650,7 @@
       "auto_heartbeat": "Automatic presence updates while admin is active"
     },
     "integrations": {
-      "google_gemini": "AI assistant powered by Google Generative AI",
+      "groq_qwen": "AI assistant powered by Qwen3 32B through Groq",
       "spotify_oauth": "Spotify authentication with PKCE flow",
       "spotify_api": "Search tracks/playlists, play previews, embed content",
       "firebase": "Authentication and user management",
@@ -699,7 +699,7 @@
     "database": "Supabase (PostgreSQL)",
     "storage": "Supabase Storage",
     "serverless": "Netlify Functions and Next.js API Routes",
-    "ai": "Google Gemini API",
+    "ai": "Groq API (Qwen3 32B)",
     "music": "Spotify Web API",
     "forms": "Native React forms with validation",
     "pdf": "html2pdf.js, pdf-lib, pdfjs-dist",

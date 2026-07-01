@@ -5,7 +5,7 @@ Interactive 3D portfolio with an Owner-grade Admin platform: authority managemen
 ## Feature Highlights
 
 - Immersive realtime home experience powered by Next.js 14, TailwindCSS, Framer Motion, and embedded Spline scenes with shutdown overlays and mobile fallbacks.
-- AI assistant surface (Gemini via `Chatbot`) with markdown rendering, feedback capture, slow-response UX, privacy routing, and full-screen `/AI` page variant.
+- AI assistant surface (Qwen3 32B via Groq) with markdown rendering, feedback capture, slow-response UX, privacy routing, and full-screen `/AI` page variant.
 - Announcement system with target selection (`main`, `ai`, or `both`), per-route gating, live status indicator, optimistic draft preview, versioning, expiry, CTA buttons, and mobile preview toggle.
 - Owner/admin workspace featuring authorities CRUD (canEditSections, canAccessDev, banned), owner lock, maintenance mode toggle, presence heartbeat and live roster, Firebase login logs, audit history, announcement list, site flag editor, and supabase-backed content editors for achievements, education, and organizations.
 - Mini experiences and utilities: signature request flow (`/sign-me`), indie games (`MiniFlappy`, `MiniFlappyPhaser`, `MiniChess`), micro experiments (`MicroSpline`, `ParticleField`), spotlight overlays, Spotify widgets, and shutdown UX.
@@ -62,7 +62,7 @@ Interactive 3D portfolio with an Owner-grade Admin platform: authority managemen
 - Announcement and site controls: `get-announcement`, `list-announcements`, `save-announcement`, `delete-announcement`, `get-site-flags`, `set-site-flags` handle targeted announcements, shutdown flags, and storage fallbacks.
 - Content CRUD: `get-achievements`, `save-achievements`, `patches` provide CMS-style editing and export of achievements and patch notes.
 - Messaging and outreach: `messages-list`, `messages-delete`, `send-message`, `validate-instagram` cover contact submissions and validation flows.
-- AI and feedback: `gemini-chat` proxies Google Gemini requests with profile context and streaming control.
+- AI and feedback: `groq-chat` proxies Qwen3 32B requests through Groq with profile context and streaming control.
 - Maintenance helpers: `save-announcement`, `delete-announcement`, and `set-site-flags` coordinate fallback storage when Supabase/Netlify APIs are unavailable.
 
 ### Netlify Functions (`/.netlify/functions/*`)
@@ -71,7 +71,7 @@ Interactive 3D portfolio with an Owner-grade Admin platform: authority managemen
 - Announcement and site flags: `get-announcement`, `list-announcements`, `save-announcement`, `delete-announcement`, `get-site-flags`, `set-site-flags` with target filtering and fallback-safe storage.
 - Content services: `get-achievements`, `save-achievements`, `patches`, `get-education`, `save-education`, `get-organizations`, `save-organizations` maintain portfolio data.
 - Messaging suite: `messages-list`, `messages-delete`, `send-message`, `feedback-create`, `feedback-list`, `feedback-chat`, `feedback-summarize` for inbox workflows, chatbot logs, and summarization.
-- AI gateway: `gemini-chat` handles Google Generative AI calls with moderation and rate protection.
+- AI gateway: `groq-chat` handles Qwen3 32B calls through Groq with moderation and rate protection.
 - Auth and security: `auth-service` (password reset request/reset endpoints), `verify-recaptcha` (server-side v3 verification), `spotify-token` (refreshes Spotify API tokens), `validate-instagram` (URL sanity checks).
 - Announcements and presence share the same fallback-safe storage helpers to sync with Next API when running locally.
 
@@ -93,6 +93,7 @@ See `.env.example` for the full list. Common ones:
 
 - NEXT_PUBLIC_BASE_PATH: base path when hosting under a subpath (e.g., "/repo").
 - NEXT_PUBLIC_ADMIN_KEY: simple admin gate for /admin (stored in localStorage).
+- AI assistant (server-side): GROQ_API_KEY, with optional GROQ_MODEL (defaults to `qwen/qwen3-32b`).
 - Supabase (table-first): SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 - Optional direct Postgres: SUPABASE_DB_URL or discrete PG vars
 - reCAPTCHA v3 (optional): NEXT_PUBLIC_RECAPTCHA_SITE_KEY_V3, RECAPTCHA_SECRET_KEY, RECAPTCHA_SCORE_THRESHOLD
@@ -126,7 +127,7 @@ If deploying to username.github.io/repo:
 ## Public contact and AI surfaces
 
 - `/message-to-aryan`: chat-styled contact form writing into serverless inbox with moderation queues.
-- `/AI`: Gemini-powered assistant with local data prompt seeding, markdown answers, conversation persistence, and optional feedback logging.
+- `/AI`: Qwen3 32B-powered assistant with local data prompt seeding, markdown answers, conversation persistence, and optional feedback logging.
 - Announcement popup respects target scope (main vs AI) and gate lists to avoid admin/system routes.
 
 ## Serverless + Persistence
